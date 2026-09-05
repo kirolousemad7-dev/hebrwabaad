@@ -1,0 +1,4 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img">
+  <rect width="640" height="400" fill="#f8fafc"/>
+  <rect x='220' y='50' width='200' height='300' rx='8' fill='#ffffff' stroke='#0f172a' stroke-width='3'/><rect x='245' y='90' width='150' height='10' rx='5' fill='#cbd5e1'/>
+</svg>

@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/*
+  Brand tokens derived from the official Hebr & Abaad logo:
+  navy ink, gold wordmark, cream paper, teal/orange accents.
+  Existing `slate-*` utilities are mapped to this palette so the
+  current component architecture stays intact.
+*/
+@theme {
+  --font-sans: "Cairo", "Segoe UI", Tahoma, sans-serif;
+
+  --color-slate-50: #f6f3ee;
+  --color-slate-100: #efe9e0;
+  --color-slate-200: #e4dcd0;
+  --color-slate-300: #cfc3b2;
+  --color-slate-400: #a3927c;
+  --color-slate-500: #7a6c5c;
+  --color-slate-600: #4f5b66;
+  --color-slate-700: #33485a;
+  --color-slate-800: #1c3c54;
+  --color-slate-900: #12324d;
+  --color-slate-950: #0b2236;
+
+  --color-amber-50: #fbf6e6;
+  --color-amber-100: #f4e7c2;
+  --color-amber-200: #e9d08a;
+  --color-amber-300: #dcb85a;
+  --color-amber-400: #c9a227;
+  --color-amber-500: #b8911f;
+  --color-amber-800: #7a6418;
+  --color-amber-950: #3f320c;
+
+  --color-brand-navy: #12324d;
+  --color-brand-ink: #0b2236;
+  --color-brand-gold: #c9a227;
+  --color-brand-canvas: #f6f3ee;
+  --color-brand-paper: #fffcf8;
+  --color-brand-teal: #2a9aa3;
+  --color-brand-orange: #e07a3d;
+
+  --shadow-sm: 0 8px 24px -18px rgb(18 50 77 / 0.28);
+  --radius-lg: 0.75rem;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    overflow-x: clip;
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    background-color: var(--color-brand-canvas);
+    color: var(--color-brand-navy);
+    overflow-x: clip;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea {
+    min-height: 2.75rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-slate-300);
+    background: var(--color-brand-paper);
+    padding: 0.5rem 0.75rem;
+  }
+
+  textarea {
+    min-height: 6rem;
+  }
+}
+
+.brand-watermark {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.brand-watermark img {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(20rem, 70vw);
+  max-width: none;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .brand-watermark img {
+    width: min(28rem, 48vw);
+    opacity: 0.038;
+  }
+}
+
+@media (min-width: 1024px) {
+  .brand-watermark img {
+    width: min(34rem, 38vw);
+    top: 44%;
+    opacity: 0.035;
+  }
+}
