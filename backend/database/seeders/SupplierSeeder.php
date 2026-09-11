@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ContentStatus;
 use App\Models\Supplier;
 use App\Models\SupplierPortfolioItem;
 use Illuminate\Database\Seeder;
@@ -16,7 +17,11 @@ class SupplierSeeder extends Seeder
 
             $supplier = Supplier::query()->updateOrCreate(
                 ['slug' => $definition['slug']],
-                $definition,
+                [
+                    ...$definition,
+                    'is_published' => true,
+                    'profile_status' => ContentStatus::Published,
+                ],
             );
 
             $supplier->portfolioItems()->delete();
@@ -27,6 +32,8 @@ class SupplierSeeder extends Seeder
                     'supplier_id' => $supplier->id,
                     'sort_order' => $index,
                     'is_active' => true,
+                    'status' => ContentStatus::Published,
+                    'published_at' => now(),
                 ]);
             }
         }

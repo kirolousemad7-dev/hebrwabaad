@@ -13,6 +13,13 @@ class EmployeeWorkspaceConfigTest extends TestCase
         $this->assertFalse(UserRole::Owner->usesEmployeeWorkspace());
         $this->assertFalse(UserRole::Customer->usesEmployeeWorkspace());
         $this->assertFalse(UserRole::AdminManager->usesEmployeeWorkspace());
+        $this->assertFalse(UserRole::Supplier->usesEmployeeWorkspace());
+        $this->assertFalse(UserRole::SalesManager->usesEmployeeWorkspace());
+        $this->assertFalse(UserRole::SalesRepresentative->usesEmployeeWorkspace());
+        $this->assertFalse(UserRole::Supplier->isEmployee());
+        $this->assertSame('supplier', UserRole::Supplier->workspaceKey());
+        $this->assertSame('crm', UserRole::SalesManager->workspaceKey());
+        $this->assertSame('crm', UserRole::SalesRepresentative->workspaceKey());
         $this->assertSame([], EmployeeWorkspace::capabilitiesFor(UserRole::AdminManager));
     }
 

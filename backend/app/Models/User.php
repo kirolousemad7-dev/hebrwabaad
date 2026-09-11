@@ -9,13 +9,16 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'role', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'department_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -40,6 +43,32 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * @return BelongsToMany<Project, $this>
+     */
+    public function memberProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasOne<UserNotificationPreference, $this>
+     */
+    public function notificationPreferences(): HasOne
+    {
+        return $this->hasOne(UserNotificationPreference::class);
     }
 
     /**
@@ -166,5 +195,36 @@ class User extends Authenticatable
     public function customerPayments(): HasMany
     {
         return $this->hasMany(Payment::class, 'customer_id');
+    }
+
+    /**
+     * @return HasMany<WorkSubmission, $this>
+     */
+    public function workSubmissions(): HasMany
+    {
+        return $this->hasMany(WorkSubmission::class);
+    }
+
+    /**
+     * @return HasOne<Supplier, $this>
+     */
+    public function supplierProfile(): HasOne
+    {
+        return $this->hasOne(Supplier::class);
+    }
+
+    public function canReviewContent(): bool
+    {
+        return $this->role instanceof UserRole && $this->role->canReviewContent();
+    }
+
+    public function canSubmitEmployeeWork(): bool
+    {
+        return $this->role instanceof UserRole && $this->role->canSubmitEmployeeWork();
+    }
+
+    public function isSupplier(): bool
+    {
+        return $this->role === UserRole::Supplier;
     }
 }

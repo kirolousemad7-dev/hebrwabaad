@@ -9,15 +9,26 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Commercial payment row. Amount is immutable after creation — never reduced for refunds.
+ *
+ * Extension point: dispute_status / dispute_metadata may hold chargeback / dispute workflow
+ * state once that surface is implemented (Phase 8G). Do not overload these columns for refunds;
+ * use payment_refunds instead.
+ */
 #[Fillable([
     'customer_id',
     'order_id',
+    'printing_quotation_id',
+    'commercial_quotation_id',
     'amount',
     'currency',
     'payment_method',
     'status',
     'provider',
+    'provider_status',
     'provider_transaction_id',
     'checkout_session_id',
     'reference_number',
@@ -27,6 +38,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'paid_at',
     'verified_at',
     'verified_by',
+    'last_reconciled_at',
+    'reconciliation_note',
+    'dispute_status',
+    'dispute_metadata',
 ])]
 class Payment extends Model
 {
@@ -44,6 +59,8 @@ class Payment extends Model
             'status' => PaymentStatus::class,
             'paid_at' => 'datetime',
             'verified_at' => 'datetime',
+            'last_reconciled_at' => 'datetime',
+            'dispute_metadata' => 'array',
         ];
     }
 
@@ -64,11 +81,43 @@ class Payment extends Model
     }
 
     /**
+     * @return BelongsTo<PrintingQuotation, $this>
+     */
+    public function printingQuotation(): BelongsTo
+    {
+        return $this->belongsTo(PrintingQuotation::class);
+    }
+
+    /**
+     * @return BelongsTo<CommercialQuotation, $this>
+     */
+    public function commercialQuotation(): BelongsTo
+    {
+        return $this->belongsTo(CommercialQuotation::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    /**
+     * @return HasMany<PaymentAttempt, $this>
+     */
+    public function attempts(): HasMany
+    {
+        return $this->hasMany(PaymentAttempt::class);
+    }
+
+    /**
+     * @return HasMany<PaymentRefund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(PaymentRefund::class);
     }
 
     public function belongsToCustomer(User $user): bool

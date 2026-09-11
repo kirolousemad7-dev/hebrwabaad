@@ -24,6 +24,7 @@ class TaskResource extends JsonResource
             'priority' => $this->priority?->value ?? $this->priority,
             'status' => $this->status?->value ?? $this->status,
             'deadline' => $this->deadline?->toDateString(),
+            'calendar_item_id' => $this->calendar_item_id,
             'is_overdue' => $this->isOverdue(),
             'assigned_to' => $this->assigned_to,
             'created_by' => $this->created_by,

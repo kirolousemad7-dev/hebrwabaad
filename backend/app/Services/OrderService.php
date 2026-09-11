@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Models\CatalogAddon;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Package;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\Catalog\CustomPackageOperationsService;
+use App\Services\Workflow\WorkflowAutomationEngine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -25,7 +28,7 @@ class OrderService
      */
     public function eagerLoad(): array
     {
-        return ['customer', 'accountManager', 'project', 'service', 'package', 'packageTier', 'statusHistory.changedBy'];
+        return ['customer', 'accountManager', 'project', 'service', 'package', 'packageTier', 'items.service', 'items.addons.addon', 'addons.addon', 'statusHistory.changedBy'];
     }
 
     /**
@@ -116,6 +119,175 @@ class OrderService
             $order->update([
                 'reference' => sprintf('HEBR-ORD-%06d', $order->id),
             ]);
+
+            $this->recordHistory($order, null, OrderStatus::Received, $customer);
+
+            return [
+                'order' => $this->load($order->fresh())->load('latestPayment'),
+                'reused' => false,
+            ];
+        });
+    }
+
+    /**
+     * Build-your-own multi-service package. Stores normalized order_items (never comma strings).
+     * If any line is not FIXED+priced, requires_quote is set and payable stays unavailable.
+     *
+     * @param  list<array{service_id: int, quantity: int, addon_slugs?: list<string>, notes?: string|null}>  $items
+     * @param  list<string>  $packageAddonSlugs
+     * @return array{order: Order, reused: bool}
+     */
+    public function createCustomPackageOrder(User $customer, array $items, array $packageAddonSlugs = []): array
+    {
+        return DB::transaction(function () use ($customer, $items, $packageAddonSlugs): array {
+            if ($items === []) {
+                throw ValidationException::withMessages([
+                    'items' => ['اختر خدمة واحدة على الأقل.'],
+                ]);
+            }
+
+            $manager = User::query()
+                ->active()
+                ->where('role', UserRole::AccountManager)
+                ->orderBy('id')
+                ->first();
+
+            if ($manager === null) {
+                $manager = User::query()
+                    ->active()
+                    ->where('role', UserRole::Owner)
+                    ->orderBy('id')
+                    ->first();
+            }
+
+            if ($manager === null) {
+                throw ValidationException::withMessages([
+                    'items' => ['تعذر إنشاء الطلب حاليًا. برجاء المحاولة مرة أخرى.'],
+                ]);
+            }
+
+            $serviceIds = collect($items)->pluck('service_id')->map(fn ($id) => (int) $id)->unique()->values();
+            $services = Service::query()
+                ->active()
+                ->where('is_public', true)
+                ->whereIn('id', $serviceIds)
+                ->get()
+                ->keyBy('id');
+
+            if ($services->count() !== $serviceIds->count()) {
+                throw ValidationException::withMessages([
+                    'items' => ['بعض الخدمات المحددة غير متاحة أو غير منشورة.'],
+                ]);
+            }
+
+            $requiresQuote = false;
+            $names = [];
+
+            foreach ($items as $row) {
+                $service = $services->get((int) $row['service_id']);
+                $names[] = $service->name;
+                if (! $service->isChargeable()) {
+                    $requiresQuote = true;
+                }
+            }
+
+            $title = count($names) === 1
+                ? 'باقة مخصّصة — '.$names[0]
+                : 'باقة مخصّصة ('.count($names).' خدمات)';
+
+            $order = Order::query()->create([
+                'reference' => 'TMP-'.Str::ulid(),
+                'title' => $title,
+                'description' => 'طلب باقة مخصّصة عبر صمّم باقتك.',
+                'customer_id' => $customer->id,
+                'account_manager_id' => $manager->id,
+                'is_custom_package' => true,
+                'requires_quote' => $requiresQuote,
+                'status' => OrderStatus::Received,
+            ]);
+
+            $order->update([
+                'reference' => sprintf('HEBR-ORD-%06d', $order->id),
+            ]);
+
+            $sort = 0;
+            foreach ($items as $row) {
+                $service = $services->get((int) $row['service_id']);
+                $quantity = max(1, (int) ($row['quantity'] ?? 1));
+                $mode = $service->pricingMode();
+                $unitPrice = $service->isChargeable() ? $service->base_price : null;
+
+                $item = $order->items()->create([
+                    'service_id' => $service->id,
+                    'quantity' => $quantity,
+                    'pricing_mode' => $mode->value,
+                    'unit_price' => $unitPrice,
+                    'currency' => $service->currency ?: 'SAR',
+                    'notes' => $row['notes'] ?? null,
+                    'sort_order' => $sort++,
+                ]);
+
+                $addonSlugs = array_values(array_filter($row['addon_slugs'] ?? [], fn ($slug) => is_string($slug) && $slug !== ''));
+                if ($addonSlugs !== []) {
+                    $addons = CatalogAddon::query()
+                        ->active()
+                        ->public()
+                        ->whereIn('slug', $addonSlugs)
+                        ->with('services')
+                        ->get();
+
+                    foreach ($addons as $addon) {
+                        if (! $addon->isAvailable()) {
+                            continue;
+                        }
+
+                        $eligible = $addon->services->isEmpty()
+                            || $addon->services->contains(fn (Service $s) => $s->id === $service->id);
+
+                        if (! $eligible) {
+                            throw ValidationException::withMessages([
+                                'items' => ["الإضافة «{$addon->name}» غير متوافقة مع «{$service->name}»."],
+                            ]);
+                        }
+
+                        if (! $addon->isChargeable()) {
+                            $requiresQuote = true;
+                        }
+
+                        $item->addons()->create([
+                            'catalog_addon_id' => $addon->id,
+                            'quantity' => 1,
+                        ]);
+                    }
+                }
+            }
+
+            if ($packageAddonSlugs !== []) {
+                $packageAddons = CatalogAddon::query()
+                    ->active()
+                    ->public()
+                    ->whereIn('slug', $packageAddonSlugs)
+                    ->get();
+
+                foreach ($packageAddons as $addon) {
+                    if (! $addon->isAvailable()) {
+                        continue;
+                    }
+
+                    if (! $addon->isChargeable()) {
+                        $requiresQuote = true;
+                    }
+
+                    $order->addons()->create([
+                        'catalog_addon_id' => $addon->id,
+                        'quantity' => 1,
+                    ]);
+                }
+            }
+
+            if ($requiresQuote) {
+                $order->update(['requires_quote' => true]);
+            }
 
             $this->recordHistory($order, null, OrderStatus::Received, $customer);
 
@@ -233,6 +405,26 @@ class OrderService
 
         $this->recordHistory($order, null, OrderStatus::Received, $actor);
 
+        try {
+            app(WorkflowAutomationEngine::class)->dispatch('order.created', [
+                'source_type' => 'order',
+                'source_id' => $order->id,
+                'actor_id' => $actor->id,
+                'title' => 'متابعة طلب: '.$order->title,
+                'description' => $order->description,
+                'related_type' => 'order',
+                'related_id' => $order->id,
+                'assignee_ids' => [$manager->id],
+                'payload' => [
+                    'order_id' => $order->id,
+                    'reference' => $order->reference,
+                    'status' => OrderStatus::Received->value,
+                ],
+            ]);
+        } catch (\Throwable) {
+            // Workflow hooks must never break order creation.
+        }
+
         return $this->load($order->fresh());
     }
 
@@ -265,6 +457,38 @@ class OrderService
         $order->update($attributes);
         $this->recordHistory($order, $current, $next, $actor);
         app(PlatformNotifier::class)->orderStatusUpdated($order->fresh(['customer']), $next);
+
+        if ($next === OrderStatus::Confirmed) {
+            try {
+                app(CustomPackageOperationsService::class)
+                    ->ensureOperationalWork($order->fresh(['items.service.department', 'customer', 'accountManager', 'project']));
+            } catch (\Throwable) {
+                // Operational fan-out must never break order transitions.
+            }
+        }
+
+        try {
+            app(WorkflowAutomationEngine::class)->dispatch('order.status_changed', [
+                'source_type' => 'order',
+                'source_id' => $order->id,
+                'actor_id' => $actor->id,
+                'title' => 'تحديث حالة طلب: '.$order->title,
+                'related_type' => 'order',
+                'related_id' => $order->id,
+                'assignee_ids' => array_filter([$order->account_manager_id]),
+                'old_status' => $current->value,
+                'new_status' => $next->value,
+                'order_id' => $order->id,
+                'payload' => [
+                    'order_id' => $order->id,
+                    'old_status' => $current->value,
+                    'new_status' => $next->value,
+                    'actor_id' => $actor->id,
+                ],
+            ], $current->value.'->'.$next->value);
+        } catch (\Throwable) {
+            // Workflow hooks must never break order transitions.
+        }
 
         return $this->load($order->fresh());
     }

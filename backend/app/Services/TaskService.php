@@ -7,6 +7,8 @@ use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\Operations\Work\TaskCalendarLinkService;
+use App\Support\Operations\TaskCalendarSyncContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
@@ -127,6 +129,10 @@ class TaskService
         $this->projects->assertManagedBy($actor, (int) $attributes['project_id']);
         $assignee = $this->assertAssignableEmployee((int) $attributes['assigned_to']);
         $previousAssigneeId = $task->assigned_to;
+        $previousTitle = $task->title;
+        $previousStatus = $task->status instanceof TaskStatus
+            ? $task->status
+            : TaskStatus::tryFrom((string) $task->status);
 
         $task->update([
             'title' => $attributes['title'],
@@ -141,14 +147,42 @@ class TaskService
         $task = $task->fresh(['assignee', 'creator', 'project']);
         app(PlatformNotifier::class)->taskAssigned($task, $previousAssigneeId);
 
+        if (! TaskCalendarSyncContext::isSyncing()) {
+            $newStatus = $task->status instanceof TaskStatus
+                ? $task->status
+                : TaskStatus::tryFrom((string) $task->status);
+
+            if ($task->title !== $previousTitle) {
+                app(TaskCalendarLinkService::class)->syncTitleFromTask($task);
+            }
+
+            if ($newStatus === TaskStatus::Completed && $previousStatus !== TaskStatus::Completed) {
+                app(TaskCalendarLinkService::class)->syncCompletionFromTask($task);
+            }
+        }
+
         return $task;
     }
 
     public function updateStatus(Task $task, TaskStatus $status): Task
     {
+        $previousStatus = $task->status instanceof TaskStatus
+            ? $task->status
+            : TaskStatus::tryFrom((string) $task->status);
+
         $task->update(['status' => $status]);
 
-        return $task->fresh(['assignee', 'creator', 'project']);
+        $task = $task->fresh(['assignee', 'creator', 'project']);
+
+        if (
+            ! TaskCalendarSyncContext::isSyncing()
+            && $status === TaskStatus::Completed
+            && $previousStatus !== TaskStatus::Completed
+        ) {
+            app(TaskCalendarLinkService::class)->syncCompletionFromTask($task);
+        }
+
+        return $task;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Orders\StoreCustomerCustomPackageOrderRequest;
 use App\Http\Requests\Orders\StoreCustomerPackageOrderRequest;
 use App\Http\Resources\CustomerOrderResource;
 use App\Models\Order;
@@ -38,6 +39,22 @@ class CustomerOrderController extends Controller
         $payload['reused'] = $result['reused'];
 
         return ApiResponse::success($payload, $result['reused'] ? 200 : 201);
+    }
+
+    public function storeCustomPackage(StoreCustomerCustomPackageOrderRequest $request): JsonResponse
+    {
+        $this->authorize('createOwned', Order::class);
+
+        $result = $this->orders->createCustomPackageOrder(
+            $request->user(),
+            $request->validated('items'),
+            $request->validated('package_addon_slugs') ?? [],
+        );
+
+        $payload = CustomerOrderResource::make($result['order'])->resolve($request);
+        $payload['reused'] = $result['reused'];
+
+        return ApiResponse::success($payload, 201);
     }
 
     public function show(Request $request, Order $order): JsonResponse

@@ -22,6 +22,7 @@ class StoreManagedFileRequest extends ApiFormRequest
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
+            'calendar_item_id' => ['nullable', 'integer', 'exists:calendar_items,id'],
         ];
     }
 

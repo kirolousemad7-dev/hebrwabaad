@@ -14,6 +14,7 @@ use App\Services\Consultant\DiagnosisBuilder;
 use App\Services\Consultant\QuestionEngine;
 use App\Services\Consultant\ReadinessScoreCalculator;
 use App\Services\Consultant\RecommendationEngine;
+use App\Services\Crm\CrmLeadService;
 use App\Support\Consultant\BusinessCatalog;
 use App\Support\Consultant\ConsultationState;
 use Illuminate\Support\Str;
@@ -142,6 +143,12 @@ class ConsultationService
         );
 
         $this->recordEvent($consultation, 'quote_requested', ['source' => 'lead']);
+
+        try {
+            app(CrmLeadService::class)->createFromConsultationLead($lead);
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return $lead;
     }

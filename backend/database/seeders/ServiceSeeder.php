@@ -147,6 +147,12 @@ class ServiceSeeder extends Seeder
                 'summary' => 'جلسة استشارية لتقييم الوضع الحالي وتحديد الأولويات.',
                 'category' => ServiceCategory::Strategy,
             ],
+            [
+                'slug' => 'social-media-plan',
+                'name' => 'خطة سوشيال ميديا',
+                'summary' => 'خطة تشغيل للمنصات الاجتماعية بأهداف ومحتوى ومؤشرات.',
+                'category' => ServiceCategory::Strategy,
+            ],
 
             // البراند والتصميم
             [
@@ -271,6 +277,12 @@ class ServiceSeeder extends Seeder
                 'summary' => 'فيديوهات رسوم متحركة لتوضيح الرسائل.',
                 'category' => ServiceCategory::Production,
             ],
+            [
+                'slug' => 'video-editing',
+                'name' => 'مونتاج',
+                'summary' => 'مونتاج فيديو احترافي من المواد المصورة.',
+                'category' => ServiceCategory::Production,
+            ],
 
             // المتاجر الرقمية
             [
@@ -317,6 +329,12 @@ class ServiceSeeder extends Seeder
             ],
 
             // المحتوى
+            [
+                'slug' => 'content-writing',
+                'name' => 'كتابة محتوى',
+                'summary' => 'كتابة محتوى تسويقي للمنصات والقنوات.',
+                'category' => ServiceCategory::Content,
+            ],
             [
                 'slug' => 'video-scripts',
                 'name' => 'كتابة نصوص فيديو',

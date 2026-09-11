@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ContentStatus;
 use App\Models\Supplier;
 use App\Models\SupplierPortfolioItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,8 @@ class SupplierPortfolioItemFactory extends Factory
             'category' => 'كروت شخصية',
             'sort_order' => fake()->numberBetween(0, 10),
             'is_active' => true,
+            'status' => ContentStatus::Published,
+            'published_at' => now(),
         ];
     }
 
@@ -31,6 +34,7 @@ class SupplierPortfolioItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_active' => false,
+            'status' => ContentStatus::Archived,
         ]);
     }
 }

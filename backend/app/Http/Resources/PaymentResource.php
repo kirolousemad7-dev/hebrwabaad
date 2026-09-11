@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Services\Payments\PaymentRefundService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -72,6 +73,20 @@ class PaymentResource extends JsonResource
                     'name' => $this->verifier->name,
                 ];
             }),
+            'printing_quotation_id' => $this->when($this->forOwner, $this->printing_quotation_id),
+            'refundable_amount' => $this->when(
+                $this->forOwner && $status === PaymentStatus::Paid,
+                fn () => app(PaymentRefundService::class)->refundableAmount($this->resource)
+            ),
+            'net_paid' => $this->when(
+                $this->forOwner && $status === PaymentStatus::Paid,
+                fn () => app(PaymentRefundService::class)->netPaid($this->resource)
+            ),
+            'can_refund' => $this->when(
+                $this->forOwner,
+                fn () => $status === PaymentStatus::Paid
+                    && $request->user()?->can('refund', $this->resource)
+            ),
         ];
     }
 }

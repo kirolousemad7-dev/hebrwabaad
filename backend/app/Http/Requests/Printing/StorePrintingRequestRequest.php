@@ -59,10 +59,30 @@ class StorePrintingRequestRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
-            'file.required' => 'A design file is required.',
-            'file.uploaded' => 'The design file could not be uploaded. Try a smaller PDF or image.',
-            'finishing.required' => 'Select at least one finishing option.',
-            'finishing.array' => 'Select at least one finishing option.',
+            'file.required' => 'أرفق ملف التصميم.',
+            'file.uploaded' => 'تعذر رفع ملف التصميم. تحقق من إعدادات الرفع على الخادم أو حاول مرة أخرى.',
+            'file.max' => 'حجم الملف يتجاوز 10 ميجابايت.',
+            'file.extensions' => 'نوع الملف غير مدعوم. استخدم PDF أو صورة أو ZIP.',
+            'file.mimes' => 'نوع الملف غير مدعوم. استخدم PDF أو صورة أو ZIP.',
+            'finishing.required' => 'اختر تشطيباً واحداً على الأقل.',
+            'finishing.array' => 'اختر تشطيباً واحداً على الأقل.',
+            'finishing.min' => 'اختر تشطيباً واحداً على الأقل.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'file' => 'ملف التصميم',
+            'finishing' => 'التشطيب',
+            'product_slug' => 'المنتج',
+            'width' => 'العرض',
+            'height' => 'الارتفاع',
+            'quantity' => 'الكمية',
+            'required_date' => 'تاريخ التسليم',
         ];
     }
 }

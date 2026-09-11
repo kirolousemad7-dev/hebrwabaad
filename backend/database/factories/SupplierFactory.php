@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ContentStatus;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -29,6 +30,9 @@ class SupplierFactory extends Factory
             'location' => 'الرياض',
             'is_active' => true,
             'is_featured' => false,
+            'is_published' => true,
+            'profile_status' => ContentStatus::Published,
+            'category' => 'الطباعة التجارية',
         ];
     }
 
@@ -43,6 +47,14 @@ class SupplierFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_featured' => true,
+        ]);
+    }
+
+    public function unpublished(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_published' => false,
+            'profile_status' => ContentStatus::Draft,
         ]);
     }
 }

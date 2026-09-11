@@ -30,4 +30,9 @@ class PrintingRequestPolicy
     {
         return $user->role->canReviewPrintingRequests();
     }
+
+    public function manageLifecycle(User $user, PrintingRequest $printingRequest): bool
+    {
+        return $user->role->canReviewPrintingRequests();
+    }
 }

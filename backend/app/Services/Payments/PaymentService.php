@@ -2,13 +2,23 @@
 
 namespace App\Services\Payments;
 
+use App\Enums\CommercialQuotationStatus;
+use App\Enums\PaymentAttemptStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PrintingPaymentPolicy;
+use App\Enums\PrintingQuotationStatus;
+use App\Enums\UserRole;
+use App\Models\CommercialQuotation;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PaymentAttempt;
 use App\Models\PaymentSetting;
+use App\Models\PrintingQuotation;
 use App\Models\User;
 use App\Services\PlatformNotifier;
+use App\Services\Printing\PrintingQuotationService;
+use App\Services\Quotes\CommercialQuotationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -24,6 +34,10 @@ class PaymentService
         private readonly CardPaymentGateway $cards,
         private readonly PayTabsClient $paytabs,
         private readonly PlatformNotifier $notifier,
+        private readonly PrintingQuotationService $printingQuotations,
+        private readonly CommercialQuotationService $commercialQuotations,
+        private readonly PaymentStatusTransitionService $statusTransitions,
+        private readonly PayTabsCallbackMetrics $callbackMetrics,
     ) {}
 
     /**
@@ -133,6 +147,369 @@ class PaymentService
         $settings->save();
 
         return $this->ownerSettings();
+    }
+
+    /**
+     * Create a payment linked to a printing quotation (manual or card).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{payment: Payment, checkout_url: string|null}
+     */
+    public function createForPrintingQuotation(User $actor, PrintingQuotation $quotation, array $data): array
+    {
+        return DB::transaction(function () use ($actor, $quotation, $data) {
+            /** @var PrintingQuotation $locked */
+            $locked = PrintingQuotation::query()->whereKey($quotation->id)->lockForUpdate()->firstOrFail();
+
+            $method = $data['method'] instanceof PaymentMethod
+                ? $data['method']
+                : PaymentMethod::from((string) $data['method']);
+
+            if ($method === PaymentMethod::Card) {
+                if (! $this->cards->isConfigured()) {
+                    Log::warning('paytabs.not_configured', ['printing_quotation_id' => $locked->id]);
+                    throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+                }
+
+                $this->assertMethodEnabled($method);
+
+                $amount = $this->resolvePrintingPaymentAmount($locked, $data);
+
+                $payment = Payment::query()->create([
+                    'customer_id' => $locked->customer_id,
+                    'order_id' => null,
+                    'printing_quotation_id' => $locked->id,
+                    'amount' => $amount,
+                    'currency' => $locked->currency,
+                    'payment_method' => PaymentMethod::Card,
+                    'status' => PaymentStatus::Processing,
+                    'provider' => PaymentMethod::Card->provider(),
+                    'notes' => $data['notes'] ?? null,
+                    'reference_number' => $data['reference_number'] ?? null,
+                    'payer_name' => $data['payer_name'] ?? null,
+                ]);
+
+                return $this->startCardCheckout($payment);
+            }
+
+            if (! $method->isManual()) {
+                throw ValidationException::withMessages([
+                    'method' => ['Unsupported payment method.'],
+                ]);
+            }
+
+            $this->assertMethodEnabled($method);
+
+            $amount = $this->resolvePrintingPaymentAmount($locked, $data);
+
+            $payment = Payment::query()->create([
+                'customer_id' => $locked->customer_id,
+                'order_id' => null,
+                'printing_quotation_id' => $locked->id,
+                'amount' => $amount,
+                'currency' => $locked->currency,
+                'payment_method' => $method,
+                'status' => ! empty($data['mark_paid']) ? PaymentStatus::Paid : PaymentStatus::Pending,
+                'provider' => $method->provider(),
+                'notes' => $data['notes'] ?? null,
+                'reference_number' => $data['reference_number'] ?? null,
+                'payer_name' => $data['payer_name'] ?? null,
+                'paid_at' => ! empty($data['mark_paid']) ? now() : null,
+                'verified_at' => ! empty($data['mark_paid']) ? now() : null,
+                'verified_by' => ! empty($data['mark_paid']) ? $actor->id : null,
+            ]);
+
+            if (! empty($data['mark_paid'])) {
+                $fresh = $this->load($payment->fresh() ?? $payment);
+                $this->notifier->paymentPaid($fresh);
+                $this->afterPrintingPaymentPaid($locked, $actor);
+
+                return ['payment' => $fresh, 'checkout_url' => null];
+            }
+
+            return ['payment' => $this->load($payment), 'checkout_url' => null];
+        });
+    }
+
+    /**
+     * Public PayTabs checkout for an accepted printing quotation.
+     * Amount is always computed server-side; client amount fields are ignored.
+     *
+     * @return array{payment_id: int, checkout_url: string, amount: string, currency: string}
+     */
+    public function createPublicPrintingCheckout(PrintingQuotation $quotation): array
+    {
+        if (! $this->cards->isConfigured()) {
+            Log::warning('paytabs.not_configured', ['printing_quotation_id' => $quotation->id]);
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        return DB::transaction(function () use ($quotation) {
+            /** @var PrintingQuotation $locked */
+            $locked = PrintingQuotation::query()->whereKey($quotation->id)->lockForUpdate()->firstOrFail();
+
+            $status = $locked->status instanceof PrintingQuotationStatus
+                ? $locked->status
+                : PrintingQuotationStatus::from((string) $locked->status);
+
+            if ($status !== PrintingQuotationStatus::Accepted) {
+                throw ValidationException::withMessages([
+                    'token' => ['Only accepted quotations can be paid online.'],
+                ]);
+            }
+
+            $this->assertMethodEnabled(PaymentMethod::Card);
+
+            $amount = $this->printingCheckoutAmount($locked);
+
+            if (bccomp($amount, '0', 2) < 1) {
+                throw ValidationException::withMessages([
+                    'amount' => ['No outstanding balance to pay.'],
+                ]);
+            }
+
+            $payment = Payment::query()->create([
+                'customer_id' => $locked->customer_id,
+                'order_id' => null,
+                'printing_quotation_id' => $locked->id,
+                'amount' => $amount,
+                'currency' => $locked->currency,
+                'payment_method' => PaymentMethod::Card,
+                'status' => PaymentStatus::Processing,
+                'provider' => PaymentMethod::Card->provider(),
+            ]);
+
+            $result = $this->startCardCheckout($payment);
+
+            $this->printingQuotations->recordEvent($locked, 'checkout_created', null, 'customer', [
+                'payment_id' => (int) $result['payment']->id,
+                'amount' => number_format((float) $result['payment']->amount, 2, '.', ''),
+                'currency' => (string) $result['payment']->currency,
+            ]);
+
+            return [
+                'payment_id' => (int) $result['payment']->id,
+                'checkout_url' => (string) $result['checkout_url'],
+                'amount' => number_format((float) $result['payment']->amount, 2, '.', ''),
+                'currency' => (string) $result['payment']->currency,
+            ];
+        });
+    }
+
+    /**
+     * Outstanding card checkout amount for a printing quotation (deposit or remaining).
+     */
+    public function printingCheckoutAmount(PrintingQuotation $quotation): string
+    {
+        $summary = $this->printingQuotations->paymentSummary($quotation);
+        $policy = $quotation->payment_policy instanceof PrintingPaymentPolicy
+            ? $quotation->payment_policy
+            : PrintingPaymentPolicy::from((string) ($summary['payment_policy'] ?? PrintingPaymentPolicy::Full->value));
+
+        if ($policy === PrintingPaymentPolicy::Deposit && $summary['deposit_required'] !== null) {
+            if (bccomp($summary['paid'], $summary['deposit_required'], 2) >= 0) {
+                return '0.00';
+            }
+
+            $needed = bcsub($summary['deposit_required'], $summary['paid'], 2);
+
+            return bccomp($needed, $summary['remaining'], 2) === 1
+                ? $summary['remaining']
+                : $needed;
+        }
+
+        return $summary['remaining'];
+    }
+
+    /**
+     * Public status poll — status only; never marks PAID.
+     *
+     * @return array{status: string, payment_id: int}
+     */
+    public function publicPrintingPaymentStatus(Payment $payment, string $rawQuoteToken): array
+    {
+        if ($payment->printing_quotation_id === null) {
+            throw ValidationException::withMessages([
+                'token' => ['Payment not found.'],
+            ]);
+        }
+
+        $quotation = PrintingQuotation::findByRawToken($rawQuoteToken);
+
+        if ($quotation === null || (int) $quotation->id !== (int) $payment->printing_quotation_id) {
+            throw ValidationException::withMessages([
+                'token' => ['Payment not found.'],
+            ]);
+        }
+
+        $status = $payment->status instanceof PaymentStatus
+            ? $payment->status
+            : PaymentStatus::from((string) $payment->status);
+
+        return [
+            'payment_id' => (int) $payment->id,
+            'status' => $status->value,
+        ];
+    }
+
+    /**
+     * @return array{payment_id: int, checkout_url: string, amount: string, currency: string}
+     */
+    public function createPublicCommercialCheckout(CommercialQuotation $quotation): array
+    {
+        if (! $this->cards->isConfigured()) {
+            Log::warning('paytabs.not_configured', ['commercial_quotation_id' => $quotation->id]);
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        return DB::transaction(function () use ($quotation) {
+            /** @var CommercialQuotation $locked */
+            $locked = CommercialQuotation::query()->whereKey($quotation->id)->lockForUpdate()->firstOrFail();
+
+            $status = $locked->status instanceof CommercialQuotationStatus
+                ? $locked->status
+                : CommercialQuotationStatus::from((string) $locked->status);
+
+            if ($status !== CommercialQuotationStatus::Accepted) {
+                throw ValidationException::withMessages([
+                    'token' => ['Only accepted quotations can be paid online.'],
+                ]);
+            }
+
+            $this->assertMethodEnabled(PaymentMethod::Card);
+
+            $amount = $this->commercialCheckoutAmount($locked);
+
+            if (bccomp($amount, '0', 2) < 1) {
+                throw ValidationException::withMessages([
+                    'amount' => ['No outstanding balance to pay.'],
+                ]);
+            }
+
+            $payment = Payment::query()->create([
+                'customer_id' => $locked->customer_id,
+                'order_id' => $locked->order_id,
+                'commercial_quotation_id' => $locked->id,
+                'amount' => $amount,
+                'currency' => $locked->currency,
+                'payment_method' => PaymentMethod::Card,
+                'status' => PaymentStatus::Processing,
+                'provider' => PaymentMethod::Card->provider(),
+            ]);
+
+            $result = $this->startCardCheckout($payment);
+
+            $this->commercialQuotations->recordEvent($locked, 'checkout_created', null, 'customer', [
+                'payment_id' => (int) $result['payment']->id,
+                'amount' => number_format((float) $result['payment']->amount, 2, '.', ''),
+                'currency' => (string) $result['payment']->currency,
+            ]);
+
+            return [
+                'payment_id' => (int) $result['payment']->id,
+                'checkout_url' => (string) $result['checkout_url'],
+                'amount' => number_format((float) $result['payment']->amount, 2, '.', ''),
+                'currency' => (string) $result['payment']->currency,
+            ];
+        });
+    }
+
+    public function commercialCheckoutAmount(CommercialQuotation $quotation): string
+    {
+        $summary = $this->commercialQuotations->paymentSummary($quotation);
+        $policy = $quotation->payment_policy instanceof PrintingPaymentPolicy
+            ? $quotation->payment_policy
+            : PrintingPaymentPolicy::from((string) ($summary['payment_policy'] ?? PrintingPaymentPolicy::Full->value));
+
+        if ($policy === PrintingPaymentPolicy::Deposit && $summary['deposit_required'] !== null) {
+            if (bccomp($summary['paid'], $summary['deposit_required'], 2) >= 0) {
+                return '0.00';
+            }
+
+            $needed = bcsub($summary['deposit_required'], $summary['paid'], 2);
+
+            return bccomp($needed, $summary['remaining'], 2) === 1
+                ? $summary['remaining']
+                : $needed;
+        }
+
+        if ($policy === PrintingPaymentPolicy::None) {
+            return '0.00';
+        }
+
+        return $summary['amount_due_now'] ?? $summary['remaining'];
+    }
+
+    public function publicCommercialPaymentStatus(Payment $payment, string $rawQuoteToken): array
+    {
+        if ($payment->commercial_quotation_id === null) {
+            throw ValidationException::withMessages([
+                'token' => ['Payment not found.'],
+            ]);
+        }
+
+        $quotation = CommercialQuotation::findByRawToken($rawQuoteToken);
+
+        if ($quotation === null || (int) $quotation->id !== (int) $payment->commercial_quotation_id) {
+            throw ValidationException::withMessages([
+                'token' => ['Payment not found.'],
+            ]);
+        }
+
+        $status = $payment->status instanceof PaymentStatus
+            ? $payment->status
+            : PaymentStatus::from((string) $payment->status);
+
+        return [
+            'payment_id' => (int) $payment->id,
+            'status' => $status->value,
+        ];
+    }
+
+    public function reconcileWithProvider(User $actor, Payment $payment): Payment
+    {
+        if (! ($actor->role instanceof UserRole) || ! $actor->role->canManagePayments()) {
+            throw ValidationException::withMessages([
+                'payment' => ['You cannot reconcile payments.'],
+            ]);
+        }
+
+        return $this->reconcilePayment($payment);
+    }
+
+    /**
+     * Reconcile pending/processing card payments older than $minutes. Bounded to $limit rows.
+     */
+    public function reconcilePendingCardPayments(int $minutes = 30, int $limit = 50): int
+    {
+        $cutoff = now()->subMinutes(max(1, $minutes));
+        $limit = max(1, min($limit, 50));
+
+        $payments = Payment::query()
+            ->where('payment_method', PaymentMethod::Card)
+            ->whereIn('status', [PaymentStatus::Processing->value, PaymentStatus::Pending->value])
+            ->whereNotNull('provider_transaction_id')
+            ->where('provider_transaction_id', '!=', '')
+            ->where('updated_at', '<=', $cutoff)
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
+
+        $reconciled = 0;
+
+        foreach ($payments as $payment) {
+            try {
+                $this->reconcilePayment($payment);
+                $reconciled++;
+            } catch (\Throwable $exception) {
+                Log::warning('paytabs.reconcile_failed', [
+                    'payment_id' => $payment->id,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return $reconciled;
     }
 
     /**
@@ -276,8 +653,63 @@ class PaymentService
 
         $fresh = $this->load($payment->fresh());
         $this->notifier->paymentPaid($fresh);
+        $this->afterPrintingPaymentPaidFromPayment($fresh, $owner);
 
         return $fresh;
+    }
+
+    /**
+     * System confirm for signed inbound webhooks (Phase 6N).
+     * Only PENDING/PROCESSING payments linked to a printing quotation.
+     */
+    public function confirmFromInboundWebhook(int $paymentId, ?string $providerTransactionId = null): Payment
+    {
+        return DB::transaction(function () use ($paymentId, $providerTransactionId) {
+            /** @var Payment $payment */
+            $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
+
+            if ($payment->printing_quotation_id === null) {
+                throw ValidationException::withMessages([
+                    'payment_id' => ['Payment must belong to a printing quotation.'],
+                ]);
+            }
+
+            $status = $payment->status instanceof PaymentStatus
+                ? $payment->status
+                : PaymentStatus::from((string) $payment->status);
+
+            if ($status === PaymentStatus::Paid) {
+                return $this->load($payment);
+            }
+
+            if (! in_array($status, [PaymentStatus::Pending, PaymentStatus::Processing], true)) {
+                throw ValidationException::withMessages([
+                    'payment_id' => ['Payment must be PENDING or PROCESSING.'],
+                ]);
+            }
+
+            if ($status === PaymentStatus::Pending) {
+                $this->transition($payment, PaymentStatus::Processing);
+                $payment->status = PaymentStatus::Processing;
+            }
+
+            $this->transition($payment, PaymentStatus::Paid);
+
+            $payment->update([
+                'status' => PaymentStatus::Paid,
+                'paid_at' => now(),
+                'verified_at' => now(),
+                'verified_by' => null,
+                'provider_transaction_id' => $providerTransactionId ?: $payment->provider_transaction_id,
+                'failure_reason' => null,
+            ]);
+
+            $fresh = $this->load($payment->fresh());
+            $this->notifier->paymentPaid($fresh);
+            $this->afterPrintingPaymentPaidFromPayment($fresh, null);
+
+            return $fresh;
+        });
     }
 
     public function reject(User $owner, Payment $payment, string $reason): Payment
@@ -308,9 +740,13 @@ class PaymentService
      */
     public function applyPayTabsCallback(array $payload): void
     {
+        $this->callbackMetrics->increment('callback_received');
+
         $tranRef = trim((string) ($payload['tran_ref'] ?? ''));
 
         if ($tranRef === '') {
+            $this->callbackMetrics->increment('rejected');
+
             return;
         }
 
@@ -319,6 +755,7 @@ class PaymentService
 
         if ($verified === null) {
             Log::warning('paytabs.verification_incomplete');
+            $this->callbackMetrics->increment('rejected');
 
             throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
         }
@@ -327,19 +764,74 @@ class PaymentService
 
         if ($payment === null) {
             Log::warning('paytabs.payment_not_found');
+            $this->callbackMetrics->increment('rejected');
 
             return;
         }
 
         if ($payment->payment_method !== PaymentMethod::Card) {
+            $this->callbackMetrics->increment('rejected');
+
             return;
         }
 
-        DB::transaction(function () use ($payment, $verified): void {
+        $this->applyVerifiedPayTabsTransaction($payment, $verified);
+    }
+
+    private function reconcilePayment(Payment $payment): Payment
+    {
+        if ($payment->payment_method !== PaymentMethod::Card) {
+            throw ValidationException::withMessages([
+                'payment' => ['Only card payments can be reconciled with PayTabs.'],
+            ]);
+        }
+
+        $tranRef = trim((string) ($payment->provider_transaction_id ?? ''));
+
+        if ($tranRef === '') {
+            throw ValidationException::withMessages([
+                'payment' => ['Payment has no provider transaction reference.'],
+            ]);
+        }
+
+        if (! $this->cards->isConfigured()) {
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        $verifiedPayload = $this->paytabs->queryTransaction($tranRef);
+        $verified = PayTabsVerifiedTransaction::fromPayTabsPayload($verifiedPayload);
+
+        if ($verified === null) {
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        $this->applyVerifiedPayTabsTransaction($payment, $verified, true);
+
+        return $this->load($payment->fresh() ?? $payment);
+    }
+
+    private function applyVerifiedPayTabsTransaction(
+        Payment $payment,
+        PayTabsVerifiedTransaction $verified,
+        bool $fromReconcile = false,
+    ): void {
+        DB::transaction(function () use ($payment, $verified, $fromReconcile): void {
             /** @var Payment $locked */
             $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status === PaymentStatus::Paid) {
+                if (! $fromReconcile) {
+                    $this->callbackMetrics->increment('duplicate');
+                }
+
+                if ($fromReconcile) {
+                    $locked->update([
+                        'last_reconciled_at' => now(),
+                        'reconciliation_note' => 'already_paid',
+                        'provider_status' => $verified->responseStatus,
+                    ]);
+                }
+
                 return;
             }
 
@@ -350,7 +842,16 @@ class PaymentService
                     'payment_id' => $locked->id,
                     'reason' => $mismatch,
                 ]);
+                if (! $fromReconcile) {
+                    $this->callbackMetrics->increment('mismatch');
+                }
                 $this->failOrCancelCard($locked, PaymentStatus::Failed, 'Payment verification failed.');
+                $locked->refresh();
+                $locked->update([
+                    'last_reconciled_at' => $fromReconcile ? now() : $locked->last_reconciled_at,
+                    'reconciliation_note' => 'mismatch:'.$mismatch,
+                    'provider_status' => $verified->responseStatus,
+                ]);
 
                 return;
             }
@@ -359,6 +860,17 @@ class PaymentService
 
             if ($next === PaymentStatus::Paid) {
                 $this->completeCardPayment($locked, $verified->tranRef);
+                if (! $fromReconcile) {
+                    $this->callbackMetrics->increment('verified');
+                }
+                $locked->refresh();
+                if ($fromReconcile) {
+                    $locked->update([
+                        'last_reconciled_at' => now(),
+                        'reconciliation_note' => 'reconciled_paid',
+                        'provider_status' => $verified->responseStatus,
+                    ]);
+                }
 
                 return;
             }
@@ -367,8 +879,54 @@ class PaymentService
                 $this->failOrCancelCard($locked, $next, $next === PaymentStatus::Cancelled
                     ? 'Card payment cancelled.'
                     : 'Card payment failed.');
+                if (! $fromReconcile) {
+                    $this->callbackMetrics->increment('rejected');
+                }
+                $locked->refresh();
+                if ($fromReconcile) {
+                    $locked->update([
+                        'last_reconciled_at' => now(),
+                        'reconciliation_note' => 'reconciled_'.$next->value,
+                        'provider_status' => $verified->responseStatus,
+                    ]);
+                }
+
+                return;
+            }
+
+            if ($fromReconcile) {
+                $locked->update([
+                    'last_reconciled_at' => now(),
+                    'reconciliation_note' => 'pending_provider_status',
+                    'provider_status' => $verified->responseStatus,
+                ]);
             }
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolvePrintingPaymentAmount(PrintingQuotation $quotation, array $data): string
+    {
+        $summary = $this->printingQuotations->paymentSummary($quotation);
+        $amount = isset($data['amount'])
+            ? number_format((float) $data['amount'], 2, '.', '')
+            : $summary['remaining'];
+
+        if (bccomp($amount, '0', 2) < 1) {
+            throw ValidationException::withMessages([
+                'amount' => ['Payment amount must be greater than zero.'],
+            ]);
+        }
+
+        if (bccomp($amount, $summary['remaining'], 2) === 1) {
+            throw ValidationException::withMessages([
+                'amount' => ['Payment amount exceeds the remaining balance.'],
+            ]);
+        }
+
+        return $amount;
     }
 
     /**
@@ -463,7 +1021,7 @@ class PaymentService
      */
     public function eagerLoad(): array
     {
-        return ['customer', 'order.project', 'order.package', 'order.packageTier', 'order.service', 'verifier'];
+        return ['customer', 'order.project', 'order.package', 'order.packageTier', 'order.service', 'verifier', 'printingQuotation'];
     }
 
     /**
@@ -498,10 +1056,70 @@ class PaymentService
             throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
         }
 
+        $this->recordCheckoutAttempt($payment->fresh() ?? $payment, $session);
+
         return [
             'payment' => $this->load($payment->fresh()),
             'checkout_url' => $session->url,
         ];
+    }
+
+    private function recordCheckoutAttempt(Payment $payment, CardCheckoutSession $session): void
+    {
+        PaymentAttempt::query()->create([
+            'payment_id' => $payment->id,
+            'provider' => $payment->provider ?: PaymentMethod::Card->provider(),
+            'provider_reference' => filled($session->providerTransactionId)
+                ? $session->providerTransactionId
+                : null,
+            'checkout_reference' => $session->sessionId,
+            'amount' => $payment->amount,
+            'currency' => strtoupper((string) $payment->currency),
+            'status' => PaymentAttemptStatus::Redirected,
+            'started_at' => now(),
+            'metadata' => [
+                'from' => 'STARTED',
+                'to' => 'REDIRECTED',
+            ],
+        ]);
+    }
+
+    private function markLatestAttempt(Payment $payment, PaymentAttemptStatus $status, ?string $failureMessage = null): void
+    {
+        $attempt = PaymentAttempt::query()
+            ->where('payment_id', $payment->id)
+            ->where(function ($query) use ($payment): void {
+                $tranRef = trim((string) ($payment->provider_transaction_id ?? ''));
+                if ($tranRef !== '') {
+                    $query->where('provider_reference', $tranRef);
+                }
+            })
+            ->latest('id')
+            ->first();
+
+        if ($attempt === null) {
+            $attempt = PaymentAttempt::query()
+                ->where('payment_id', $payment->id)
+                ->latest('id')
+                ->first();
+        }
+
+        if ($attempt === null) {
+            return;
+        }
+
+        $payload = ['status' => $status];
+        if ($status === PaymentAttemptStatus::Verified) {
+            $payload['verified_at'] = now();
+            $payload['failure_code'] = null;
+            $payload['failure_message'] = null;
+        }
+        if ($status === PaymentAttemptStatus::Failed) {
+            $payload['failed_at'] = now();
+            $payload['failure_message'] = $failureMessage;
+        }
+
+        $attempt->update($payload);
     }
 
     /**
@@ -579,17 +1197,7 @@ class PaymentService
 
     private function transition(Payment $payment, PaymentStatus $next): void
     {
-        $current = $payment->status instanceof PaymentStatus
-            ? $payment->status
-            : PaymentStatus::from((string) $payment->status);
-
-        if (! $current->canTransitionTo($next)) {
-            throw ValidationException::withMessages([
-                'status' => ['This payment cannot move to the requested status.'],
-            ]);
-        }
-
-        $payment->status = $next;
+        $this->statusTransitions->apply($payment, $next);
     }
 
     private function completeCardPayment(Payment $payment, string $tranRef): void
@@ -611,7 +1219,46 @@ class PaymentService
             'failure_reason' => null,
         ]);
 
+        $this->markLatestAttempt($payment->fresh() ?? $payment, PaymentAttemptStatus::Verified);
         $this->notifier->paymentPaid($this->load($payment->fresh()));
+        $this->afterPrintingPaymentPaidFromPayment($payment->fresh() ?? $payment, null);
+    }
+
+    private function afterPrintingPaymentPaidFromPayment(Payment $payment, ?User $actor): void
+    {
+        if ($payment->printing_quotation_id === null) {
+            return;
+        }
+
+        $quotation = $payment->printingQuotation ?? PrintingQuotation::query()->find($payment->printing_quotation_id);
+        if ($quotation === null) {
+            return;
+        }
+
+        $this->afterPrintingPaymentPaid($quotation, $actor);
+    }
+
+    private function afterPrintingPaymentPaid(PrintingQuotation $quotation, ?User $actor): void
+    {
+        $fresh = $quotation->fresh() ?? $quotation;
+        $paid = $fresh->payments()
+            ->where('status', PaymentStatus::Paid->value)
+            ->latest('id')
+            ->first();
+
+        if ($paid !== null) {
+            $this->printingQuotations->recordPaymentRecorded($fresh, [
+                'amount' => $paid->amount,
+                'currency' => $paid->currency,
+                'method' => $paid->payment_method instanceof PaymentMethod
+                    ? $paid->payment_method->value
+                    : (string) $paid->payment_method,
+                'paid_at' => $paid->paid_at?->toIso8601String() ?? now()->toIso8601String(),
+            ], $actor);
+            $this->printingQuotations->notifyPaymentConfirmed($fresh, $actor, $paid);
+        }
+
+        $this->printingQuotations->notifyPaymentRequirementMet($fresh, $actor);
     }
 
     private function failOrCancelCard(Payment $payment, PaymentStatus $next, string $reason): void
@@ -630,6 +1277,10 @@ class PaymentService
             'status' => $next,
             'failure_reason' => $reason,
         ]);
+
+        if ($next === PaymentStatus::Failed) {
+            $this->markLatestAttempt($payment->fresh() ?? $payment, PaymentAttemptStatus::Failed, $reason);
+        }
     }
 
     /**

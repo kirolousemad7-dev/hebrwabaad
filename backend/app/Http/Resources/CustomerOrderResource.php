@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\CatalogPricingMode;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Services\OrderService;
@@ -56,6 +57,36 @@ class CustomerOrderResource extends JsonResource
                 'name' => $this->packageTier->name,
                 'slug' => $this->packageTier->slug,
             ]),
+            'is_custom_package' => (bool) $this->is_custom_package,
+            'requires_quote' => (bool) $this->requires_quote,
+            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
+                'id' => $item->id,
+                'service_id' => $item->service_id,
+                'service' => $item->relationLoaded('service') && $item->service
+                    ? ['id' => $item->service->id, 'name' => $item->service->name, 'slug' => $item->service->slug]
+                    : null,
+                'quantity' => $item->quantity,
+                'pricing_mode' => $item->pricing_mode instanceof CatalogPricingMode
+                    ? $item->pricing_mode->value
+                    : $item->pricing_mode,
+                'unit_price' => $item->unit_price,
+                'currency' => $item->currency,
+                'notes' => $item->notes,
+                'addons' => $item->relationLoaded('addons')
+                    ? $item->addons->map(fn ($row) => [
+                        'id' => $row->catalog_addon_id,
+                        'slug' => $row->addon?->slug,
+                        'name' => $row->addon?->name,
+                        'quantity' => $row->quantity,
+                    ])->values()->all()
+                    : [],
+            ])->values()->all()),
+            'package_addons' => $this->whenLoaded('addons', fn () => $this->addons->map(fn ($row) => [
+                'id' => $row->catalog_addon_id,
+                'slug' => $row->addon?->slug,
+                'name' => $row->addon?->name,
+                'quantity' => $row->quantity,
+            ])->values()->all()),
             'account_manager' => $this->whenLoaded('accountManager', fn () => $this->accountManager === null ? null : [
                 'id' => $this->accountManager->id,
                 'name' => $this->accountManager->name,

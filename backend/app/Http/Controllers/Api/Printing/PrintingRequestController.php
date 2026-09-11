@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\Printing;
 
 use App\Enums\PrintingRequestStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Printing\ReorderPrintingRequestRequest;
 use App\Http\Requests\Printing\StorePrintingRequestRequest;
 use App\Http\Resources\PrintingRequestResource;
 use App\Models\PrintingRequest;
+use App\Services\Printing\PrintingReorderService;
 use App\Services\PrintingPricingService;
 use App\Support\ApiResponse;
 use App\Support\PrintingRequestFile;
@@ -19,7 +21,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrintingRequestController extends Controller
 {
-    public function __construct(private PrintingPricingService $pricing) {}
+    public function __construct(
+        private PrintingPricingService $pricing,
+        private PrintingReorderService $reorderService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -89,6 +94,22 @@ class PrintingRequestController extends Controller
 
         return ApiResponse::success(
             PrintingRequestResource::make($printingRequest)->resolve($request),
+            201
+        );
+    }
+
+    public function reorder(ReorderPrintingRequestRequest $request, PrintingRequest $printingRequest): JsonResponse
+    {
+        $this->authorize('view', $printingRequest);
+
+        $reordered = $this->reorderService->reorder(
+            $request->user(),
+            $printingRequest,
+            $request->validated('quantity'),
+        );
+
+        return ApiResponse::success(
+            PrintingRequestResource::make($reordered)->resolve($request),
             201
         );
     }

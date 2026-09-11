@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'service_id',
     'package_id',
     'package_tier_id',
+    'is_custom_package',
+    'requires_quote',
     'status',
     'confirmed_at',
     'completed_at',
@@ -36,6 +38,8 @@ class Order extends Model
      */
     protected $attributes = [
         'status' => 'RECEIVED',
+        'is_custom_package' => false,
+        'requires_quote' => false,
     ];
 
     /**
@@ -45,6 +49,8 @@ class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
+            'is_custom_package' => 'boolean',
+            'requires_quote' => 'boolean',
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',
             'delivered_at' => 'datetime',
@@ -121,6 +127,22 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * @return HasMany<OrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<OrderAddon, $this>
+     */
+    public function addons(): HasMany
+    {
+        return $this->hasMany(OrderAddon::class);
     }
 
     /**

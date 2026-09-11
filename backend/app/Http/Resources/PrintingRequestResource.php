@@ -24,6 +24,7 @@ class PrintingRequestResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'reordered_from_id' => $this->reordered_from_id,
             'product_slug' => $this->product_slug,
             'product_name' => $this->product_name,
             'width' => $this->width,

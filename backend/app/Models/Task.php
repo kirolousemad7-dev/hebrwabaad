@@ -10,7 +10,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['title', 'description', 'project_id', 'assigned_to', 'created_by', 'priority', 'status', 'deadline'])]
+#[Fillable([
+    'title',
+    'description',
+    'project_id',
+    'department_id',
+    'order_item_id',
+    'source',
+    'assigned_to',
+    'created_by',
+    'priority',
+    'status',
+    'deadline',
+    'calendar_item_id',
+])]
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
@@ -34,6 +47,32 @@ class Task extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * @return BelongsTo<OrderItem, $this>
+     */
+    public function orderItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class);
+    }
+
+    /**
+     * Soft link to an optional CalendarItem (type=TASK). Explicit only — never auto-created.
+     *
+     * @return BelongsTo<CalendarItem, $this>
+     */
+    public function calendarItem(): BelongsTo
+    {
+        return $this->belongsTo(CalendarItem::class, 'calendar_item_id');
     }
 
     /**

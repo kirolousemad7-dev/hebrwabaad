@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Project;
+use App\Services\Catalog\CustomPackageProjectOverviewService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,8 @@ class CustomerProjectResource extends JsonResource
     public function toArray(Request $request): array
     {
         $progress = $this->progress();
+        $serviceLines = app(CustomPackageProjectOverviewService::class)
+            ->serviceLines($this->resource, forCustomer: true);
 
         return [
             'id' => $this->id,
@@ -31,7 +34,19 @@ class CustomerProjectResource extends JsonResource
                 'id' => $this->accountManager->id,
                 'name' => $this->accountManager->name,
             ]),
-            'progress' => $progress,
+            'progress' => [
+                'total' => $progress['total'],
+                'completed' => $progress['completed'],
+                'in_progress' => $progress['in_progress'],
+                'review' => $progress['review'],
+                'percent' => $progress['percent'],
+            ],
+            'service_progress' => collect($serviceLines)->map(fn (array $line): array => [
+                'service_name' => $line['service_name'],
+                'quantity' => $line['quantity'],
+                'status_key' => $line['status_key'],
+                'status_label' => $line['status_label'],
+            ])->values()->all(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

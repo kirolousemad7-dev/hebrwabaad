@@ -12,6 +12,10 @@ class PayTabsClient
 {
     public function isConfigured(): bool
     {
+        if (! (bool) config('payments.enabled', true)) {
+            return false;
+        }
+
         return $this->profileId() > 0
             && $this->serverKey() !== ''
             && $this->baseUrl() !== '';
@@ -21,7 +25,7 @@ class PayTabsClient
     {
         $this->assertConfigured();
 
-        $payment->loadMissing(['order', 'customer']);
+        $payment->loadMissing(['order', 'customer', 'printingQuotation']);
         $cartId = $this->cartId($payment);
         $payload = [
             'profile_id' => $this->profileId(),
@@ -30,7 +34,7 @@ class PayTabsClient
             'cart_id' => $cartId,
             'cart_currency' => strtoupper((string) $payment->currency),
             'cart_amount' => number_format((float) $payment->amount, 2, '.', ''),
-            'cart_description' => mb_substr((string) ($payment->order?->title ?: 'طلب حبر'), 0, 120),
+            'cart_description' => $this->cartDescription($payment),
             'paypage_lang' => 'ar',
             'hide_shipping' => true,
             'callback' => $this->callbackUrl(),
@@ -108,12 +112,83 @@ class PayTabsClient
         return $json;
     }
 
+    /**
+     * Official PayTabs refund via POST /payment/request (tran_type=refund).
+     *
+     * @return array<string, mixed>
+     */
+    public function refundTransaction(
+        string $tranRef,
+        string $amount,
+        string $currency,
+        string $cartId,
+        string $description,
+    ): array {
+        $this->assertConfigured();
+
+        $payload = [
+            'profile_id' => $this->profileId(),
+            'tran_type' => 'refund',
+            'tran_class' => 'ecom',
+            'tran_ref' => $tranRef,
+            'cart_id' => $cartId,
+            'cart_currency' => strtoupper($currency),
+            'cart_amount' => number_format((float) $amount, 2, '.', ''),
+            'cart_description' => mb_substr($description, 0, 120),
+        ];
+
+        try {
+            $response = Http::timeout($this->timeout())
+                ->acceptJson()
+                ->asJson()
+                ->withHeaders(['Authorization' => $this->serverKey()])
+                ->post($this->paymentRequestUrl(), $payload);
+        } catch (ConnectionException) {
+            Log::warning('paytabs.refund_timeout', ['tran_ref' => $tranRef]);
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        if (! $response->successful()) {
+            Log::warning('paytabs.refund_failed', [
+                'status' => $response->status(),
+                'tran_ref' => $tranRef,
+            ]);
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        $json = $response->json();
+
+        if (! is_array($json)) {
+            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        }
+
+        return $json;
+    }
+
     public function cartId(Payment $payment): string
     {
-        $payment->loadMissing('order');
+        $payment->loadMissing(['order', 'printingQuotation']);
+
+        if ($payment->printing_quotation_id !== null) {
+            $reference = $payment->printingQuotation?->reference ?: 'HEBR-PQ';
+
+            return $reference.'-P'.$payment->id;
+        }
+
         $reference = $payment->order?->reference ?: 'HEBR-ORD';
 
         return $reference.'-P'.$payment->id;
+    }
+
+    private function cartDescription(Payment $payment): string
+    {
+        if ($payment->printing_quotation_id !== null) {
+            $reference = (string) ($payment->printingQuotation?->reference ?: '');
+
+            return mb_substr($reference !== '' ? 'عرض طباعة '.$reference : 'عرض طباعة', 0, 120);
+        }
+
+        return mb_substr((string) ($payment->order?->title ?: 'طلب حبر'), 0, 120);
     }
 
     public function paymentIdFromCartId(string $cartId): ?int

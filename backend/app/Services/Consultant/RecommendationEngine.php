@@ -2,6 +2,7 @@
 
 namespace App\Services\Consultant;
 
+use App\Services\Catalog\GoalRecommendationService;
 use App\Support\Consultant\BusinessCatalog;
 use App\Support\Consultant\ConsultationState;
 use App\Support\PrintingCatalog;
@@ -10,6 +11,7 @@ class RecommendationEngine
 {
     public function __construct(
         private readonly RecommendationValidator $validator,
+        private readonly GoalRecommendationService $goalRecommendations,
     ) {}
 
     /**
@@ -17,6 +19,91 @@ class RecommendationEngine
      * @return array<string, mixed>
      */
     public function recommend(ConsultationState $state, array $catalog): array
+    {
+        $goalBased = $this->goalRecommendations->recommendForState($state);
+
+        if ($goalBased !== null && ($goalBased['package'] !== null || $goalBased['services'] !== [])) {
+            return $this->validator->validate(
+                $this->presentGoalRecommendation($goalBased, $state, $catalog),
+                $catalog,
+            );
+        }
+
+        return $this->scoreBasedRecommend($state, $catalog);
+    }
+
+    /**
+     * @param  array<string, mixed>  $goalBased
+     * @param  array{packages: list<array<string, mixed>>, services: list<array<string, mixed>>, printing_slugs: list<string>}  $catalog
+     * @return array<string, mixed>
+     */
+    private function presentGoalRecommendation(array $goalBased, ConsultationState $state, array $catalog): array
+    {
+        $intent = $this->intent($state);
+        $package = $goalBased['package'];
+        $services = [];
+
+        foreach ($goalBased['services'] as $service) {
+            $services[] = [
+                'kind' => 'service',
+                'id' => $service['id'],
+                'slug' => $service['slug'],
+                'name' => $service['name'],
+                'summary' => $service['summary'],
+                'category' => $service['category'],
+                'base_price' => $service['base_price'],
+                'currency' => $service['currency'],
+                'duration_days' => $service['duration_days'],
+                'reasons' => array_values(array_filter([$service['reason_ar'] ?? null])),
+                'cta' => [
+                    'type' => 'request_service',
+                    'label' => 'اطلب هذه الخدمة',
+                    'path' => '/services',
+                ],
+            ];
+        }
+
+        $bestMatch = null;
+        $livePackage = null;
+        if (is_array($package)) {
+            foreach ($catalog['packages'] as $row) {
+                if (($row['slug'] ?? null) === $package['slug']) {
+                    $livePackage = $row;
+                    break;
+                }
+            }
+
+            if ($livePackage !== null) {
+                $reasons = array_values(array_filter([
+                    $package['reason_ar'] ?? null,
+                    'التوصية مبنية على هدفك من مصفوفة الأهداف المعتمدة في المنصة.',
+                ]));
+                $bestMatch = $this->presentPackage($livePackage, $reasons);
+            }
+        }
+
+        $primaryCta = $goalBased['ctas'][0] ?? $this->cta($intent, $livePackage, $services, null, $state);
+
+        return [
+            'intent' => $intent,
+            'source' => 'recommendation_goals',
+            'matched_goals' => $goalBased['goals'],
+            'best_match' => $bestMatch,
+            'alternative' => null,
+            'services' => array_slice($services, 0, 5),
+            'addons' => $goalBased['addons'],
+            'printing' => $this->printingRecommendation($state, $intent),
+            'cta' => $primaryCta,
+            'ctas' => $goalBased['ctas'],
+            'fallback' => null,
+        ];
+    }
+
+    /**
+     * @param  array{packages: list<array<string, mixed>>, services: list<array<string, mixed>>, printing_slugs: list<string>}  $catalog
+     * @return array<string, mixed>
+     */
+    private function scoreBasedRecommend(ConsultationState $state, array $catalog): array
     {
         $intent = $this->intent($state);
         $budgetMax = $this->budgetMax($state);
@@ -70,11 +157,29 @@ class RecommendationEngine
 
         $payload = [
             'intent' => $intent,
+            'source' => 'scoring',
             'best_match' => $bestRow ? $this->presentPackage($bestRow['package'], $this->reasons($bestRow['package'], $intent, $state, 'best')) : null,
             'alternative' => $altRow ? $this->presentPackage($altRow['package'], $this->reasons($altRow['package'], $intent, $state, 'alt')) : null,
             'services' => $services,
             'printing' => $printing,
             'cta' => $this->cta($intent, $bestRow['package'] ?? null, $services, $printing, $state),
+            'ctas' => [
+                [
+                    'type' => 'accept_recommendation',
+                    'label' => 'قبول التوصية',
+                    'path' => '/customer?intent=order',
+                ],
+                [
+                    'type' => 'modify_need',
+                    'label' => 'تعديل احتياجي',
+                    'path' => '/consultant?modify=1',
+                ],
+                [
+                    'type' => 'human_consultation',
+                    'label' => 'استشارة بشرية',
+                    'path' => '/consultant?lead=1',
+                ],
+            ],
             'fallback' => null,
         ];
 

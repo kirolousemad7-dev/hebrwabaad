@@ -93,6 +93,23 @@ class AuthTest extends TestCase
             ->assertJsonPath('message', 'Invalid credentials.');
     }
 
+    public function test_login_requires_email_and_password_fields(): void
+    {
+        $this->postJson('/api/auth/login', [])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Validation failed.')
+            ->assertJsonPath('errors.email.0', 'البريد الإلكتروني مطلوب.')
+            ->assertJsonPath('errors.password.0', 'كلمة المرور مطلوبة.');
+
+        $this->postJson('/api/auth/login', [
+            'email' => '',
+            'password' => '',
+        ])->assertStatus(422)
+            ->assertJsonPath('errors.email.0', 'البريد الإلكتروني مطلوب.')
+            ->assertJsonPath('errors.password.0', 'كلمة المرور مطلوبة.');
+    }
+
     public function test_inactive_account_cannot_login(): void
     {
         $user = User::factory()->inactive()->create([

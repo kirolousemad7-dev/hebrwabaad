@@ -3,12 +3,17 @@
 namespace App\Services\Payments;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 
 class OrderPayableResolver
 {
     public function resolve(Order $order): ?PayableQuote
     {
-        $order->loadMissing(['package', 'packageTier', 'service']);
+        $order->loadMissing(['package', 'packageTier', 'service', 'items', 'addons.addon']);
+
+        if ($order->is_custom_package || $order->items->isNotEmpty()) {
+            return $this->resolveCustomPackage($order);
+        }
 
         $tier = $order->packageTier;
 
@@ -54,12 +59,63 @@ class OrderPayableResolver
         return null;
     }
 
+    private function resolveCustomPackage(Order $order): ?PayableQuote
+    {
+        if ($order->requires_quote || $order->items->isEmpty()) {
+            return null;
+        }
+
+        $total = '0.00';
+        $currency = 'SAR';
+
+        foreach ($order->items as $item) {
+            /** @var OrderItem $item */
+            if (! $item->isChargeable()) {
+                return null;
+            }
+
+            $line = $item->lineTotal();
+            if ($line === null) {
+                return null;
+            }
+
+            $total = bcadd($total, $line, 2);
+            $currency = strtoupper((string) ($item->currency ?: 'SAR'));
+        }
+
+        foreach ($order->addons as $orderAddon) {
+            $addon = $orderAddon->addon;
+            if ($addon === null || ! $addon->isChargeable()) {
+                return null;
+            }
+
+            $addonTotal = bcmul(
+                number_format((float) $addon->price, 2, '.', ''),
+                (string) max(1, (int) $orderAddon->quantity),
+                2,
+            );
+            $total = bcadd($total, $addonTotal, 2);
+        }
+
+        $quote = new PayableQuote($total, $currency);
+
+        return $quote->isPayable() ? $quote : null;
+    }
+
     /**
      * Machine-readable explanation for a non-payable order, used by the customer payment page.
      */
     public function unavailableReason(Order $order): string
     {
-        $order->loadMissing(['package', 'packageTier', 'service']);
+        $order->loadMissing(['package', 'packageTier', 'service', 'items']);
+
+        if ($order->is_custom_package || $order->items->isNotEmpty()) {
+            if ($order->requires_quote || $order->items->contains(fn (OrderItem $item) => ! $item->isChargeable())) {
+                return 'awaiting_owner_quote';
+            }
+
+            return 'order_has_no_catalog_price';
+        }
 
         $tier = $order->packageTier;
 

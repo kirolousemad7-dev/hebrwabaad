@@ -46,6 +46,21 @@ class ProjectPolicy
         return $this->create($user) && $project->account_manager_id === $user->id;
     }
 
+    public function manageMembers(User $user, Project $project): bool
+    {
+        $role = $user->role;
+
+        if (! $role instanceof UserRole || ! $user->is_active) {
+            return false;
+        }
+
+        if ($role === UserRole::Owner) {
+            return true;
+        }
+
+        return $role->canManageProjects() && $project->account_manager_id === $user->id;
+    }
+
     public function viewOwned(User $user, Project $project): bool
     {
         return $user->is_active

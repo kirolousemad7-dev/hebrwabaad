@@ -16,13 +16,26 @@ enum UserRole: string
     case MediaBuyer = 'MEDIA_BUYER';
     case AccountManager = 'ACCOUNT_MANAGER';
     case Hr = 'HR';
+    case Supplier = 'SUPPLIER';
+    case SalesManager = 'SALES_MANAGER';
+    case SalesRepresentative = 'SALES_REPRESENTATIVE';
 
     public function isStaff(): bool
     {
-        return $this !== self::Customer;
+        return $this !== self::Customer && $this !== self::Supplier;
+    }
+
+    public function isSupplier(): bool
+    {
+        return $this === self::Supplier;
     }
 
     public function canManageCatalog(): bool
+    {
+        return in_array($this, [self::Owner, self::AdminManager], true);
+    }
+
+    public function canManagePlatformSettings(): bool
     {
         return in_array($this, [self::Owner, self::AdminManager], true);
     }
@@ -35,6 +48,16 @@ enum UserRole: string
     public function isEmployee(): bool
     {
         return $this->isStaff() && $this !== self::Owner;
+    }
+
+    public function canReviewContent(): bool
+    {
+        return $this->canManageCatalog();
+    }
+
+    public function canSubmitEmployeeWork(): bool
+    {
+        return $this->usesEmployeeWorkspace();
     }
 
     public function canAssignTasks(): bool
@@ -62,6 +85,31 @@ enum UserRole: string
         return $this === self::Owner;
     }
 
+    /**
+     * Refunds follow the same finance boundary as payment management (Owner only).
+     */
+    public function canRefundPayments(): bool
+    {
+        return $this->canManagePayments();
+    }
+
+    /**
+     * Financial amounts for printing revenue (insights, command center, exports).
+     * Account managers may see counts without amounts.
+     */
+    public function canViewPrintingRevenue(): bool
+    {
+        return in_array($this, [self::Owner, self::AdminManager], true);
+    }
+
+    /**
+     * Operational revenue / quote pipeline widgets (counts always; amounts gated separately).
+     */
+    public function canViewPrintingRevenueSection(): bool
+    {
+        return $this->canViewCommandCenter();
+    }
+
     public function canManageSupport(): bool
     {
         return $this === self::Owner || $this === self::AccountManager;
@@ -82,6 +130,151 @@ enum UserRole: string
             self::EventSpecialist,
             self::PrintingSpecialist,
             self::MediaBuyer,
+        ], true);
+    }
+
+    public function canAccessCrm(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::SalesManager,
+            self::SalesRepresentative,
+        ], true);
+    }
+
+    public function canManageCrmTeam(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::SalesManager,
+        ], true);
+    }
+
+    public function canManageCrmSettings(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::SalesManager,
+        ], true);
+    }
+
+    public function canAccessWorkCalendar(): bool
+    {
+        return $this->isStaff();
+    }
+
+    public function canViewTeamCalendar(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
+            self::Hr,
+        ], true);
+    }
+
+    public function canViewUnifiedWork(): bool
+    {
+        return $this->canAccessWorkCalendar();
+    }
+
+    /**
+     * Department managers and leadership roles that may manage team work.
+     * Callers should also allow when actor.id matches department.manager_id.
+     */
+    public function canManageTeamWork(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::Hr,
+            self::AccountManager,
+        ], true);
+    }
+
+    public function canManageWorkCalendar(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
+        ], true);
+    }
+
+    public function canManageDepartments(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::Hr,
+        ], true);
+    }
+
+    public function canManageAutomations(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+        ], true);
+    }
+
+    public function canManageIntegrations(): bool
+    {
+        return $this->canManageAutomations();
+    }
+
+    public function canViewCommandCenter(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+        ], true);
+    }
+
+    public function canManageApprovals(): bool
+    {
+        return $this->canManageWorkCalendar();
+    }
+
+    public function isSalesRole(): bool
+    {
+        return $this === self::SalesManager || $this === self::SalesRepresentative;
+    }
+
+    public function canViewQuoteRequests(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
+            self::SalesRepresentative,
+        ], true);
+    }
+
+    public function canManageQuoteRequests(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
+        ], true);
+    }
+
+    public function canCreateQuotations(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
         ], true);
     }
 
@@ -123,11 +316,14 @@ enum UserRole: string
 
     /**
      * Admin Manager keeps the catalog destination.
+     * Sales roles use the CRM workspace.
      * Other employees use the shared employee workspace shell.
      */
     public function usesEmployeeWorkspace(): bool
     {
-        return $this->isEmployee() && $this !== self::AdminManager;
+        return $this->isEmployee()
+            && $this !== self::AdminManager
+            && ! $this->isSalesRole();
     }
 
     /**
@@ -159,6 +355,8 @@ enum UserRole: string
             self::MediaBuyer => 'media-buyer',
             self::AccountManager => 'account-manager',
             self::Hr => 'hr',
+            self::Supplier => 'supplier',
+            self::SalesManager, self::SalesRepresentative => 'crm',
         };
     }
 }

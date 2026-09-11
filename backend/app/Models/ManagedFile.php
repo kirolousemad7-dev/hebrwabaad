@@ -20,6 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'project_id',
     'order_id',
     'task_id',
+    'crm_lead_id',
+    'crm_opportunity_id',
+    'crm_quotation_id',
+    'quote_request_id',
+    'commercial_quotation_id',
+    'calendar_item_id',
 ])]
 class ManagedFile extends Model
 {
@@ -58,6 +64,54 @@ class ManagedFile extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    /**
+     * @return BelongsTo<CrmLead, $this>
+     */
+    public function crmLead(): BelongsTo
+    {
+        return $this->belongsTo(CrmLead::class, 'crm_lead_id');
+    }
+
+    /**
+     * @return BelongsTo<CrmOpportunity, $this>
+     */
+    public function crmOpportunity(): BelongsTo
+    {
+        return $this->belongsTo(CrmOpportunity::class, 'crm_opportunity_id');
+    }
+
+    /**
+     * @return BelongsTo<CrmQuotation, $this>
+     */
+    public function crmQuotation(): BelongsTo
+    {
+        return $this->belongsTo(CrmQuotation::class, 'crm_quotation_id');
+    }
+
+    /**
+     * @return BelongsTo<QuoteRequest, $this>
+     */
+    public function quoteRequest(): BelongsTo
+    {
+        return $this->belongsTo(QuoteRequest::class, 'quote_request_id');
+    }
+
+    /**
+     * @return BelongsTo<CommercialQuotation, $this>
+     */
+    public function commercialQuotation(): BelongsTo
+    {
+        return $this->belongsTo(CommercialQuotation::class, 'commercial_quotation_id');
+    }
+
+    /**
+     * @return BelongsTo<CalendarItem, $this>
+     */
+    public function calendarItem(): BelongsTo
+    {
+        return $this->belongsTo(CalendarItem::class, 'calendar_item_id');
     }
 
     public function isPreviewable(): bool

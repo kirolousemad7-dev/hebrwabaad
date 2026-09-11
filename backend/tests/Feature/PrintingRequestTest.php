@@ -307,6 +307,28 @@ class PrintingRequestTest extends TestCase
         $this->assertDatabaseCount('printing_requests', 0);
     }
 
+    public function test_jpg_png_and_pdf_design_files_are_accepted(): void
+    {
+        $token = $this->tokenFor();
+
+        foreach ([
+            ['name' => 'design.jpg', 'mime' => 'image/jpeg'],
+            ['name' => 'design.png', 'mime' => 'image/png'],
+            ['name' => 'design.pdf', 'mime' => 'application/pdf'],
+            ['name' => 'design.webp', 'mime' => 'image/webp'],
+        ] as $index => $file) {
+            $this->withToken($token)
+                ->post('/api/printing-requests', $this->validPayload([
+                    'file' => UploadedFile::fake()->create($file['name'], 40, $file['mime']),
+                    'notes' => 'case-'.$index,
+                ]), ['Accept' => 'application/json'])
+                ->assertCreated()
+                ->assertJsonPath('success', true);
+        }
+
+        $this->assertDatabaseCount('printing_requests', 4);
+    }
+
     public function test_oversized_file_is_rejected(): void
     {
         $this->withToken($this->tokenFor())

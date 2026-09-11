@@ -37,12 +37,15 @@ class PrintingRequestFactory extends Factory
             'required_date' => now('Asia/Riyadh')->addDays(7)->toDateString(),
             'notes' => null,
             'status' => PrintingRequestStatus::Pending,
+            'status_changed_at' => null,
             'pricing_type' => null,
             'estimated_price' => null,
             'quoted_price' => null,
             'pricing_notes' => null,
             'quoted_at' => null,
             'quoted_by' => null,
+            'assigned_to' => null,
+            'assigned_department_id' => null,
         ];
     }
 
@@ -51,6 +54,38 @@ class PrintingRequestFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'product_slug' => 'custom-printed-product',
             'product_name' => 'منتج مطبوع حسب الطلب',
+        ]);
+    }
+
+    public function inProgress(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PrintingRequestStatus::InProgress,
+            'status_changed_at' => now(),
+        ]);
+    }
+
+    public function readyForDelivery(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PrintingRequestStatus::ReadyForDelivery,
+            'status_changed_at' => now(),
+        ]);
+    }
+
+    public function completed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PrintingRequestStatus::Completed,
+            'status_changed_at' => now(),
+        ]);
+    }
+
+    public function cancelled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PrintingRequestStatus::Cancelled,
+            'status_changed_at' => now(),
         ]);
     }
 }

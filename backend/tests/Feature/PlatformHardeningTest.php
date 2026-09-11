@@ -51,7 +51,8 @@ class PlatformHardeningTest extends TestCase
         $this->assertContains('throttle:hebr-consultations', $this->middlewareFor('api/consultations', 'POST'));
         $this->assertContains('throttle:hebr-messages', $this->middlewareFor('api/customer/conversations/{conversation}/messages', 'POST'));
         $this->assertContains('throttle:hebr-uploads', $this->middlewareFor('api/customer/files', 'POST'));
-        $this->assertContains('throttle:hebr-uploads', $this->middlewareFor('api/workspace/files', 'POST'));
+        $this->assertContains('throttle:hebr-contact', $this->middlewareFor('api/contact', 'POST'));
+        $this->assertContains('throttle:hebr-uploads', $this->middlewareFor('api/content-media', 'POST'));
     }
 
     public function test_login_is_rate_limited_after_repeated_failures(): void
@@ -118,6 +119,7 @@ class PlatformHardeningTest extends TestCase
             UserRole::VideoEditor->value => User::factory()->videoEditor()->create(),
             UserRole::AccountManager->value => User::factory()->accountManager()->create(),
             UserRole::Hr->value => User::factory()->hr()->create(),
+            UserRole::Supplier->value => User::factory()->supplier()->create(),
         ];
 
         foreach ($users as $role => $user) {
@@ -128,6 +130,8 @@ class PlatformHardeningTest extends TestCase
             $workspace = $this->asUser($user)->getJson('/api/workspace');
             $hrDirectory = $this->asUser($user)->getJson('/api/workspace/hr/employees');
             $managedOrders = $this->asUser($user)->getJson('/api/orders');
+            $supplierProfile = $this->asUser($user)->getJson('/api/supplier/profile');
+            $workReviews = $this->asUser($user)->getJson('/api/admin/work-reviews');
 
             $role === UserRole::Owner->value ? $adminDashboard->assertOk() : $adminDashboard->assertForbidden();
             $role === UserRole::Owner->value ? $employees->assertOk() : $employees->assertForbidden();
@@ -147,6 +151,14 @@ class PlatformHardeningTest extends TestCase
             in_array($role, [UserRole::Owner->value, UserRole::AccountManager->value], true)
                 ? $managedOrders->assertOk()
                 : $managedOrders->assertForbidden();
+
+            in_array($role, [UserRole::Owner->value, UserRole::AdminManager->value], true)
+                ? $workReviews->assertOk()
+                : $workReviews->assertForbidden();
+
+            $role === UserRole::Supplier->value
+                ? $this->assertContains($supplierProfile->status(), [200, 404])
+                : $supplierProfile->assertForbidden();
         }
     }
 

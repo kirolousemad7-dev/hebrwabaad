@@ -26,8 +26,16 @@ class UpdateServiceRequest extends ApiFormRequest
             'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
             'pricing_mode' => ['sometimes', Rule::in(CatalogPricingMode::values())],
             'duration_days' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'revision_rounds' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:50'],
             'is_active' => ['sometimes', 'boolean'],
             'is_featured' => ['sometimes', 'boolean'],
+            'department_id' => ['sometimes', 'nullable', 'integer', 'exists:departments,id'],
+            'task_title_template' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'default_task_priority' => ['sometimes', 'nullable', 'string', Rule::in(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])],
+            'requires_review' => ['sometimes', 'boolean'],
+            'requires_customer_approval' => ['sometimes', 'boolean'],
+            'checklist_template' => ['sometimes', 'nullable', 'array'],
+            'checklist_template.*' => ['string', 'max:255'],
         ];
     }
 }

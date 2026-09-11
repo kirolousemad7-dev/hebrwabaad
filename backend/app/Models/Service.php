@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,13 +19,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'slug',
     'summary',
     'description',
+    'scope',
+    'deliverables',
     'category',
     'base_price',
     'currency',
     'pricing_mode',
     'duration_days',
+    'revision_rounds',
     'is_active',
     'is_featured',
+    'is_public',
+    'sort_order',
+    'department_id',
+    'task_title_template',
+    'default_task_priority',
+    'requires_review',
+    'requires_customer_approval',
+    'checklist_template',
 ])]
 class Service extends Model
 {
@@ -41,6 +53,8 @@ class Service extends Model
         'pricing_mode' => CatalogPricingMode::Fixed->value,
         'is_active' => true,
         'is_featured' => false,
+        'is_public' => true,
+        'sort_order' => 0,
     ];
 
     /**
@@ -51,11 +65,26 @@ class Service extends Model
         return [
             'category' => ServiceCategory::class,
             'pricing_mode' => CatalogPricingMode::class,
+            'deliverables' => 'array',
             'base_price' => 'decimal:2',
             'duration_days' => 'integer',
+            'revision_rounds' => 'integer',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            'is_public' => 'boolean',
+            'sort_order' => 'integer',
+            'requires_review' => 'boolean',
+            'requires_customer_approval' => 'boolean',
+            'checklist_template' => 'array',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**
@@ -74,6 +103,22 @@ class Service extends Model
         return $this->belongsToMany(Package::class, 'package_items')
             ->withPivot(['quantity', 'sort_order', 'notes'])
             ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<Sector, $this>
+     */
+    public function sectors(): BelongsToMany
+    {
+        return $this->belongsToMany(Sector::class, 'sector_service')->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<CatalogAddon, $this>
+     */
+    public function addons(): BelongsToMany
+    {
+        return $this->belongsToMany(CatalogAddon::class, 'addon_service')->withTimestamps();
     }
 
     public function pricingMode(): CatalogPricingMode
@@ -97,5 +142,13 @@ class Service extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);
+    }
+
+    /**
+     * @param  Builder<Service>  $query
+     */
+    public function scopePublic(Builder $query): void
+    {
+        $query->where('is_public', true);
     }
 }

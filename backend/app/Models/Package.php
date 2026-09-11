@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'revision_rounds',
     'is_active',
     'is_featured',
+    'is_public',
     'sort_order',
 ])]
 class Package extends Model
@@ -46,6 +47,7 @@ class Package extends Model
         'pricing_mode' => CatalogPricingMode::Fixed->value,
         'is_active' => true,
         'is_featured' => false,
+        'is_public' => true,
         'sort_order' => 0,
     ];
 
@@ -65,6 +67,7 @@ class Package extends Model
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            'is_public' => 'boolean',
         ];
     }
 
@@ -92,6 +95,22 @@ class Package extends Model
         return $this->belongsToMany(Service::class, 'package_items')
             ->withPivot(['quantity', 'sort_order', 'notes'])
             ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<Sector, $this>
+     */
+    public function sectors(): BelongsToMany
+    {
+        return $this->belongsToMany(Sector::class, 'sector_package')->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<CatalogAddon, $this>
+     */
+    public function addons(): BelongsToMany
+    {
+        return $this->belongsToMany(CatalogAddon::class, 'addon_package')->withTimestamps();
     }
 
     /**
@@ -123,5 +142,13 @@ class Package extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);
+    }
+
+    /**
+     * @param  Builder<Package>  $query
+     */
+    public function scopePublic(Builder $query): void
+    {
+        $query->where('is_public', true);
     }
 }

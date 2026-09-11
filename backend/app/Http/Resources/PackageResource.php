@@ -39,6 +39,7 @@ class PackageResource extends JsonResource
             'tiers' => PackageTierResource::collection($this->whenLoaded('tiers')),
             ...CatalogVisibility::managementFields($request, fn () => [
                 'is_active' => $this->is_active,
+                'is_public' => $this->is_public,
             ]),
         ];
     }

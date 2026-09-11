@@ -24,8 +24,16 @@ class StoreServiceRequest extends ApiFormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'pricing_mode' => ['nullable', Rule::in(CatalogPricingMode::values())],
             'duration_days' => ['nullable', 'integer', 'min:0'],
+            'revision_rounds' => ['nullable', 'integer', 'min:0', 'max:50'],
             'is_active' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'task_title_template' => ['nullable', 'string', 'max:255'],
+            'default_task_priority' => ['nullable', 'string', Rule::in(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])],
+            'requires_review' => ['nullable', 'boolean'],
+            'requires_customer_approval' => ['nullable', 'boolean'],
+            'checklist_template' => ['nullable', 'array'],
+            'checklist_template.*' => ['string', 'max:255'],
         ];
     }
 }

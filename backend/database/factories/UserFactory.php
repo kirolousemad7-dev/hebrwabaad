@@ -106,10 +106,31 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function salesManager(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::SalesManager,
+        ]);
+    }
+
+    public function salesRepresentative(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::SalesRepresentative,
+        ]);
+    }
+
     public function hr(): static
     {
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Hr,
+        ]);
+    }
+
+    public function supplier(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Supplier,
         ]);
     }
 

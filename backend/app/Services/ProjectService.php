@@ -6,13 +6,21 @@ use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\User;
+use App\Services\Operations\ProjectHealthService;
+use App\Services\Workflow\WorkflowAutomationEngine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ProjectService
 {
+    public function __construct(
+        private readonly ProjectHealthService $healthService,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, Project>
@@ -61,6 +69,10 @@ class ProjectService
     public function update(Project $project, array $attributes): Project
     {
         $customer = $this->assertAssignableCustomer((int) $attributes['customer_id']);
+        $oldStatus = $project->status instanceof ProjectStatus
+            ? $project->status->value
+            : (string) $project->status;
+        $newStatus = (string) $attributes['status'];
 
         $project->update([
             'title' => $attributes['title'],
@@ -71,7 +83,78 @@ class ProjectService
             'deadline' => $attributes['deadline'] ?? null,
         ]);
 
+        if ($oldStatus !== $newStatus) {
+            try {
+                app(WorkflowAutomationEngine::class)->dispatch('project.status_changed', [
+                    'source_type' => 'project',
+                    'source_id' => $project->id,
+                    'title' => 'تحديث حالة مشروع: '.$project->title,
+                    'related_type' => 'project',
+                    'related_id' => $project->id,
+                    'assignee_ids' => array_filter([$project->account_manager_id]),
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'payload' => [
+                        'project_id' => $project->id,
+                        'old_status' => $oldStatus,
+                        'new_status' => $newStatus,
+                    ],
+                ], $oldStatus.'->'.$newStatus);
+            } catch (\Throwable) {
+                // Workflow hooks must never break project updates.
+            }
+        }
+
         return $this->load($project->fresh());
+    }
+
+    /**
+     * @param  list<array{user_id: int, role?: string}>  $members
+     */
+    public function syncMembers(Project $project, array $members): Project
+    {
+        DB::transaction(function () use ($project, $members): void {
+            $keep = [];
+            foreach ($members as $row) {
+                $userId = (int) ($row['user_id'] ?? 0);
+                if ($userId <= 0) {
+                    continue;
+                }
+
+                $user = User::query()->find($userId);
+                if ($user === null || ! $user->is_active) {
+                    throw ValidationException::withMessages([
+                        'members' => ['One or more members are invalid.'],
+                    ]);
+                }
+
+                $role = (string) ($row['role'] ?? 'member');
+                if (! in_array($role, ['manager', 'member'], true)) {
+                    $role = 'member';
+                }
+
+                ProjectMember::query()->updateOrCreate(
+                    ['project_id' => $project->id, 'user_id' => $userId],
+                    ['role' => $role],
+                );
+                $keep[] = $userId;
+            }
+
+            ProjectMember::query()
+                ->where('project_id', $project->id)
+                ->when($keep !== [], fn ($q) => $q->whereNotIn('user_id', $keep), fn ($q) => $q)
+                ->delete();
+        });
+
+        return $project->fresh(['members.user:id,name,role']) ?? $project->load(['members.user:id,name,role']);
+    }
+
+    /**
+     * @return array{status: string, label: string, overdue_workspace_tasks: int, overdue_calendar_tasks: int, days_to_deadline: ?int}
+     */
+    public function health(Project $project): array
+    {
+        return $this->healthService->evaluate($project);
     }
 
     /**

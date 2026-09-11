@@ -40,6 +40,13 @@ class PaymentPolicy
         return $this->managesPayments($user);
     }
 
+    public function refund(User $user, Payment $payment): bool
+    {
+        return $user->is_active
+            && $user->role instanceof UserRole
+            && $user->role->canRefundPayments();
+    }
+
     private function managesPayments(User $user): bool
     {
         return $user->is_active

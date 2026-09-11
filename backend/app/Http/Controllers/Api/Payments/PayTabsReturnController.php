@@ -21,6 +21,12 @@ class PayTabsReturnController extends Controller
             return redirect()->away($frontend.'/dashboard/orders');
         }
 
+        if ($payment->printing_quotation_id !== null) {
+            return redirect()->away(
+                $frontend.'/payment/result?payment_id='.$payment->id.'&ref=printing'
+            );
+        }
+
         return redirect()->away(
             $frontend.'/dashboard/orders/'.$payment->order_id.'/pay?payment='.$payment->id.'&checkout=return'
         );

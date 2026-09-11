@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
+use App\Models\CalendarItem;
 use App\Models\ManagedFile;
 use App\Models\Order;
 use App\Models\Project;
@@ -94,6 +95,7 @@ class FileService
             'project_id' => $context['project_id'],
             'order_id' => $context['order_id'],
             'task_id' => $context['task_id'],
+            'calendar_item_id' => $context['calendar_item_id'],
         ]);
 
         return $file->load($this->eagerLoad());
@@ -125,19 +127,49 @@ class FileService
 
     /**
      * @param  array<string, mixed>  $attributes
-     * @return array{project_id: int|null, order_id: int|null, task_id: int|null}
+     * @return array{project_id: int|null, order_id: int|null, task_id: int|null, calendar_item_id: int|null}
      */
     private function assertUploadContext(User $actor, array $attributes): array
     {
         $projectId = $attributes['project_id'] ?? null;
         $orderId = $attributes['order_id'] ?? null;
         $taskId = $attributes['task_id'] ?? null;
-        $filled = collect([$projectId, $orderId, $taskId])->filter(fn ($value) => $value !== null && $value !== '')->count();
+        $calendarItemId = $attributes['calendar_item_id'] ?? null;
+        $filled = collect([$projectId, $orderId, $taskId, $calendarItemId])
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->count();
 
         if ($filled !== 1) {
             throw ValidationException::withMessages([
-                'file' => ['Select exactly one project, order, or task.'],
+                'file' => ['Select exactly one project, order, task, or calendar item.'],
             ]);
+        }
+
+        if ($calendarItemId !== null) {
+            $item = CalendarItem::query()->find((int) $calendarItemId);
+            if ($item === null) {
+                throw ValidationException::withMessages([
+                    'calendar_item_id' => ['Selected calendar item is not available.'],
+                ]);
+            }
+
+            $canUpdate = $actor->role === UserRole::Owner
+                || ($actor->role instanceof UserRole && $actor->role->canManageWorkCalendar())
+                || (int) $item->created_by === (int) $actor->id
+                || $item->assignees()->where('users.id', $actor->id)->exists();
+
+            if (! $canUpdate) {
+                throw ValidationException::withMessages([
+                    'calendar_item_id' => ['Selected calendar item is not available.'],
+                ]);
+            }
+
+            return [
+                'project_id' => null,
+                'order_id' => null,
+                'task_id' => null,
+                'calendar_item_id' => $item->id,
+            ];
         }
 
         if ($actor->role === UserRole::Customer) {
@@ -155,7 +187,7 @@ class FileService
                     ]);
                 }
 
-                return ['project_id' => $project->id, 'order_id' => null, 'task_id' => null];
+                return ['project_id' => $project->id, 'order_id' => null, 'task_id' => null, 'calendar_item_id' => null];
             }
 
             $order = Order::query()->find((int) $orderId);
@@ -165,7 +197,7 @@ class FileService
                 ]);
             }
 
-            return ['project_id' => $order->project_id, 'order_id' => $order->id, 'task_id' => null];
+            return ['project_id' => $order->project_id, 'order_id' => $order->id, 'task_id' => null, 'calendar_item_id' => null];
         }
 
         if ($taskId !== null) {
@@ -176,7 +208,7 @@ class FileService
                 ]);
             }
 
-            return ['project_id' => $task->project_id, 'order_id' => null, 'task_id' => $task->id];
+            return ['project_id' => $task->project_id, 'order_id' => null, 'task_id' => $task->id, 'calendar_item_id' => null];
         }
 
         if ($projectId !== null) {
@@ -187,7 +219,7 @@ class FileService
                 ]);
             }
 
-            return ['project_id' => $project->id, 'order_id' => null, 'task_id' => null];
+            return ['project_id' => $project->id, 'order_id' => null, 'task_id' => null, 'calendar_item_id' => null];
         }
 
         $order = Order::query()->find((int) $orderId);
@@ -197,7 +229,7 @@ class FileService
             ]);
         }
 
-        return ['project_id' => $order->project_id, 'order_id' => $order->id, 'task_id' => null];
+        return ['project_id' => $order->project_id, 'order_id' => $order->id, 'task_id' => null, 'calendar_item_id' => null];
     }
 
     private function staffCanUseTask(User $actor, Task $task): bool
@@ -287,6 +319,10 @@ class FileService
 
         if (isset($filters['task_id']) && $filters['task_id'] !== '') {
             $query->where('task_id', (int) $filters['task_id']);
+        }
+
+        if (isset($filters['calendar_item_id']) && $filters['calendar_item_id'] !== '') {
+            $query->where('calendar_item_id', (int) $filters['calendar_item_id']);
         }
     }
 
