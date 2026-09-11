@@ -23,6 +23,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/backups/*.sql
+/storage/backups/*.sqlite
+/storage/backups/*.sqlite-journal
 /vendor
 _ide_helper.php
 Homestead.json

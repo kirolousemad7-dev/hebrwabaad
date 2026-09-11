@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ContentStatus;
 use App\Enums\UserRole;
 use App\Models\PaymentSetting;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -37,6 +39,21 @@ class DemoAccountSeeder extends Seeder
                 'name' => 'موظف تجريبي',
                 'role' => UserRole::GraphicDesigner,
             ],
+            [
+                'email' => 'supplier.demo@hebr.test',
+                'name' => 'مورد تجريبي',
+                'role' => UserRole::Supplier,
+            ],
+            [
+                'email' => 'sales.manager@hebr.test',
+                'name' => 'مدير مبيعات تجريبي',
+                'role' => UserRole::SalesManager,
+            ],
+            [
+                'email' => 'sales.rep@hebr.test',
+                'name' => 'مندوب مبيعات تجريبي',
+                'role' => UserRole::SalesRepresentative,
+            ],
         ];
 
         foreach ($accounts as $account) {
@@ -52,6 +69,30 @@ class DemoAccountSeeder extends Seeder
             }
 
             $user->save();
+        }
+
+        $supplierUser = User::query()->where('email', 'supplier.demo@hebr.test')->first();
+
+        if ($supplierUser !== null) {
+            Supplier::query()->firstOrCreate(
+                ['slug' => 'demo-supplier'],
+                [
+                    'user_id' => $supplierUser->id,
+                    'name' => 'مورد تجريبي',
+                    'logo' => '/suppliers/logos/ufuq.svg',
+                    'short_description' => 'حساب مورّد تجريبي للمراجعة الداخلية.',
+                    'description' => 'ملف تجريبي لإدارة المحتوى واعتماد المالك.',
+                    'specialties' => ['الطباعة التجارية'],
+                    'services' => ['كروت شخصية'],
+                    'location' => 'الرياض',
+                    'category' => 'الطباعة التجارية',
+                    'is_active' => true,
+                    'is_featured' => false,
+                    'is_published' => true,
+                    'profile_status' => ContentStatus::Published,
+                    'published_at' => now(),
+                ],
+            );
         }
 
         $settings = PaymentSetting::current();

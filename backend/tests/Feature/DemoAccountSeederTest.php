@@ -24,6 +24,9 @@ class DemoAccountSeederTest extends TestCase
         $this->assertSame(UserRole::Customer, User::query()->where('email', 'customer.demo@hebr.test')->first()?->role);
         $this->assertSame(UserRole::AccountManager, User::query()->where('email', 'manager.demo@hebr.test')->first()?->role);
         $this->assertSame(UserRole::GraphicDesigner, User::query()->where('email', 'employee.demo@hebr.test')->first()?->role);
+        $this->assertSame(UserRole::Supplier, User::query()->where('email', 'supplier.demo@hebr.test')->first()?->role);
+        $this->assertSame(UserRole::SalesManager, User::query()->where('email', 'sales.manager@hebr.test')->first()?->role);
+        $this->assertSame(UserRole::SalesRepresentative, User::query()->where('email', 'sales.rep@hebr.test')->first()?->role);
 
         $settings = PaymentSetting::current();
         $this->assertTrue($settings->bank_transfer_enabled);
