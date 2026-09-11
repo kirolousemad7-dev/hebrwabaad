@@ -12,6 +12,8 @@ export const EMPLOYEE_ROLES = [
   'MEDIA_BUYER',
   'ACCOUNT_MANAGER',
   'HR',
+  'SALES_MANAGER',
+  'SALES_REPRESENTATIVE',
 ] as const
 
 export type EmployeeRole = (typeof EMPLOYEE_ROLES)[number]
@@ -27,6 +29,8 @@ export const EMPLOYEE_ROLE_LABELS: Record<EmployeeRole, string> = {
   MEDIA_BUYER: 'ميديا باير',
   ACCOUNT_MANAGER: 'أكونت مانجر',
   HR: 'الموارد البشرية',
+  SALES_MANAGER: 'مدير مبيعات',
+  SALES_REPRESENTATIVE: 'مندوب مبيعات',
 }
 
 export const ROLE_WORKSPACE: Record<string, { key: string; label: string }> = {
@@ -42,6 +46,9 @@ export const ROLE_WORKSPACE: Record<string, { key: string; label: string }> = {
   MEDIA_BUYER: { key: 'media-buyer', label: 'مساحة الميديا باير' },
   ACCOUNT_MANAGER: { key: 'account-manager', label: 'مساحة الأكونت مانجر' },
   HR: { key: 'hr', label: 'مساحة الـ HR' },
+  SALES_MANAGER: { key: 'crm', label: 'لوحة المبيعات' },
+  SALES_REPRESENTATIVE: { key: 'crm', label: 'لوحة المبيعات' },
+  SUPPLIER: { key: 'supplier', label: 'لوحة المورد' },
 }
 
 export function isEmployeeRole(role: string | undefined): role is EmployeeRole {

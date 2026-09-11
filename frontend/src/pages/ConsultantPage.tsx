@@ -205,7 +205,7 @@ export function ConsultantPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-3">
-        <p className="text-sm font-medium text-amber-800">HEBR AI Consultant</p>
+        <p className="text-sm font-medium text-brand-primary">مستشار حبر وأبعاد</p>
         <h1 className="text-3xl font-semibold">مستشار حبر الذكي</h1>
         <p className="max-w-2xl leading-7 text-slate-600">
           ليس دردشة عامة. نفهم نشاطك وأهدافك ثم نرشّح خدمة أو باقة حقيقية من المنصة مع سبب واضح.

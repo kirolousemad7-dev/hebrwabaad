@@ -59,10 +59,17 @@ export type Service = {
   pricing_label: string
   is_chargeable: boolean
   duration_days: number | null
+  revision_rounds?: number | null
   is_featured: boolean
   /** Only present for OWNER / ADMIN_MANAGER responses. */
   is_active?: boolean
   packages_count?: number
+  department_id?: number | null
+  task_title_template?: string | null
+  default_task_priority?: string | null
+  requires_review?: boolean
+  requires_customer_approval?: boolean
+  checklist_template?: string[] | null
 }
 
 export type PackageItem = {
@@ -163,15 +170,36 @@ export type Supplier = {
   name: string
   slug: string
   logo: string
+  cover_image?: string | null
   short_description: string
   description: string | null
   specialties: string[]
   services: string[]
   location: string
+  address?: string | null
+  category?: string | null
+  years_experience?: number | null
+  min_order_info?: string | null
+  brand_colors?: string[] | null
+  brand_description?: string | null
+  phone?: string | null
+  email?: string | null
+  website?: string | null
   featured: boolean
   portfolio_count: number
   portfolio_preview: SupplierPortfolioItem[]
   portfolio?: SupplierPortfolioItem[]
+  featured_products?: Array<{ name: string; slug: string; short_description: string | null; images: string[] }>
+  products?: Array<{ name: string; slug: string; short_description: string | null; images: string[]; contact_for_price: boolean; price: string | null }>
+  seo?: {
+    title: string | null
+    description: string | null
+    og_title: string | null
+    og_description: string | null
+    og_image: string | null
+    canonical_url: string | null
+    robots: string
+  }
 }
 
 export type OwnerDashboardMetric = {
@@ -202,7 +230,19 @@ export type CustomerProject = {
   started_at: string | null
   deadline: string | null
   account_manager: { id: number; name: string } | null
-  progress: WorkspaceProjectProgress
+  progress: {
+    total: number
+    completed: number
+    in_progress: number
+    review: number
+    percent: number
+  }
+  service_progress?: Array<{
+    service_name: string
+    quantity: number
+    status_key: string
+    status_label: string
+  }>
   created_at: string | null
   updated_at: string | null
 }
@@ -258,6 +298,20 @@ export type CustomerOrder = {
   service: { id: number; name: string } | null
   package: { id: number; name: string; slug?: string } | null
   package_tier?: { id: number; name: string; slug: string } | null
+  is_custom_package?: boolean
+  requires_quote?: boolean
+  items?: Array<{
+    id: number
+    service_id: number
+    service: { id: number; name: string; slug?: string } | null
+    quantity: number
+    pricing_mode: string | null
+    unit_price: string | null
+    currency: string
+    notes: string | null
+    addons: Array<{ id: number; slug?: string | null; name?: string | null; quantity: number }>
+  }>
+  package_addons?: Array<{ id: number; slug?: string | null; name?: string | null; quantity: number }>
   account_manager: { id: number; name: string } | null
   payable?: OrderPayable
   latest_payment?: CustomerPayment | null
@@ -366,6 +420,8 @@ export type PlatformNotification = {
   title: string
   message: string
   href: string | null
+  category?: string
+  is_group?: false
   read_at: string | null
   created_at: string | null
   data: {
@@ -375,11 +431,27 @@ export type PlatformNotification = {
     conversation_reference?: string
     task_id?: number
     project_id?: number
+    calendar_item_id?: number
+    lead_id?: number
+    quotation_id?: number
   }
 }
 
-export type NotificationListData = {
+export type NotificationGroup = {
+  is_group: true
+  key: string
+  category: string
+  title: string
+  count: number
+  latest_at: string | null
   items: PlatformNotification[]
+  href: string | null
+}
+
+export type NotificationInboxItem = PlatformNotification | NotificationGroup
+
+export type NotificationListData = {
+  items: NotificationInboxItem[]
   unread_count: number
   meta: EmployeeListMeta
 }
@@ -764,6 +836,10 @@ export type OwnerPayment = CustomerPayment & {
   notes?: string | null
   verified_by?: { id: number; name: string } | null
   customer?: { id: number; name: string; email?: string } | null
+  printing_quotation_id?: number | null
+  refundable_amount?: string | number | null
+  net_paid?: string | number | null
+  can_refund?: boolean
 }
 
 export type PaymentListMeta = {

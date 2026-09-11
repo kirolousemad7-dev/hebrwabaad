@@ -88,3 +88,35 @@ export function getOwnerPaymentSettings() {
 export function updateOwnerPaymentSettings(payload: Partial<OwnerPaymentSettings>) {
   return apiPatch<OwnerPaymentSettings>('/api/admin/payments/settings', payload)
 }
+
+export type PaymentRefundRow = {
+  id: number
+  payment_id: number
+  amount: string | number
+  currency: string
+  status: string
+  reason?: string | null
+  is_manual?: boolean
+  requested_at?: string | null
+  processed_at?: string | null
+}
+
+export function getOwnerPaymentRefunds(paymentId: number) {
+  return apiGet<{
+    items: PaymentRefundRow[]
+    refundable_amount: string
+    net_paid: string
+    payment_amount: string | number
+  }>(`/api/admin/payments/${paymentId}/refunds`)
+}
+
+export function requestOwnerPaymentRefund(
+  paymentId: number,
+  payload: { amount: string; reason?: string; manual?: boolean },
+) {
+  return apiPost<{
+    refund: PaymentRefundRow
+    payment_amount: string | number
+    net_paid: string
+  }>(`/api/admin/payments/${paymentId}/refunds`, payload)
+}

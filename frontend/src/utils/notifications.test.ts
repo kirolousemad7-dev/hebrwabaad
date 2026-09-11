@@ -24,11 +24,17 @@ describe('notifications', () => {
     expect(isNotificationUnread(sample)).toBe(true)
     expect(isNotificationUnread({ ...sample, read_at: '2026-09-03T01:00:00+00:00' })).toBe(false)
     expect(safeNotificationHref(sample, '/dashboard/notifications')).toBe('/dashboard/orders/21')
-    expect(safeNotificationHref({ ...sample, href: '/owner/secret' }, '/dashboard/notifications')).toBe(
+    expect(safeNotificationHref({ ...sample, href: 'https://evil.example/phish' }, '/dashboard/notifications')).toBe(
+      '/dashboard/notifications',
+    )
+    expect(safeNotificationHref({ ...sample, href: '//evil.example' }, '/dashboard/notifications')).toBe(
       '/dashboard/notifications',
     )
     expect(safeNotificationHref({ ...sample, href: '/owner/payments/4' }, '/owner/notifications')).toBe(
       '/owner/payments/4',
+    )
+    expect(safeNotificationHref({ ...sample, href: '/owner/integrations/webhooks' }, '/owner/notifications')).toBe(
+      '/owner/integrations/webhooks',
     )
     expect(NOTIFICATION_COPY.empty).toBe('لا توجد إشعارات جديدة.')
     expect(NOTIFICATION_COPY.error).toBe('تعذر تحميل الإشعارات.')

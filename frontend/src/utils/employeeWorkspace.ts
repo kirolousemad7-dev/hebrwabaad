@@ -31,6 +31,7 @@ export type EmployeeCapability = (typeof EMPLOYEE_CAPABILITIES)[number]
 
 export const WORKSPACE_WIDGET_IDS = [
   'overview',
+  'my-day',
   'projects',
   'tasks',
   'task-progress',
@@ -78,6 +79,12 @@ export type EmployeeWorkspaceConfig = {
 }
 
 const WIDGET_CATALOG: Record<Exclude<WorkspaceWidgetId, 'overview'>, WorkspaceWidgetDefinition> = {
+  'my-day': {
+    id: 'my-day',
+    title: 'يومي',
+    requiredCapability: 'tasks.view',
+    order: 11,
+  },
   projects: {
     id: 'projects',
     title: 'المشاريع',
@@ -267,31 +274,31 @@ const CAPABILITIES_BY_ROLE: Record<EmployeeWorkspaceRole, EmployeeCapability[]> 
 
 const WIDGET_ORDER_BY_ROLE: Partial<Record<EmployeeWorkspaceRole, Partial<Record<WorkspaceWidgetId, number>>>> = {
   WEB_DEVELOPER: {
-    overview: 10, tasks: 12, projects: 14, deadlines: 16, requirements: 40, revisions: 45, files: 50, messages: 60,
+    overview: 10, 'my-day': 11, tasks: 12, projects: 14, deadlines: 16, requirements: 40, revisions: 45, files: 50, messages: 60,
   },
   GRAPHIC_DESIGNER: {
-    overview: 10, projects: 12, 'design-briefs': 14, tasks: 16, deadlines: 18, files: 40, revisions: 45, messages: 50,
+    overview: 10, 'my-day': 11, projects: 12, 'design-briefs': 14, tasks: 16, deadlines: 18, files: 40, revisions: 45, messages: 50,
   },
   VIDEO_EDITOR: {
-    overview: 10, tasks: 12, projects: 14, files: 16, revisions: 18, deadlines: 20, messages: 50,
+    overview: 10, 'my-day': 11, tasks: 12, projects: 14, files: 16, revisions: 18, deadlines: 20, messages: 50,
   },
   MEDIA_BUYER: {
-    overview: 10, tasks: 12, projects: 13, campaigns: 14, budgets: 16, performance: 18, deadlines: 20, reports: 50,
+    overview: 10, 'my-day': 11, tasks: 12, projects: 13, campaigns: 14, budgets: 16, performance: 18, deadlines: 20, reports: 50,
   },
   ACCOUNT_MANAGER: {
-    overview: 10, projects: 11, tasks: 12, 'task-progress': 14, deadlines: 16, files: 38, clients: 40, 'client-requests': 45,
+    overview: 10, 'my-day': 11, projects: 12, tasks: 13, 'task-progress': 14, deadlines: 16, files: 38, clients: 40, 'client-requests': 45,
   },
   HR: {
-    overview: 10, employees: 12, 'active-employees': 13, 'inactive-employees': 14, tasks: 16, 'employee-requests': 40, attendance: 50,
+    overview: 10, 'my-day': 11, employees: 12, 'active-employees': 13, 'inactive-employees': 14, tasks: 16, 'employee-requests': 40, attendance: 50,
   },
   MARKETING_SPECIALIST: {
-    overview: 10, campaigns: 12, tasks: 14, projects: 15, content: 16, deadlines: 18, 'client-requests': 20, reports: 22,
+    overview: 10, 'my-day': 11, campaigns: 12, tasks: 14, projects: 15, content: 16, deadlines: 18, 'client-requests': 20, reports: 22,
   },
   EVENT_SPECIALIST: {
-    overview: 10, tasks: 12, projects: 13, events: 14, 'client-requests': 16, deadlines: 18, files: 40,
+    overview: 10, 'my-day': 11, tasks: 12, projects: 13, events: 14, 'client-requests': 16, deadlines: 18, files: 40,
   },
   PRINTING_SPECIALIST: {
-    overview: 10, 'printing-queue': 12, tasks: 14, projects: 15, deadlines: 16, files: 40, messages: 50,
+    overview: 10, 'my-day': 11, 'printing-queue': 12, tasks: 14, projects: 15, deadlines: 16, files: 40, messages: 50,
   },
 }
 
@@ -343,6 +350,9 @@ function widgetsForCapabilities(
 function navigationForRole(role: EmployeeWorkspaceRole, capabilities: EmployeeCapability[]): DashboardNavItem[] {
   const items: DashboardNavItem[] = [DASHBOARD_NAV_ITEM]
 
+  items.push({ to: '/workspace/calendar', label: 'التقويم', icon: 'calendar' })
+  items.push({ to: '/workspace/work', label: 'العمل', icon: 'tasks' })
+
   if (capabilities.includes('tasks.view')) {
     items.push({ to: '/workspace/tasks', label: 'المهام', icon: 'tasks' })
   }
@@ -355,7 +365,12 @@ function navigationForRole(role: EmployeeWorkspaceRole, capabilities: EmployeeCa
     items.push({ to: '/workspace/files', label: 'الملفات', icon: 'files' })
   }
 
+  items.push({ to: '/workspace/portfolio', label: 'أعمالي', icon: 'work' })
   items.push({ to: '/workspace/notifications', label: 'الإشعارات', icon: 'notifications' })
+
+  if (role === 'ACCOUNT_MANAGER' || role === 'HR') {
+    items.push({ to: '/workspace/team', label: 'الفريق', icon: 'employees' })
+  }
 
   if (role === 'ACCOUNT_MANAGER') {
     items.push({ to: '/workspace/orders', label: 'الطلبات', icon: 'orders' })

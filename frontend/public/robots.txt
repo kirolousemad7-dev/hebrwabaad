@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+Allow: /services
+Allow: /packages
+Allow: /marketing-packages
+Allow: /event-packages
+Allow: /printing-packaging
+Allow: /build-package
+Allow: /consultant
+Allow: /suppliers
+Allow: /portfolio
+Allow: /about
+Allow: /contact
+
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /customer
+Disallow: /owner
+Disallow: /crm
+Disallow: /workspace
+Disallow: /supplier
+Disallow: /printing-requests
+Disallow: /printing/customize
+
+Sitemap: /sitemap.xml

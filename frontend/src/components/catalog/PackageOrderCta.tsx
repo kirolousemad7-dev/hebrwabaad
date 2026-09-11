@@ -9,6 +9,7 @@ import {
   packageOrderPath,
 } from '../../utils/orderIntent'
 import { customerPayPath } from '../../utils/payments'
+import { buildRequestQuotePath } from '../../utils/quoteRequests'
 
 type PackageOrderCtaProps = {
   slug: string
@@ -16,6 +17,12 @@ type PackageOrderCtaProps = {
   tierSlug?: string | null
   label?: string
   variant?: 'primary' | 'secondary'
+  /** When true, opens RFQ flow instead of creating a payable order. */
+  requiresQuote?: boolean
+  packageId?: number | null
+  packageName?: string | null
+  tierId?: number | null
+  pricingMode?: string | null
 }
 
 const variantClasses: Record<'primary' | 'secondary', string> = {
@@ -28,11 +35,18 @@ export function PackageOrderCta({
   tierSlug = null,
   label = PACKAGE_ORDER_COPY.order,
   variant = 'primary',
+  requiresQuote = false,
+  packageId = null,
+  packageName = null,
+  tierId = null,
+  pricingMode = null,
 }: PackageOrderCtaProps) {
   const { isAuthenticated, isReady, user } = useAuth()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const quoteMode = requiresQuote || pricingMode === 'QUOTE'
 
   async function orderPackage() {
     const action = packageOrderAction({
@@ -46,13 +60,28 @@ export function PackageOrderCta({
       return
     }
 
+    const quotePath = buildRequestQuotePath({
+      source_type: tierId ? 'PACKAGE_TIER' : 'PACKAGE',
+      source_id: tierId ?? packageId ?? undefined,
+      title: packageName || label,
+      payload: {
+        package_slug: slug,
+        tier_slug: tierSlug,
+      },
+    })
+
     if (action === 'login') {
-      navigate('/login', { state: { from: packageOrderPath(slug, tierSlug) } })
+      navigate('/login', { state: { from: quoteMode ? quotePath : packageOrderPath(slug, tierSlug) } })
       return
     }
 
     if (action === 'forbidden') {
       setError(PACKAGE_ORDER_COPY.customerOnly)
+      return
+    }
+
+    if (quoteMode) {
+      navigate(quotePath)
       return
     }
 

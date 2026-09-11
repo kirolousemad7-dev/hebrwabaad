@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../../components/catalog/CatalogStatus'
 import { PrintingPricingStatus } from '../../components/printing/PrintingPricingStatus'
 import { PrintingRequestSpecs } from '../../components/printing/PrintingRequestSpecs'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { downloadCustomerPrintingRequestFile, getCustomerPrintingRequest } from '../../services/printingRequests'
+import {
+  downloadCustomerPrintingRequestFile,
+  getCustomerPrintingRequest,
+  reorderCustomerPrintingRequest,
+} from '../../services/printingRequests'
 import { describeApiError } from '../../utils/errors'
 
 type CustomerPrintingRequestDetailBodyProps = {
@@ -12,9 +16,12 @@ type CustomerPrintingRequestDetailBodyProps = {
 }
 
 function CustomerPrintingRequestDetailBody({ id }: CustomerPrintingRequestDetailBodyProps) {
+  const navigate = useNavigate()
   const { state, reload } = useAsyncData(() => getCustomerPrintingRequest(id))
   const [fileError, setFileError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
+  const [reordering, setReordering] = useState(false)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   async function handleDownload() {
     if (state.status !== 'ready') {
@@ -30,6 +37,26 @@ function CustomerPrintingRequestDetailBody({ id }: CustomerPrintingRequestDetail
       setFileError(describeApiError(caught, 'تعذر تنزيل الملف.'))
     } finally {
       setDownloading(false)
+    }
+  }
+
+  async function handleReorder() {
+    if (state.status !== 'ready') {
+      return
+    }
+
+    setReorderError(null)
+    setReordering(true)
+
+    try {
+      const created = await reorderCustomerPrintingRequest(id)
+      navigate(`/customer/printing-requests/${created.data.id}`)
+    } catch (caught) {
+      setReorderError(
+        describeApiError(caught, 'تعذر إعادة الطلب. يمكن إعادة الطلب بعد اكتمال التنفيذ أو الجاهزية.'),
+      )
+    } finally {
+      setReordering(false)
     }
   }
 
@@ -52,6 +79,7 @@ function CustomerPrintingRequestDetailBody({ id }: CustomerPrintingRequestDetail
   }
 
   const request = state.data
+  const canReorder = String(request.status) === 'COMPLETED' || String(request.status) === 'READY_FOR_DELIVERY'
 
   return (
     <article className="space-y-6">
@@ -63,17 +91,40 @@ function CustomerPrintingRequestDetailBody({ id }: CustomerPrintingRequestDetail
       <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="font-semibold">المواصفات</h2>
         <PrintingRequestSpecs request={request} />
-        <button
-          type="button"
-          onClick={() => void handleDownload()}
-          disabled={downloading}
-          className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:opacity-60"
-        >
-          {downloading ? 'جاري التنزيل...' : 'تنزيل ملف التصميم'}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void handleDownload()}
+            disabled={downloading}
+            className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:opacity-60"
+          >
+            {downloading ? 'جاري التنزيل...' : 'تنزيل ملف التصميم'}
+          </button>
+          {canReorder ? (
+            <button
+              type="button"
+              onClick={() => void handleReorder()}
+              disabled={reordering}
+              className="rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+            >
+              {reordering ? 'جاري إنشاء الطلب...' : 'إعادة الطلب'}
+            </button>
+          ) : null}
+        </div>
         {fileError ? (
           <p className="text-sm text-red-700" role="alert">
             {fileError}
+          </p>
+        ) : null}
+        {reorderError ? (
+          <p className="text-sm text-red-700" role="alert">
+            {reorderError}
+          </p>
+        ) : null}
+        {canReorder ? (
+          <p className="text-sm text-slate-500">
+            إعادة الطلب تنسخ المواصفات فقط وتعيد التسعير حسب البيانات الحالية — لا يُعاد استخدام السعر أو الدفع أو الاعتماد
+            السابق.
           </p>
         ) : null}
       </section>

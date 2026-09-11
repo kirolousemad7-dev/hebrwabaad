@@ -159,15 +159,19 @@ export function PrintingRequestForm({ product, onSuccess }: PrintingRequestFormP
       onSuccess(response.data)
     } catch (caught) {
       if (caught instanceof ApiRequestError) {
-        setFieldErrors(caught.body?.errors ?? {})
+        const errors = caught.body?.errors ?? {}
+        setFieldErrors(errors)
+        const fileError = errors.file?.[0]
         setFormError(
           caught.status === 401
-            ? 'يلزم تسجيل الدخول لإرسال الطلب.'
+            ? 'انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.'
             : caught.status === 403
               ? 'طلب الطباعة المخصصة متاح لحسابات العملاء فقط.'
-              : caught.body?.errors
-                ? 'راجع الحقول المحددة ثم أعد المحاولة.'
-                : 'تعذر إرسال الطلب. حاول مرة أخرى.',
+              : fileError
+                ? fileError
+                : caught.body?.errors
+                  ? 'راجع الحقول المحددة ثم أعد المحاولة.'
+                  : 'تعذر إرسال الطلب. حاول مرة أخرى.',
         )
       } else {
         setFormError('تعذر إرسال الطلب. حاول مرة أخرى.')
@@ -378,8 +382,14 @@ export function PrintingRequestForm({ product, onSuccess }: PrintingRequestFormP
           PDF، JPG، PNG، WebP، SVG، أو ZIP. الحد الأقصى 10 ميغابايت.
         </p>
         {file ? (
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <p>الملف المحدد: {file.name}</p>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-slate-800">{file.name}</p>
+              <p className="text-xs text-slate-500">
+                {(file.size / 1024).toFixed(file.size >= 1024 * 100 ? 0 : 1)} ك.ب
+                {file.type ? ` · ${file.type}` : ''}
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => handleFileChange(null)}

@@ -6,7 +6,7 @@ export type AsyncState<T> =
   | { status: 'ready'; data: T }
   | { status: 'error'; message: string }
 
-export function useAsyncData<T>(loader: () => Promise<{ data: T }>) {
+export function useAsyncData<T>(loader: () => Promise<{ data: T }>, deps: unknown[] = []) {
   const loaderRef = useRef(loader)
   loaderRef.current = loader
 
@@ -28,7 +28,8 @@ export function useAsyncData<T>(loader: () => Promise<{ data: T }>) {
 
   useEffect(() => {
     void reload()
-  }, [reload])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- caller-controlled refresh deps
+  }, [reload, ...deps])
 
   return { state, reload }
 }

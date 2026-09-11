@@ -21,7 +21,7 @@ export function ConsultantProgress({ current, total, percent }: ConsultantProgre
         aria-valuenow={percent}
         aria-label="تقدم الاستشارة"
       >
-        <div className="h-full rounded-full bg-amber-400 transition-[width]" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-brand-primary transition-[width]" style={{ width: `${percent}%` }} />
       </div>
     </div>
   )

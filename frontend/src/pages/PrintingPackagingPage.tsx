@@ -1,27 +1,103 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CatalogHero } from '../components/catalog/CatalogHero'
 import { CatalogEmptyState } from '../components/catalog/CatalogStatus'
 import { PrintingCategoryCard } from '../components/printing/PrintingCategoryCard'
 import { PrintingProductCard } from '../components/printing/PrintingProductCard'
 import { PublicCta } from '../components/public/PublicCta'
+import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAuth } from '../context/AuthContext'
+import { usePlatformSettings } from '../context/PlatformSettingsContext'
+import { getPublicPrintingCatalog } from '../services/platformSettings'
 import { isPrintingCategoryId, PRINTING_CATEGORIES, PRINTING_CUSTOM_PATH } from '../utils/printing'
-import { getPrintingProducts } from '../utils/printingProducts'
+import { getPrintingProducts, type PrintingProduct } from '../utils/printingProducts'
+import { resolveMediaUrl } from '../utils/mediaUrl'
+
+function mapApiProduct(row: Record<string, unknown>): PrintingProduct | null {
+  const slug = String(row.slug ?? '')
+  if (!slug) return null
+  const categorySlug = String((row.category as { slug?: string } | null)?.slug ?? 'custom-products')
+  const category = isPrintingCategoryId(categorySlug) ? categorySlug : 'custom-products'
+  const options = Array.isArray(row.options)
+    ? (row.options as Array<{ type?: string; name_ar?: string }>)
+    : []
+  const pricingMode = String(row.pricing_mode ?? 'QUOTE')
+  const starting =
+    pricingMode === 'QUOTE' || row.starting_price == null ? 0 : Number(row.starting_price)
+
+  return {
+    id: String(row.id ?? slug),
+    slug,
+    category,
+    name: String(row.name_ar ?? ''),
+    summary: String(row.short_description ?? ''),
+    image: resolveMediaUrl(String(row.image_url ?? '')) || '/printing/custom.svg',
+    imageAlt: String(row.name_ar ?? 'منتج طباعة'),
+    startingPrice: Number.isFinite(starting) ? starting : 0,
+    currency: 'SAR',
+    sizes: options.filter((item) => item.type === 'size').map((item) => String(item.name_ar ?? '')),
+    materials: options
+      .filter((item) => item.type === 'material')
+      .map((item) => String(item.name_ar ?? '')),
+    isActive: true,
+  }
+}
 
 export function PrintingPackagingPage() {
   const { user } = useAuth()
+  const { settings } = usePlatformSettings()
   const [params] = useSearchParams()
   const categoryParam = params.get('category')
   const selectedCategory = isPrintingCategoryId(categoryParam) ? categoryParam : null
   const selectedLabel = PRINTING_CATEGORIES.find((category) => category.id === selectedCategory)?.name
-  const products = getPrintingProducts(selectedCategory)
+  const [remoteProducts, setRemoteProducts] = useState<PrintingProduct[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getPublicPrintingCatalog()
+      .then((payload) => {
+        if (cancelled) return
+        const mapped = (payload.products ?? [])
+          .map((row) => mapApiProduct(row))
+          .filter((row): row is PrintingProduct => row !== null)
+        setRemoteProducts(mapped.length > 0 ? mapped : null)
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteProducts(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const products = useMemo(() => {
+    const source = remoteProducts ?? getPrintingProducts()
+    if (!selectedCategory) return source
+    return source.filter((product) => product.category === selectedCategory)
+  }, [remoteProducts, selectedCategory])
+
+  if (settings.website.features.show_printing === false) {
+    return (
+      <CatalogEmptyState
+        title="قسم الطباعة غير متاح حالياً"
+        description="يمكنك تصفح باقي أقسام المنصة."
+        actions={[{ to: '/services', label: 'الخدمات', variant: 'primary' }]}
+      />
+    )
+  }
 
   return (
     <div className="space-y-10">
+      <PublicBreadcrumbs
+        items={[
+          { name: 'الرئيسية', to: '/' },
+          { name: 'الطباعة والتغليف' },
+        ]}
+      />
       <CatalogHero
         tone="printing"
         eyebrow="الطباعة والتغليف"
-        title="مواد مطبوعة وتغليف يعكس هوية علامتك"
+        title="حلول طباعة وتغليف لمختلف احتياجات مشروعك"
         description="من الكروت والبوسترات إلى العلب والأكياس والتغليف المخصص. ننفّذ إنتاجاً تجارياً واضحاً يليق بعلامتك، دون تشتيت بين مطبعة وتصميم وتنفيذ."
         primaryCta="استعرض الفئات"
         secondaryCta="صمّم باقتك"
@@ -35,7 +111,9 @@ export function PrintingPackagingPage() {
       <section id="printing-categories" className="space-y-4 scroll-mt-24">
         <header className="space-y-1">
           <h2 className="text-xl font-semibold">فئات الطباعة والتغليف</h2>
-          <p className="text-sm text-slate-600">اختر فئة لعرض منتجاتها وأسعارها الابتدائية والأحجام والخامات المتاحة.</p>
+          <p className="text-sm text-slate-600">
+            اختر فئة لعرض منتجاتها وأسعارها الابتدائية والأحجام والخامات المتاحة.
+          </p>
         </header>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PRINTING_CATEGORIES.map((category) => (
@@ -70,7 +148,9 @@ export function PrintingPackagingPage() {
           <CatalogEmptyState
             title="لا توجد منتجات متاحة في هذا القسم حاليًا."
             description="يمكنك اختيار فئة أخرى أو العودة لكل منتجات الطباعة."
-            actions={[{ to: '/printing-packaging#printing-products', label: 'كل المنتجات', variant: 'primary' }]}
+            actions={[
+              { to: '/printing-packaging#printing-products', label: 'كل المنتجات', variant: 'primary' },
+            ]}
           />
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -113,7 +193,8 @@ export function PrintingPackagingPage() {
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">منتج مخصص أو كمية خاصة؟</h2>
           <p className="text-sm text-white/75">
-            إن لم تجد المنتج المناسب، يمكنك تسجيل رغبتك في حل طباعة مخصص. نموذج الطلب الفعلي سيُفعَّل لاحقاً، ولن يُنشأ طلب الآن.
+            إن لم تجد المنتج المناسب، يمكنك تسجيل رغبتك في حل طباعة مخصص. نموذج الطلب الفعلي سيُفعَّل لاحقاً، ولن
+            يُنشأ طلب الآن.
           </p>
         </div>
         <PublicCta to={PRINTING_CUSTOM_PATH} variant="inverse">

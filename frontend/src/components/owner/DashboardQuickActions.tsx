@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom'
 const ACTIONS = [
   { to: '/owner/employees', label: 'إدارة الموظفين' },
   { to: '/owner/orders', label: 'الطلبات' },
+  { to: '/owner/quote-requests', label: 'طلبات التسعير' },
   { to: '/owner/payments', label: 'المدفوعات' },
   { to: '/owner/support', label: 'الدعم' },
   { to: '/owner/services', label: 'إدارة الخدمات' },
   { to: '/owner/packages', label: 'إدارة الباقات' },
+  { to: '/owner/catalog-control', label: 'مركز الكتالوج' },
+  { to: '/owner/seo', label: 'إدارة SEO' },
+  { to: '/owner/marketing', label: 'المحتوى التسويقي' },
+  { to: '/owner/work-reviews', label: 'مراجعة الأعمال' },
+  { to: '/owner/suppliers', label: 'الموردين' },
+  { to: '/crm', label: 'المبيعات / CRM' },
   { to: '/printing-requests', label: 'طلبات الطباعة' },
 ] as const
 

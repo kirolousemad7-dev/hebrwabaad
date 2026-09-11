@@ -1,23 +1,37 @@
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PublicCta } from '../components/public/PublicCta'
+import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicServices } from '../services/catalog'
 import { formatDuration, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../utils/catalog'
+import { buildRequestQuotePath } from '../utils/quoteRequests'
 
 export function ServicesPage() {
   const { state, reload } = useAsyncData(getPublicServices)
 
   return (
     <section className="space-y-6">
+      <PublicBreadcrumbs
+        items={[
+          { name: 'الرئيسية', to: '/' },
+          { name: 'الخدمات' },
+        ]}
+      />
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">الخدمات</h1>
-        <p className="text-slate-600">خدماتنا المتاحة حالياً مع الأسعار ومدة التنفيذ التقديرية.</p>
+        <h1 className="text-2xl font-semibold">خدمات متكاملة لبناء وتطوير علامتك التجارية</h1>
+        <p className="text-slate-600">
+          خدمات البرمجة وتطوير المواقع، التسويق الرقمي، التصميم والهوية البصرية، الطباعة والتغليف وتنظيم الفعاليات — مع
+          الأسعار ومدة التنفيذ التقديرية.
+        </p>
         <div className="flex flex-wrap gap-3">
           <PublicCta to="/packages" variant="secondary">
             تصفح الباقات
           </PublicCta>
           <PublicCta to="/marketing-packages" variant="secondary">
             الباقات التسويقية
+          </PublicCta>
+          <PublicCta to="/printing-packaging" variant="secondary">
+            الطباعة والتغليف
           </PublicCta>
           <PublicCta to="/build-package">صمّم باقتك</PublicCta>
         </div>
@@ -60,11 +74,22 @@ export function ServicesPage() {
                     <span className="text-sm text-slate-500">{formatDuration(service.duration_days)}</span>
                   ) : null}
                   {service.is_featured ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">مميّزة</span>
+                    <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّزة</span>
                   ) : null}
                 </div>
-                <PublicCta to="/consultant" variant="secondary">
-                  اطلب توصية مناسبة
+                <PublicCta
+                  to={
+                    service.pricing_mode === 'QUOTE' || !service.is_chargeable
+                      ? buildRequestQuotePath({
+                          source_type: 'SERVICE',
+                          source_id: service.id,
+                          title: service.name,
+                        })
+                      : '/consultant'
+                  }
+                  variant="secondary"
+                >
+                  {service.pricing_mode === 'QUOTE' || !service.is_chargeable ? 'طلب تسعير' : 'اطلب توصية مناسبة'}
                 </PublicCta>
               </div>
             </li>

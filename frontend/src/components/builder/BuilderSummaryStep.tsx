@@ -1,130 +1,156 @@
-import { Link } from 'react-router-dom'
-import type { Service, ServiceCategory } from '../../types/api'
 import {
-  BUILDER_ADDONS,
-  BUILDER_MIN_QUANTITY,
+  addonPriceLabel,
   serviceLineHalalas,
+  type BuilderAddon,
+  type BuilderStepId,
+  type SelectedServiceConfig,
 } from '../../utils/builder'
-import { formatDuration, formatHalalas, formatMoney, SERVICE_CATEGORY_LABELS } from '../../utils/catalog'
-import { customPackagePath } from '../../utils/orderIntent'
+import { formatDuration, formatHalalas, servicePriceLabel } from '../../utils/catalog'
 
 type BuilderSummaryStepProps = {
-  category: ServiceCategory
-  services: Service[]
-  quantities: Record<number, number>
-  addonIds: string[]
+  configs: SelectedServiceConfig[]
+  addons: BuilderAddon[]
+  packageAddonIds: string[]
   servicesSubtotal: number
   addonsSubtotal: number
   estimatedTotal: number
+  incomplete: boolean
   durationDays: number | null
-  onEditStep: (step: 1 | 2 | 3 | 4) => void
+  submitting: boolean
+  submitError: string | null
+  onEditStep: (step: BuilderStepId) => void
+  onSubmit: () => void
 }
 
 export function BuilderSummaryStep({
-  category,
-  services,
-  quantities,
-  addonIds,
+  configs,
+  addons,
+  packageAddonIds,
   servicesSubtotal,
   addonsSubtotal,
   estimatedTotal,
+  incomplete,
   durationDays,
+  submitting,
+  submitError,
   onEditStep,
+  onSubmit,
 }: BuilderSummaryStepProps) {
-  const selectedAddons = BUILDER_ADDONS.filter((addon) => addonIds.includes(addon.id))
+  const packageAddons = addons.filter((addon) => packageAddonIds.includes(addon.id))
 
   return (
     <section className="space-y-6">
       <header className="space-y-1">
-        <h2 className="text-lg font-semibold">ملخص الباقة التقديرية</h2>
-        <p className="text-sm text-slate-600">
-          هذا تقدير للمقارنة فقط. لا يُنشئ طلباً ولا يُثبّت سعراً تعاقدياً حتى مرحلة الطلب لاحقاً.
+        <h2 className="text-xl font-extrabold text-brand-black">ملخص باقتك</h2>
+        <p className="text-sm text-brand-text-muted">
+          راجع الخدمات والكميات والإضافات قبل الإرسال. إن وُجد عنصر يحتاج تسعير فلن يُعرض إجمالي نهائي مضلّل.
         </p>
       </header>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="space-y-3 rounded-2xl border border-brand-border bg-white p-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">الفئة</h3>
-          <button type="button" className="text-sm underline" onClick={() => onEditStep(1)}>
+          <h3 className="font-semibold text-brand-black">الخدمات</h3>
+          <button type="button" className="text-sm text-brand-primary underline" onClick={() => onEditStep(2)}>
             تعديل
           </button>
         </div>
-        <p>{SERVICE_CATEGORY_LABELS[category]}</p>
-      </div>
-
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">الخدمات</h3>
-          <button type="button" className="text-sm underline" onClick={() => onEditStep(3)}>
-            تعديل
-          </button>
-        </div>
-        <ul className="space-y-2 text-sm">
-          {services.map((service) => {
-            const quantity = quantities[service.id] ?? BUILDER_MIN_QUANTITY
-
-            return (
-              <li key={service.id} className="flex flex-wrap justify-between gap-2">
+        <ul className="space-y-3 text-sm">
+          {configs.map((row) => (
+            <li key={row.service.id} className="space-y-1 border-b border-brand-border pb-3 last:border-0 last:pb-0">
+              <div className="flex flex-wrap justify-between gap-2 font-medium text-brand-black">
                 <span>
-                  {service.name} × {quantity}
+                  {row.service.name} × {row.quantity}
                 </span>
                 <span>
-                  {formatMoney(service.base_price, service.currency)} ·{' '}
-                  {formatHalalas(serviceLineHalalas(service, quantity), service.currency)}
+                  {row.service.is_chargeable
+                    ? formatHalalas(serviceLineHalalas(row.service, row.quantity), row.service.currency)
+                    : 'طلب تسعير'}
                 </span>
-              </li>
-            )
-          })}
+              </div>
+              <p className="text-brand-text-muted">{servicePriceLabel(row.service)}</p>
+              {row.addonIds.length > 0 ? (
+                <ul className="text-brand-text-muted">
+                  {row.addonIds.map((id) => {
+                    const addon = addons.find((item) => item.id === id)
+                    return (
+                      <li key={id}>
+                        + {addon?.name ?? id} — {addon ? addonPriceLabel(addon) : 'طلب تسعير'}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : null}
+            </li>
+          ))}
         </ul>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="space-y-3 rounded-2xl border border-brand-border bg-white p-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">الإضافات</h3>
-          <button type="button" className="text-sm underline" onClick={() => onEditStep(4)}>
+          <h3 className="font-semibold text-brand-black">إضافات الباقة</h3>
+          <button type="button" className="text-sm text-brand-primary underline" onClick={() => onEditStep(3)}>
             تعديل
           </button>
         </div>
-        {selectedAddons.length === 0 ? (
-          <p className="text-sm text-slate-600">لا توجد إضافات محددة.</p>
+        {packageAddons.length === 0 ? (
+          <p className="text-sm text-brand-text-muted">لا توجد إضافات على مستوى الباقة.</p>
         ) : (
           <ul className="space-y-2 text-sm">
-            {selectedAddons.map((addon) => (
+            {packageAddons.map((addon) => (
               <li key={addon.id} className="flex flex-wrap justify-between gap-2">
                 <span>{addon.name}</span>
-                <span>{formatHalalas(addon.priceHalalas)}</span>
+                <span>{addonPriceLabel(addon)}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div className="space-y-2 rounded-xl border border-slate-900 bg-slate-900 p-4 text-white">
-        <p className="flex justify-between gap-3 text-sm">
-          <span>مجموع الخدمات</span>
-          <span>{formatHalalas(servicesSubtotal)}</span>
-        </p>
-        <p className="flex justify-between gap-3 text-sm">
-          <span>مجموع الإضافات التقديرية</span>
-          <span>{formatHalalas(addonsSubtotal)}</span>
-        </p>
-        <p className="flex justify-between gap-3 text-lg font-semibold">
-          <span>السعر التقديري</span>
-          <span>{formatHalalas(estimatedTotal)}</span>
-        </p>
+      <div className="space-y-2 rounded-2xl border border-brand-black bg-brand-black p-4 text-white">
+        {incomplete ? (
+          <>
+            <p className="flex justify-between gap-3 text-sm">
+              <span>القيمة المعروفة (المسعّرة فقط)</span>
+              <span>{formatHalalas(estimatedTotal)}</span>
+            </p>
+            <p className="text-sm text-white/80">+ خدمة/إضافة تحتاج تسعير</p>
+            <p className="text-lg font-semibold">النهائي: بعد المراجعة</p>
+          </>
+        ) : (
+          <>
+            <p className="flex justify-between gap-3 text-sm">
+              <span>مجموع الخدمات</span>
+              <span>{formatHalalas(servicesSubtotal)}</span>
+            </p>
+            <p className="flex justify-between gap-3 text-sm">
+              <span>مجموع الإضافات</span>
+              <span>{formatHalalas(addonsSubtotal)}</span>
+            </p>
+            <p className="flex justify-between gap-3 text-lg font-semibold">
+              <span>الإجمالي</span>
+              <span>{formatHalalas(estimatedTotal)}</span>
+            </p>
+          </>
+        )}
         <p className="text-sm text-white/75">
           {durationDays === null
-            ? 'لم يتم تحديد مدة التنفيذ بعد'
-            : `مدة التنفيذ التقديرية: ${formatDuration(durationDays)}`}
+            ? 'مدة الباقة النهائية يتم تأكيدها بعد المراجعة'
+            : `مدة التنفيذ التقديرية (أطول مسار موازٍ): ${formatDuration(durationDays)}`}
         </p>
       </div>
 
-      <Link
-        to={customPackagePath()}
-        className="mb-2 inline-flex scroll-mb-44 items-center justify-center rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 lg:scroll-mb-0"
+      {submitError ? (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{submitError}</p>
+      ) : null}
+
+      <button
+        type="button"
+        disabled={submitting || configs.length === 0}
+        onClick={onSubmit}
+        className="brand-btn-primary w-full disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500 sm:w-auto"
       >
-        اطلب هذه الباقة
-      </Link>
+        {submitting ? 'جاري الإرسال...' : incomplete ? 'إرسال لطلب تسعير' : 'اطلب هذه الباقة'}
+      </button>
     </section>
   )
 }

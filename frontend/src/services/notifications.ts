@@ -6,7 +6,11 @@ export function getNotifications(query = '') {
 }
 
 export function getUnreadNotificationCount() {
-  return apiGet<{ unread_count: number }>('/api/notifications/unread-count')
+  return apiGet<{
+    unread_count: number
+    total: number
+    by_category: Record<string, number>
+  }>('/api/notifications/unread-count')
 }
 
 export function markNotificationRead(id: string) {

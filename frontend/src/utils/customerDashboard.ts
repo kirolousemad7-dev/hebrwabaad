@@ -38,13 +38,18 @@ export const CUSTOMER_LIVE_ROUTES = [
   '/dashboard/messages',
   '/dashboard/files',
   '/dashboard/notifications',
+  '/dashboard/quote-requests',
   '/dashboard/profile',
   '/customer/printing-requests',
   '/consultant',
   '/services',
   '/packages',
+  '/marketing-packages',
+  '/event-packages',
   '/build-package',
   '/printing-packaging',
+  '/suppliers',
+  '/request-quote',
 ] as const
 
 export function customerInitials(name: string | undefined): string {

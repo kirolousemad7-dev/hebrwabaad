@@ -11,13 +11,37 @@ export const NOTIFICATION_COPY = {
   read: 'مقروء',
 } as const
 
+export type NotificationCategory =
+  | 'all'
+  | 'tasks'
+  | 'calendar'
+  | 'projects'
+  | 'printing'
+  | 'approvals'
+  | 'automation'
+  | 'crm'
+  | 'alerts'
+
+export const NOTIFICATION_CATEGORIES: Array<{ value: NotificationCategory; label: string }> = [
+  { value: 'all', label: 'الكل' },
+  { value: 'tasks', label: 'المهام' },
+  { value: 'calendar', label: 'التقويم' },
+  { value: 'projects', label: 'المشاريع' },
+  { value: 'printing', label: 'الطباعة' },
+  { value: 'approvals', label: 'الموافقات' },
+  { value: 'automation', label: 'الأتمتة' },
+  { value: 'crm', label: 'CRM' },
+  { value: 'alerts', label: 'تنبيهات' },
+]
+
 const LIVE_HREF_PREFIXES = [
-  '/dashboard/orders/',
-  '/dashboard/messages/',
-  '/workspace/tasks/',
-  '/workspace/support/',
-  '/owner/support/',
-  '/owner/payments/',
+  '/dashboard',
+  '/workspace',
+  '/owner',
+  '/crm',
+  '/supplier',
+  '/operations',
+  '/printing-requests',
 ] as const
 
 export function notificationsPathForRole(role: string | undefined): string {
@@ -39,11 +63,14 @@ export function isNotificationUnread(notification: PlatformNotification): boolea
 export function safeNotificationHref(notification: PlatformNotification, fallback: string): string {
   const href = notification.href
 
-  if (!href || !href.startsWith('/')) {
+  if (!href || !href.startsWith('/') || href.startsWith('//')) {
     return fallback
   }
 
-  return LIVE_HREF_PREFIXES.some((prefix) => href.startsWith(prefix)) ? href : fallback
+  const path = href.split('?')[0] ?? href
+  return LIVE_HREF_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
+    ? href
+    : fallback
 }
 
 export function notificationAriaLabel(unreadCount: number): string {

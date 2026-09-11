@@ -9,6 +9,7 @@ import {
   DashboardSection,
 } from '../../components/owner/DashboardSection'
 import { DashboardStatCard } from '../../components/owner/DashboardStatCard'
+import { OwnerCommandCenter } from '../../components/owner/OwnerCommandCenter'
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { getOwnerDashboard } from '../../services/ownerDashboard'
@@ -45,6 +46,8 @@ export function OwnerHomePage() {
         <p className="text-slate-600">مرحباً {user?.name}. نظرة على النشاط الفعلي في المنصة.</p>
       </header>
 
+      <OwnerCommandCenter />
+
       {state.status === 'loading' ? <DashboardOverviewSkeleton /> : null}
 
       {state.status === 'error' ? (
@@ -53,7 +56,7 @@ export function OwnerHomePage() {
 
       {state.status === 'ready' ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <DashboardStatCard
               title="الإيرادات"
               icon="revenue"

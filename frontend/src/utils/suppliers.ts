@@ -31,9 +31,24 @@ export function uniqueSupplierValues(suppliers: Supplier[], key: 'specialties' |
   return [...new Set(suppliers.flatMap((supplier) => supplier[key]))]
 }
 
+export function uniqueSupplierLocations(suppliers: Supplier[]): string[] {
+  return [...new Set(suppliers.map((supplier) => supplier.location).filter(Boolean))]
+}
+
+export function uniqueSupplierCategories(suppliers: Supplier[]): string[] {
+  return [...new Set(suppliers.map((supplier) => supplier.category).filter((value): value is string => Boolean(value)))]
+}
+
 export function filterSuppliers(
   suppliers: Supplier[],
-  filters: { specialty: string | null; service: string | null; q: string },
+  filters: {
+    specialty: string | null
+    service: string | null
+    q: string
+    location?: string | null
+    category?: string | null
+    featured?: boolean
+  },
 ): Supplier[] {
   const query = filters.q.trim()
 
@@ -46,11 +61,23 @@ export function filterSuppliers(
       return false
     }
 
+    if (filters.location && supplier.location !== filters.location) {
+      return false
+    }
+
+    if (filters.category && supplier.category !== filters.category) {
+      return false
+    }
+
+    if (filters.featured && !supplier.featured) {
+      return false
+    }
+
     if (query === '') {
       return true
     }
 
-    const haystack = [supplier.name, supplier.short_description, supplier.location, ...supplier.specialties, ...supplier.services]
+    const haystack = [supplier.name, supplier.short_description, supplier.location, supplier.category ?? '', ...supplier.specialties, ...supplier.services]
       .join(' ')
       .toLowerCase()
 

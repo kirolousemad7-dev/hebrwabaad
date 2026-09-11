@@ -19,7 +19,17 @@ export function RegisterPage() {
     event.preventDefault()
     setError(null)
 
-    if (password !== passwordConfirmation) {
+    const formData = new FormData(event.currentTarget)
+    const submittedName = String(formData.get('name') ?? name).trim()
+    const submittedEmail = String(formData.get('email') ?? email).trim()
+    const submittedPassword = String(formData.get('password') ?? password)
+    const submittedConfirmation = String(formData.get('password_confirmation') ?? passwordConfirmation)
+    setName(submittedName)
+    setEmail(submittedEmail)
+    setPassword(submittedPassword)
+    setPasswordConfirmation(submittedConfirmation)
+
+    if (submittedPassword !== submittedConfirmation) {
       setError('تأكيد كلمة المرور غير مطابق.')
       return
     }
@@ -28,10 +38,10 @@ export function RegisterPage() {
 
     try {
       await register({
-        name,
-        email,
-        password,
-        password_confirmation: passwordConfirmation,
+        name: submittedName,
+        email: submittedEmail,
+        password: submittedPassword,
+        password_confirmation: submittedConfirmation,
       })
       navigate('/dashboard', { replace: true })
     } catch (caught) {
@@ -62,6 +72,7 @@ export function RegisterPage() {
           <span>الاسم</span>
           <input
             id="register-name"
+            name="name"
             autoComplete="name"
             required
             value={name}
@@ -73,6 +84,7 @@ export function RegisterPage() {
           <span>البريد الإلكتروني</span>
           <input
             id="register-email"
+            name="email"
             type="email"
             autoComplete="email"
             required
@@ -85,6 +97,7 @@ export function RegisterPage() {
           <span>كلمة المرور</span>
           <input
             id="register-password"
+            name="password"
             type="password"
             autoComplete="new-password"
             required
@@ -98,6 +111,7 @@ export function RegisterPage() {
           <span>تأكيد كلمة المرور</span>
           <input
             id="register-password-confirmation"
+            name="password_confirmation"
             type="password"
             autoComplete="new-password"
             required

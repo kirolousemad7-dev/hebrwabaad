@@ -3,6 +3,7 @@ import { CatalogHero } from '../components/catalog/CatalogHero'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PackageCard } from '../components/catalog/PackageCard'
 import { ServiceCategoryNav } from '../components/catalog/ServiceCategoryNav'
+import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicPackages } from '../services/catalog'
 import type { ServiceCategory } from '../types/api'
@@ -38,10 +39,16 @@ export function EventPackagesPage() {
 
   return (
     <div className="space-y-10">
+      <PublicBreadcrumbs
+        items={[
+          { name: 'الرئيسية', to: '/' },
+          { name: 'باقات الفعاليات' },
+        ]}
+      />
       <CatalogHero
         tone="events"
         eyebrow="حلول الفعاليات"
-        title="نحوّل فعاليتك إلى تجربة لا تُنسى"
+        title="نخطط وننفذ فعاليات تصنع تجربة لا تُنسى"
         description="من التخطيط والتنظيم إلى الهوية البصرية والإنتاج والتنفيذ الميداني. نجهّز مناسبتك كتجربة متكاملة، لا كمجموعة مهام منفصلة."
         primaryCta="استكشف الباقات"
         packagesAnchor="event-packages-list"
@@ -69,15 +76,15 @@ export function EventPackagesPage() {
       {state.status === 'ready' && packages.length > 0 ? (
         <>
           <section className="grid gap-3 sm:grid-cols-3" aria-label="ماذا نغطي في فعاليتك">
-            <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="rounded-xl border border-brand-primary/15 bg-brand-primary-soft/40 p-4">
               <p className="font-medium">تخطيط وتنظيم</p>
               <p className="mt-1 text-sm text-slate-600">نرتّب الجدول، المساحات، وتسلسل يوم المناسبة.</p>
             </div>
-            <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="rounded-xl border border-brand-primary/15 bg-brand-primary-soft/40 p-4">
               <p className="font-medium">إنتاج وإبداع</p>
               <p className="mt-1 text-sm text-slate-600">هوية بصرية، تصوير، ومواد تُثبت حضور علامتك.</p>
             </div>
-            <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="rounded-xl border border-brand-primary/15 bg-brand-primary-soft/40 p-4">
               <p className="font-medium">تنفيذ ميداني</p>
               <p className="mt-1 text-sm text-slate-600">طباعة، تركيب، وتغطية حتى إغلاق الفعالية.</p>
             </div>

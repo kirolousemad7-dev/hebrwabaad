@@ -11,8 +11,15 @@ export type ServiceInput = {
   currency?: string
   pricing_mode?: PricingMode
   duration_days?: number | null
+  revision_rounds?: number | null
   is_active?: boolean
   is_featured?: boolean
+  department_id?: number | null
+  task_title_template?: string | null
+  default_task_priority?: string | null
+  requires_review?: boolean
+  requires_customer_approval?: boolean
+  checklist_template?: string[] | null
 }
 
 export type PackageItemInput = {

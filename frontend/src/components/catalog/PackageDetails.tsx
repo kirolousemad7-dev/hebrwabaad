@@ -101,6 +101,11 @@ export function PackageDetails({ pkg }: PackageDetailsProps) {
                   <PackageOrderCta
                     slug={pkg.slug}
                     tierSlug={tier.slug}
+                    packageId={pkg.id}
+                    packageName={pkg.name}
+                    tierId={tier.id}
+                    pricingMode={tier.is_priced ? pkg.pricing_mode : 'QUOTE'}
+                    requiresQuote={!tier.is_priced}
                     variant="secondary"
                     label={tier.is_priced ? `اطلب ${tier.name}` : `اطلب تسعير ${tier.name}`}
                   />

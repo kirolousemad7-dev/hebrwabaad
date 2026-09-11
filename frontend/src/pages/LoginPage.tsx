@@ -1,9 +1,9 @@
 import { FeedbackBanner } from '../components/ui/FeedbackBanner'
 import { FormEvent, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { BrandLogo } from '../components/brand/BrandLogo'
 import { useAuth } from '../context/AuthContext'
-import { ApiRequestError } from '../services/api'
+import { describeApiError } from '../utils/errors'
 import { isSafeInternalPath } from '../utils/orderIntent'
 import { homePathForRole, isCatalogManager } from '../utils/roles'
 
@@ -11,6 +11,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,9 +22,19 @@ export function LoginPage() {
     setError(null)
     setLoading(true)
 
+    // Read from the DOM/FormData so browser autofill is included even when
+    // React controlled state did not receive an onChange event.
+    const formData = new FormData(event.currentTarget)
+    const submittedEmail = String(formData.get('email') ?? email).trim()
+    const submittedPassword = String(formData.get('password') ?? password)
+    setEmail(submittedEmail)
+    setPassword(submittedPassword)
+
     try {
-      const user = await login(email, password)
-      const from = (location.state as { from?: string } | null)?.from
+      const user = await login(submittedEmail, submittedPassword)
+      const fromState = (location.state as { from?: string } | null)?.from
+      const fromQuery = searchParams.get('next')
+      const from = fromState || fromQuery
 
       if (from && !isCatalogManager(user.role) && isSafeInternalPath(from)) {
         navigate(from, { replace: true })
@@ -31,7 +42,7 @@ export function LoginPage() {
         navigate(homePathForRole(user.role), { replace: true })
       }
     } catch (caught) {
-      setError(caught instanceof ApiRequestError ? caught.message : 'تعذر تسجيل الدخول.')
+      setError(describeApiError(caught, 'تعذر تسجيل الدخول.'))
     } finally {
       setLoading(false)
     }
@@ -51,6 +62,7 @@ export function LoginPage() {
           <span>البريد الإلكتروني</span>
           <input
             id="login-email"
+            name="email"
             type="email"
             autoComplete="email"
             required
@@ -63,6 +75,7 @@ export function LoginPage() {
           <span>كلمة المرور</span>
           <input
             id="login-password"
+            name="password"
             type="password"
             autoComplete="current-password"
             required

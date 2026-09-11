@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   createService,
@@ -8,9 +8,12 @@ import {
   updateService,
   type ServiceInput,
 } from '../../services/catalog'
+import { getDepartmentOptions } from '../../services/operations'
 import { PRICING_MODES, SERVICE_CATEGORIES, type PricingMode, type Service } from '../../types/api'
 import { PRICING_MODE_LABELS, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../../utils/catalog'
 import { describeApiError } from '../../utils/errors'
+
+type FormTab = 'commercial' | 'operations'
 
 type FormState = {
   id: number | null
@@ -22,8 +25,15 @@ type FormState = {
   base_price: string
   pricing_mode: PricingMode
   duration_days: string
+  revision_rounds: string
   is_active: boolean
   is_featured: boolean
+  department_id: string
+  task_title_template: string
+  default_task_priority: string
+  requires_review: boolean
+  requires_customer_approval: boolean
+  checklist_template: string
 }
 
 const emptyForm: FormState = {
@@ -36,8 +46,15 @@ const emptyForm: FormState = {
   base_price: '0',
   pricing_mode: 'QUOTE',
   duration_days: '',
+  revision_rounds: '',
   is_active: true,
   is_featured: false,
+  department_id: '',
+  task_title_template: '',
+  default_task_priority: '',
+  requires_review: false,
+  requires_customer_approval: false,
+  checklist_template: '',
 }
 
 function toFormState(service: Service): FormState {
@@ -51,17 +68,31 @@ function toFormState(service: Service): FormState {
     base_price: service.base_price,
     pricing_mode: service.pricing_mode,
     duration_days: service.duration_days === null ? '' : String(service.duration_days),
+    revision_rounds: service.revision_rounds == null ? '' : String(service.revision_rounds),
     is_active: service.is_active ?? true,
     is_featured: service.is_featured,
+    department_id: service.department_id == null ? '' : String(service.department_id),
+    task_title_template: service.task_title_template ?? '',
+    default_task_priority: service.default_task_priority ?? '',
+    requires_review: service.requires_review ?? false,
+    requires_customer_approval: service.requires_customer_approval ?? false,
+    checklist_template: (service.checklist_template ?? []).join('\n'),
   }
 }
 
 export function OwnerServicesPage() {
   const { state, reload } = useAsyncData(getManagedServices)
+  const departments = useAsyncData(() => getDepartmentOptions())
   const [form, setForm] = useState<FormState | null>(null)
+  const [tab, setTab] = useState<FormTab>('commercial')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  const departmentOptions = useMemo(
+    () => (departments.state.status === 'ready' ? departments.state.data.items : []),
+    [departments.state],
+  )
 
   function patch(changes: Partial<FormState>) {
     setForm((current) => (current === null ? current : { ...current, ...changes }))
@@ -70,12 +101,14 @@ export function OwnerServicesPage() {
   function openCreate() {
     setError(null)
     setNotice(null)
+    setTab('commercial')
     setForm({ ...emptyForm })
   }
 
   function openEdit(service: Service) {
     setError(null)
     setNotice(null)
+    setTab('commercial')
     setForm(toFormState(service))
   }
 
@@ -98,6 +131,11 @@ export function OwnerServicesPage() {
       return
     }
 
+    const checklist = form.checklist_template
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '')
+
     const payload: ServiceInput = {
       name: form.name.trim(),
       slug: form.slug.trim() === '' ? null : form.slug.trim(),
@@ -107,8 +145,15 @@ export function OwnerServicesPage() {
       base_price: basePrice,
       pricing_mode: form.pricing_mode,
       duration_days: form.duration_days.trim() === '' ? null : Number.parseInt(form.duration_days, 10),
+      revision_rounds: form.revision_rounds.trim() === '' ? null : Number.parseInt(form.revision_rounds, 10),
       is_active: form.is_active,
       is_featured: form.is_featured,
+      department_id: form.department_id.trim() === '' ? null : Number.parseInt(form.department_id, 10),
+      task_title_template: form.task_title_template.trim() === '' ? null : form.task_title_template.trim(),
+      default_task_priority: form.default_task_priority.trim() === '' ? null : form.default_task_priority,
+      requires_review: form.requires_review,
+      requires_customer_approval: form.requires_customer_approval,
+      checklist_template: checklist.length > 0 ? checklist : null,
     }
 
     setSaving(true)
@@ -162,7 +207,9 @@ export function OwnerServicesPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">إدارة الخدمات</h1>
-          <p className="text-sm text-slate-600">إضافة وتعديل وتعطيل خدمات الكتالوج.</p>
+          <p className="text-sm text-slate-600">
+            التسعير والنطاق التجاري منفصلان عن إعدادات التشغيل (القسم، قالب المهمة، الاعتماد).
+          </p>
         </div>
         <button
           type="button"
@@ -185,121 +232,229 @@ export function OwnerServicesPage() {
 
       {form !== null ? (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="font-semibold">{form.id === null ? 'خدمة جديدة' : 'تعديل الخدمة'}</h2>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-1 text-sm">
-              <span>الاسم</span>
-              <input
-                required
-                value={form.name}
-                onChange={(event) => patch({ name: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>المعرّف (يُولَّد تلقائياً إذا تُرك فارغاً)</span>
-              <input
-                value={form.slug}
-                onChange={(event) => patch({ slug: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-                dir="ltr"
-              />
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>التصنيف</span>
-              <select
-                value={form.category}
-                onChange={(event) => patch({ category: event.target.value as FormState['category'] })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">{form.id === null ? 'خدمة جديدة' : 'تعديل الخدمة'}</h2>
+            <div className="flex gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => setTab('commercial')}
+                className={`rounded-full px-3 py-1 ${tab === 'commercial' ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
               >
-                {SERVICE_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {SERVICE_CATEGORY_LABELS[category]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>السعر الأساسي (ريال)</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                value={form.base_price}
-                onChange={(event) => patch({ base_price: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>حالة السعر</span>
-              <select
-                value={form.pricing_mode}
-                onChange={(event) => patch({ pricing_mode: event.target.value as PricingMode })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
+                تجاري
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('operations')}
+                className={`rounded-full px-3 py-1 ${tab === 'operations' ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
               >
-                {PRICING_MODES.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {PRICING_MODE_LABELS[mode]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>مدة التنفيذ (أيام)</span>
-              <input
-                type="number"
-                min={0}
-                value={form.duration_days}
-                onChange={(event) => patch({ duration_days: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>وصف مختصر</span>
-              <input
-                value={form.summary}
-                onChange={(event) => patch({ summary: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
+                تشغيلي
+              </button>
+            </div>
           </div>
 
-          <label className="block space-y-1 text-sm">
-            <span>الوصف التفصيلي</span>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(event) => patch({ description: event.target.value })}
-              className="w-full rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
+          {tab === 'commercial' ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-1 text-sm">
+                  <span>الاسم</span>
+                  <input
+                    required
+                    value={form.name}
+                    onChange={(event) => patch({ name: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
 
-          <div className="flex flex-wrap gap-6 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.is_active}
-                onChange={(event) => patch({ is_active: event.target.checked })}
-              />
-              <span>منشورة</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.is_featured}
-                onChange={(event) => patch({ is_featured: event.target.checked })}
-              />
-              <span>مميّزة</span>
-            </label>
-          </div>
+                <label className="block space-y-1 text-sm">
+                  <span>المعرّف (يُولَّد تلقائياً إذا تُرك فارغاً)</span>
+                  <input
+                    value={form.slug}
+                    onChange={(event) => patch({ slug: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    dir="ltr"
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>التصنيف</span>
+                  <select
+                    value={form.category}
+                    onChange={(event) => patch({ category: event.target.value as FormState['category'] })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  >
+                    {SERVICE_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>
+                        {SERVICE_CATEGORY_LABELS[category]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>السعر الأساسي (ريال)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    required
+                    value={form.base_price}
+                    onChange={(event) => patch({ base_price: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>حالة السعر</span>
+                  <select
+                    value={form.pricing_mode}
+                    onChange={(event) => patch({ pricing_mode: event.target.value as PricingMode })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  >
+                    {PRICING_MODES.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {PRICING_MODE_LABELS[mode]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>مدة التنفيذ (أيام)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.duration_days}
+                    onChange={(event) => patch({ duration_days: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>جولات التعديل المشمولة</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.revision_rounds}
+                    onChange={(event) => patch({ revision_rounds: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    placeholder="اتركه فارغاً إن لم يُحدَّد"
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>وصف مختصر</span>
+                  <input
+                    value={form.summary}
+                    onChange={(event) => patch({ summary: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-1 text-sm">
+                <span>الوصف التفصيلي</span>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(event) => patch({ description: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-6 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(event) => patch({ is_active: event.target.checked })}
+                  />
+                  <span>منشورة</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.is_featured}
+                    onChange={(event) => patch({ is_featured: event.target.checked })}
+                  />
+                  <span>مميّزة</span>
+                </label>
+              </div>
+            </>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>القسم التشغيلي المسؤول</span>
+                <select
+                  value={form.department_id}
+                  onChange={(event) => patch({ department_id: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                >
+                  <option value="">— بدون تعيين —</option>
+                  {departmentOptions.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>قالب عنوان المهمة</span>
+                <input
+                  value={form.task_title_template}
+                  onChange={(event) => patch({ task_title_template: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  placeholder="مثال: إعداد :name أو تنفيذ :quantity × :name"
+                />
+                <span className="text-xs text-slate-500">المتغيرات: :name :service :quantity</span>
+              </label>
+
+              <label className="block space-y-1 text-sm">
+                <span>أولوية المهمة الافتراضية</span>
+                <select
+                  value={form.default_task_priority}
+                  onChange={(event) => patch({ default_task_priority: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                >
+                  <option value="">MEDIUM</option>
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="URGENT">URGENT</option>
+                </select>
+              </label>
+
+              <div className="flex flex-col gap-3 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.requires_review}
+                    onChange={(event) => patch({ requires_review: event.target.checked })}
+                  />
+                  <span>يتطلب مراجعة داخلية</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.requires_customer_approval}
+                    onChange={(event) => patch({ requires_customer_approval: event.target.checked })}
+                  />
+                  <span>يتطلب اعتماد العميل (البوابة الحالية)</span>
+                </label>
+              </div>
+
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>قائمة تحقق (سطر لكل بند)</span>
+                <textarea
+                  rows={4}
+                  value={form.checklist_template}
+                  onChange={(event) => patch({ checklist_template: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  placeholder={'مراجعة الموجز\nتسليم المسودة'}
+                />
+              </label>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <button
@@ -359,6 +514,8 @@ export function OwnerServicesPage() {
                 </div>
                 <p className="text-sm text-slate-600">
                   {servicePriceLabel(service)}
+                  {service.department_id ? ' · مرتبط بقسم' : ' · بلا قسم'}
+                  {service.requires_customer_approval ? ' · اعتماد عميل' : ''}
                   {service.packages_count !== undefined
                     ? ` · مستخدمة في ${service.packages_count} باقة`
                     : ''}

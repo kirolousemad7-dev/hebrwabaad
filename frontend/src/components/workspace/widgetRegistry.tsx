@@ -17,6 +17,7 @@ import { GraphicDesignerOverviewWidget } from './widgets/GraphicDesignerOverview
 import { HrDirectoryWidget } from './widgets/HrDirectoryWidget'
 import { HrEmployeeGroupWidget } from './widgets/HrEmployeeGroupWidget'
 import { MyTasksWidget } from './widgets/MyTasksWidget'
+import { MyDayWidget } from './widgets/MyDayWidget'
 import { OverviewWidget } from './widgets/OverviewWidget'
 import { PrintingQueueWidget } from './widgets/PrintingQueueWidget'
 import { ProjectsWidget } from './widgets/ProjectsWidget'
@@ -64,6 +65,10 @@ export function WorkspaceWidgetSlot({
 
   if (widget.id === 'printing-queue') {
     return <PrintingQueueWidget />
+  }
+
+  if (widget.id === 'my-day') {
+    return <MyDayWidget />
   }
 
   if (widget.id === 'projects') {

@@ -1,6 +1,7 @@
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PackageCard } from '../components/catalog/PackageCard'
 import { PublicCta } from '../components/public/PublicCta'
+import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicPackages } from '../services/catalog'
 
@@ -9,15 +10,24 @@ export function PackagesPage() {
 
   return (
     <section className="space-y-6">
+      <PublicBreadcrumbs
+        items={[
+          { name: 'الرئيسية', to: '/' },
+          { name: 'الباقات' },
+        ]}
+      />
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">الباقات</h1>
-        <p className="text-slate-600">باقات جاهزة تجمع أكثر من خدمة بسعر واحد.</p>
+        <h1 className="text-2xl font-semibold">باقات جاهزة تناسب مرحلة مشروعك</h1>
+        <p className="text-slate-600">باقات جاهزة تجمع أكثر من خدمة بسعر واحد، مع روابط للباقات التسويقية وباقات الفعاليات وتصميم باقتك.</p>
         <div className="flex flex-wrap gap-3">
           <PublicCta to="/marketing-packages" variant="secondary">
             الباقات التسويقية
           </PublicCta>
           <PublicCta to="/event-packages" variant="secondary">
             الباقات للفعاليات
+          </PublicCta>
+          <PublicCta to="/services" variant="secondary">
+            الخدمات
           </PublicCta>
           <PublicCta to="/build-package">صمّم باقتك</PublicCta>
         </div>

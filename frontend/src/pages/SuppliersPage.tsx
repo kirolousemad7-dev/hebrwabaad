@@ -5,23 +5,28 @@ import { SupplierCard } from '../components/suppliers/SupplierCard'
 import { SupplierFilters } from '../components/suppliers/SupplierFilters'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicSuppliers } from '../services/suppliers'
-import { filterSuppliers, uniqueSupplierValues } from '../utils/suppliers'
+import { filterSuppliers, uniqueSupplierCategories, uniqueSupplierLocations, uniqueSupplierValues } from '../utils/suppliers'
 
 export function SuppliersPage() {
   const { state, reload } = useAsyncData(getPublicSuppliers)
   const [specialty, setSpecialty] = useState<string | null>(null)
   const [service, setService] = useState<string | null>(null)
+  const [location, setLocation] = useState<string | null>(null)
+  const [category, setCategory] = useState<string | null>(null)
+  const [featuredOnly, setFeaturedOnly] = useState(false)
   const [query, setQuery] = useState('')
 
   const suppliers = useMemo(() => (state.status === 'ready' ? state.data : []), [state])
   const specialties = useMemo(() => uniqueSupplierValues(suppliers, 'specialties'), [suppliers])
   const services = useMemo(() => uniqueSupplierValues(suppliers, 'services'), [suppliers])
+  const locations = useMemo(() => uniqueSupplierLocations(suppliers), [suppliers])
+  const categories = useMemo(() => uniqueSupplierCategories(suppliers), [suppliers])
   const visible = useMemo(
-    () => filterSuppliers(suppliers, { specialty, service, q: query }),
-    [suppliers, specialty, service, query],
+    () => filterSuppliers(suppliers, { specialty, service, q: query, location, category, featured: featuredOnly }),
+    [suppliers, specialty, service, query, location, category, featuredOnly],
   )
   const featured = visible.filter((supplier) => supplier.featured)
-  const filtered = specialty !== null || service !== null || query.trim() !== ''
+  const filtered = specialty !== null || service !== null || location !== null || category !== null || featuredOnly || query.trim() !== ''
 
   return (
     <div className="space-y-10">
@@ -61,11 +66,19 @@ export function SuppliersPage() {
           <SupplierFilters
             specialties={specialties}
             services={services}
+            locations={locations}
+            categories={categories}
             selectedSpecialty={specialty}
             selectedService={service}
+            selectedLocation={location}
+            selectedCategory={category}
+            featuredOnly={featuredOnly}
             query={query}
             onSpecialty={setSpecialty}
             onService={setService}
+            onLocation={setLocation}
+            onCategory={setCategory}
+            onFeaturedOnly={setFeaturedOnly}
             onQuery={setQuery}
           />
 
@@ -83,6 +96,9 @@ export function SuppliersPage() {
                   onClick={() => {
                     setSpecialty(null)
                     setService(null)
+                    setLocation(null)
+                    setCategory(null)
+                    setFeaturedOnly(false)
                     setQuery('')
                   }}
                   className="rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"

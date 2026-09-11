@@ -3,6 +3,7 @@ import { CatalogHero } from '../components/catalog/CatalogHero'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PackageCard } from '../components/catalog/PackageCard'
 import { ServiceCategoryNav } from '../components/catalog/ServiceCategoryNav'
+import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicPackages } from '../services/catalog'
 import type { ServiceCategory } from '../types/api'
@@ -38,10 +39,16 @@ export function MarketingPackagesPage() {
 
   return (
     <div className="space-y-10">
+      <PublicBreadcrumbs
+        items={[
+          { name: 'الرئيسية', to: '/' },
+          { name: 'الباقات التسويقية' },
+        ]}
+      />
       <CatalogHero
         tone="marketing"
         eyebrow="باقات التسويق الرقمي"
-        title="باقات تسويقية متكاملة لنمو علامتك التجارية"
+        title="حلول التسويق الرقمي التي تساعد مشروعك على النمو"
         description="نبني حضورك الرقمي من الاستراتيجية إلى المحتوى والحملات. اختر باقة جاهزة تناسب مرحلتك، وسننفّذها بفريق حبر وأبعاد دون تشتيت بين موردين متعددين."
         primaryCta="استعرض الباقات"
         secondaryCta="تصفح الخدمات المنفردة"

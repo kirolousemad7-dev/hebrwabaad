@@ -55,7 +55,7 @@ export function DashboardEmptyState({
 
 export function DashboardOverviewSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true" aria-live="polite">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true" aria-live="polite">
       <p className="sr-only">جاري تحميل لوحة التحكم...</p>
       {Array.from({ length: 8 }, (_, index) => (
         <div key={index} className="h-36 animate-pulse rounded-2xl bg-slate-200" />

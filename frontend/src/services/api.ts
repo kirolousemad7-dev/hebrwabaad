@@ -130,6 +130,38 @@ export function apiDelete<T>(path: string): Promise<ApiSuccess<T>> {
   return apiSend<T>('DELETE', path)
 }
 
+/** Unauthenticated JSON fetch for public token pages (no Bearer header). */
+export async function publicFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      Accept: 'application/json',
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers ?? {}),
+    },
+  })
+
+  const raw = await response.text()
+  const jsonStart = raw.indexOf('{')
+  const jsonText = jsonStart >= 0 ? raw.slice(jsonStart) : raw
+
+  let payload: { success?: boolean; data?: T; message?: string }
+  try {
+    payload = JSON.parse(jsonText) as { success?: boolean; data?: T; message?: string }
+  } catch {
+    throw new ApiRequestError('Request failed.', response.status, null)
+  }
+
+  if (!response.ok || payload.success === false) {
+    throw new ApiRequestError(payload.message || 'Request failed.', response.status, {
+      success: false,
+      message: payload.message || 'Request failed.',
+    })
+  }
+
+  return payload.data as T
+}
+
 function filenameFromDisposition(header: string | null, fallback: string): string {
   if (!header) {
     return fallback

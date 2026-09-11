@@ -10,6 +10,7 @@ type SupplierCardProps = {
 export function SupplierCard({ supplier }: SupplierCardProps) {
   const preview = supplier.portfolio_preview ?? supplier.portfolio?.slice(0, 2) ?? []
   const count = supplier.portfolio_count ?? supplier.portfolio?.length ?? preview.length
+  const featuredProducts = supplier.featured_products ?? []
 
   return (
     <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -25,7 +26,7 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold">{supplier.name}</h3>
             {supplier.featured ? (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">مميّز</span>
+              <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّز</span>
             ) : null}
           </div>
           <p className="text-sm text-slate-500">{supplier.location}</p>
@@ -33,6 +34,10 @@ export function SupplierCard({ supplier }: SupplierCardProps) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3 px-5 pb-5">
         <p className="text-sm leading-6 text-slate-600">{supplier.short_description}</p>
+        {supplier.category ? <p className="text-xs text-slate-500">{supplier.category}</p> : null}
+        {featuredProducts.length > 0 ? (
+          <p className="text-sm text-slate-600">منتجات مميزة: {featuredProducts.map((product) => product.name).join('، ')}</p>
+        ) : null}
         <p className="text-xs font-medium text-slate-500">التخصصات</p>
         <ul className="flex flex-wrap gap-1.5">
           {supplier.specialties.map((specialty) => (

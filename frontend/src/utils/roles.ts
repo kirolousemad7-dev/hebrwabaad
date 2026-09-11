@@ -8,6 +8,8 @@ export const CATALOG_MANAGER_ROLES = ['OWNER', 'ADMIN_MANAGER']
 
 export const PRINTING_OPERATIONS_ROLES = ['OWNER', 'ADMIN_MANAGER', 'PRINTING_SPECIALIST']
 
+export const CRM_ROLES = ['OWNER', 'ADMIN_MANAGER', 'SALES_MANAGER', 'SALES_REPRESENTATIVE'] as const
+
 export function isOwner(role: string | undefined): boolean {
   return role === 'OWNER'
 }
@@ -20,6 +22,10 @@ export function canReviewPrintingRequests(role: string | undefined): boolean {
   return role !== undefined && PRINTING_OPERATIONS_ROLES.includes(role)
 }
 
+export function canAccessCrm(role: string | undefined): boolean {
+  return role !== undefined && (CRM_ROLES as readonly string[]).includes(role)
+}
+
 export function homePathForRole(role: string | undefined): string {
   if (isOwner(role)) {
     return '/owner'
@@ -27,6 +33,14 @@ export function homePathForRole(role: string | undefined): string {
 
   if (role === 'ADMIN_MANAGER') {
     return '/owner/services'
+  }
+
+  if (role === 'SUPPLIER') {
+    return '/supplier'
+  }
+
+  if (role === 'SALES_MANAGER' || role === 'SALES_REPRESENTATIVE') {
+    return '/crm'
   }
 
   if (isEmployeeWorkspaceRole(role)) {

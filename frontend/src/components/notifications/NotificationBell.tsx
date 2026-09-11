@@ -75,7 +75,9 @@ export function NotificationBell() {
     setStatus('loading')
     try {
       const response = await getNotifications('?per_page=6')
-      setItems(response.data.items)
+      setItems(
+        response.data.items.filter((item): item is PlatformNotification => item.is_group !== true),
+      )
       setUnread(response.data.unread_count)
       setStatus('idle')
     } catch {

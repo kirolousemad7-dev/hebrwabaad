@@ -67,6 +67,23 @@ export function CustomerProjectDetailPage() {
         </ul>
       </article>
 
+      {(project.service_progress?.length ?? 0) > 0 ? (
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="font-semibold">تقدم الخدمات</h2>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {project.service_progress?.map((line) => (
+              <li key={`${line.service_name}-${line.quantity}`} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <span className="font-medium text-slate-900">
+                  {line.service_name}
+                  {line.quantity > 1 ? ` × ${line.quantity.toLocaleString('ar-SA')}` : ''}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">{line.status_label}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      ) : null}
+
       <SupportContextButton projectId={project.id} />
 
       <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">

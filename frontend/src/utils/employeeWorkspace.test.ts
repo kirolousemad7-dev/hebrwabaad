@@ -9,10 +9,14 @@ import { homePathForRole } from './roles'
 
 const LIVE_NAV_ROUTES = [
   '/workspace',
+  '/workspace/calendar',
+  '/workspace/work',
   '/workspace/tasks',
   '/workspace/projects',
   '/workspace/files',
+  '/workspace/portfolio',
   '/workspace/notifications',
+  '/workspace/team',
   '/workspace/orders',
   '/workspace/support',
   '/workspace/directory',
@@ -39,6 +43,7 @@ describe('employee workspace resolver', () => {
       expect(workspace?.key).toBe(expected[role])
       expect(workspace?.homePath).toBe('/workspace')
       expect(workspace?.navigation.some((item) => item.to === '/workspace')).toBe(true)
+      expect(workspace?.navigation.some((item) => item.to === '/workspace/work' && item.label === 'العمل')).toBe(true)
       expect(workspace?.navigation.every((item) => LIVE_NAV_ROUTES.includes(item.to))).toBe(true)
     }
   })
@@ -60,6 +65,9 @@ describe('employee workspace resolver', () => {
     expect(homePathForRole('MEDIA_BUYER')).toBe('/workspace')
     expect(homePathForRole('ACCOUNT_MANAGER')).toBe('/workspace')
     expect(homePathForRole('HR')).toBe('/workspace')
+    expect(homePathForRole('SALES_MANAGER')).toBe('/crm')
+    expect(homePathForRole('SALES_REPRESENTATIVE')).toBe('/crm')
+    expect(homePathForRole('SUPPLIER')).toBe('/supplier')
   })
 
   it('only includes the printing queue route for printing specialists', () => {
@@ -68,17 +76,23 @@ describe('employee workspace resolver', () => {
 
     expect(printing?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
       '/printing-requests',
     ])
     expect(developer?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
     ])
   })
@@ -111,14 +125,18 @@ describe('employee workspace resolver', () => {
     expect(developer?.label).toBe('مساحة المطوّر')
     expect(developer?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
     ])
     expect(developer?.navigation.some((item) => item.to.startsWith('/owner'))).toBe(false)
     expect(developer?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'tasks',
       'projects',
       'deadlines',
@@ -152,15 +170,19 @@ describe('employee workspace resolver', () => {
     expect(designer?.homePath).toBe('/workspace')
     expect(designer?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
     ])
     expect(designer?.navigation.some((item) => item.to.startsWith('/owner'))).toBe(false)
     expect(designer?.navigation.some((item) => item.to.includes('/projects'))).toBe(true)
     expect(designer?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'projects',
       'design-briefs',
       'tasks',
@@ -196,6 +218,7 @@ describe('employee workspace resolver', () => {
     const printing = getWorkspaceForRole('PRINTING_SPECIALIST')
     expect(printing?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'printing-queue',
       'tasks',
       'projects',
@@ -218,12 +241,16 @@ describe('employee workspace resolver', () => {
     expect(mediaBuyer?.homePath).toBe('/workspace')
     expect(mediaBuyer?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
+      '/workspace/portfolio',
       '/workspace/notifications',
     ])
     expect(mediaBuyer?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'tasks',
       'projects',
       'campaigns',
@@ -241,6 +268,7 @@ describe('employee workspace resolver', () => {
     expect(videoEditor?.label).toBe('مساحة المونتير')
     expect(videoEditor?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'tasks',
       'projects',
       'files',
@@ -253,15 +281,20 @@ describe('employee workspace resolver', () => {
     expect(accountManager?.label).toBe('مساحة الأكونت مانجر')
     expect(accountManager?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
+      '/workspace/team',
       '/workspace/orders',
       '/workspace/support',
     ])
     expect(accountManager?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'projects',
       'tasks',
       'task-progress',
@@ -277,12 +310,17 @@ describe('employee workspace resolver', () => {
     expect(hr?.label).toBe('مساحة الـ HR')
     expect(hr?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
+      '/workspace/portfolio',
       '/workspace/notifications',
+      '/workspace/team',
       '/workspace/directory',
     ])
     expect(hr?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'employees',
       'active-employees',
       'inactive-employees',
@@ -323,12 +361,16 @@ describe('employee workspace resolver', () => {
     expect(marketing?.homePath).toBe('/workspace')
     expect(marketing?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
+      '/workspace/portfolio',
       '/workspace/notifications',
     ])
     expect(marketing?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'campaigns',
       'tasks',
       'projects',
@@ -346,6 +388,7 @@ describe('employee workspace resolver', () => {
     expect(event?.label).toBe('مساحة الفعاليات')
     expect(event?.widgets.map((widget) => widget.id)).toEqual([
       'overview',
+      'my-day',
       'tasks',
       'projects',
       'events',
@@ -359,9 +402,12 @@ describe('employee workspace resolver', () => {
     expect(printing?.description).toBe('مساحة الطباعة لمتابعة طابور الطلبات الحقيقي والمهام المعيّنة.')
     expect(printing?.navigation.map((item) => item.to)).toEqual([
       '/workspace',
+      '/workspace/calendar',
+      '/workspace/work',
       '/workspace/tasks',
       '/workspace/projects',
       '/workspace/files',
+      '/workspace/portfolio',
       '/workspace/notifications',
       '/printing-requests',
     ])

@@ -18,10 +18,10 @@ type PackageCardProps = {
 }
 
 const featuredRing: Record<CatalogTone, string> = {
-  marketing: 'border-amber-300 ring-2 ring-amber-200',
-  events: 'border-amber-300 ring-2 ring-amber-200',
-  printing: 'border-amber-300 ring-2 ring-amber-200',
-  suppliers: 'border-amber-300 ring-2 ring-amber-200',
+  marketing: 'border-brand-primary ring-2 ring-brand-primary/20',
+  events: 'border-brand-primary ring-2 ring-brand-primary/20',
+  printing: 'border-brand-primary ring-2 ring-brand-primary/20',
+  suppliers: 'border-brand-primary ring-2 ring-brand-primary/20',
 }
 
 export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
@@ -41,7 +41,7 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
         <h3 className="text-lg font-semibold">{pkg.name}</h3>
         <div className="flex flex-wrap gap-2">
           {pkg.is_featured ? (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
+            <span className="rounded-full bg-brand-primary-soft px-3 py-1 text-xs font-medium text-brand-primary">
               الأكثر طلباً
             </span>
           ) : null}
@@ -99,7 +99,11 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
       <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row">
         <PackageOrderCta
           slug={pkg.slug}
-          label={pkg.is_chargeable ? PACKAGE_ORDER_COPY.order : PACKAGE_ORDER_COPY.requestQuote}
+          packageId={pkg.id}
+          packageName={pkg.name}
+          pricingMode={pkg.pricing_mode}
+          requiresQuote={!pkg.is_chargeable || pkg.pricing_mode === 'QUOTE'}
+          label={pkg.is_chargeable && pkg.pricing_mode !== 'QUOTE' ? PACKAGE_ORDER_COPY.order : PACKAGE_ORDER_COPY.requestQuote}
         />
         <button
           type="button"

@@ -128,19 +128,28 @@ function RecommendationCards({
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {isLiveConsultantCta(recommendations.cta) ? (
           <Link
-            to={recommendations.cta.path}
-            onClick={() => onCta(consultantCtaEventName(recommendations.cta.type), recommendations.cta.path)}
-            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+            to={buildPackagePrefillPath(recommendations)}
+            onClick={() =>
+              onCta(consultantCtaEventName(recommendations.cta.type), buildPackagePrefillPath(recommendations))
+            }
+            className="inline-flex items-center justify-center rounded-full bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
           >
-            {recommendations.cta.label}
+            اعتمد التوصية
           </Link>
         ) : null}
+        <Link
+          to={buildPackagePrefillPath(recommendations)}
+          onClick={() => onCta('quote_requested', buildPackagePrefillPath(recommendations))}
+          className="inline-flex items-center justify-center rounded-full border border-brand-border bg-white px-4 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+        >
+          عدّل احتياجي
+        </Link>
         <button
           type="button"
           onClick={onShowLead}
-          className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+          className="inline-flex items-center justify-center rounded-full border border-brand-border bg-white px-4 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
         >
-          تحدث مع مختص
+          أبغى استشارة بشرية
         </button>
       </div>
     </div>
@@ -200,4 +209,16 @@ function PackageMatchCard({
       ) : null}
     </article>
   )
+}
+
+function buildPackagePrefillPath(recommendations: ConsultantRecommendations): string {
+  const slugs = (recommendations.services ?? [])
+    .map((service) => service.slug)
+    .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)
+
+  if (slugs.length === 0) {
+    return '/build-package'
+  }
+
+  return `/build-package?services=${slugs.join(',')}`
 }

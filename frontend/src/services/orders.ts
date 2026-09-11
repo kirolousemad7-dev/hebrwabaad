@@ -16,6 +16,18 @@ export function createCustomerPackageOrder(packageSlug: string, tierSlug?: strin
   })
 }
 
+export function createCustomerCustomPackageOrder(payload: {
+  items: Array<{
+    service_id: number
+    quantity: number
+    addon_slugs?: string[]
+    notes?: string | null
+  }>
+  package_addon_slugs?: string[]
+}) {
+  return apiPost<CustomerOrder & { reused: boolean }>('/api/customer/orders/custom-package', payload)
+}
+
 export function getManagedOrderLookups() {
   return apiGet<OrderLookups>('/api/orders/lookups')
 }

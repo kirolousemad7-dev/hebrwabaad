@@ -1,23 +1,63 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CatalogErrorState, CatalogSkeleton } from '../../components/catalog/CatalogStatus'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { getOwnerPayment, rejectOwnerPayment, verifyOwnerPayment } from '../../services/payments'
+import {
+  getOwnerPayment,
+  getOwnerPaymentRefunds,
+  rejectOwnerPayment,
+  requestOwnerPaymentRefund,
+  verifyOwnerPayment,
+  type PaymentRefundRow,
+} from '../../services/payments'
 import { describeApiError } from '../../utils/errors'
 import { formatDashboardDateTime } from '../../utils/ownerDashboard'
 import { formatPaymentAmount } from '../../utils/payments'
+import { isOwner } from '../../utils/roles'
 
 export function OwnerPaymentDetailPage() {
   const { paymentId } = useParams()
   const numericId = Number(paymentId)
   const toast = useToast()
+  const { user } = useAuth()
   const { state, reload } = useAsyncData(() => getOwnerPayment(numericId))
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [refundOpen, setRefundOpen] = useState(false)
+  const [refundAmount, setRefundAmount] = useState('')
+  const [refundReason, setRefundReason] = useState('')
+  const [refundManual, setRefundManual] = useState(false)
+  const [refunds, setRefunds] = useState<PaymentRefundRow[]>([])
+  const [refundable, setRefundable] = useState<string | null>(null)
+
+  const ownerUser = isOwner(user?.role)
+
+  useEffect(() => {
+    if (state.status !== 'ready' || state.data.status !== 'PAID' || !ownerUser) {
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await getOwnerPaymentRefunds(state.data.id)
+        if (cancelled) return
+        setRefunds(response.data.items ?? [])
+        setRefundable(response.data.refundable_amount ?? null)
+      } catch {
+        // optional
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [state, ownerUser])
 
   if (!Number.isInteger(numericId) || numericId <= 0) {
     return <CatalogErrorState message="تعذر تحميل الدفعة." onRetry={() => undefined} />
@@ -33,6 +73,18 @@ export function OwnerPaymentDetailPage() {
 
   const payment = state.data
   const canVerify = payment.status === 'PENDING_VERIFICATION'
+  const canRefund = Boolean(ownerUser && (payment.can_refund ?? payment.status === 'PAID'))
+
+  async function loadRefunds() {
+    if (!ownerUser) return
+    try {
+      const response = await getOwnerPaymentRefunds(payment.id)
+      setRefunds(response.data.items ?? [])
+      setRefundable(response.data.refundable_amount ?? null)
+    } catch {
+      // ignore
+    }
+  }
 
   async function approve() {
     if (busy) {
@@ -75,6 +127,30 @@ export function OwnerPaymentDetailPage() {
     }
   }
 
+  async function submitRefund(event: FormEvent) {
+    event.preventDefault()
+    if (busy) return
+
+    setBusy(true)
+    setError(null)
+    try {
+      await requestOwnerPaymentRefund(payment.id, {
+        amount: refundAmount.trim(),
+        reason: refundReason.trim() || undefined,
+        manual: refundManual,
+      })
+      toast.success('تم إرسال طلب الاسترداد.')
+      setRefundOpen(false)
+      setRefundReason('')
+      await reload()
+      await loadRefunds()
+    } catch (caught) {
+      setError(describeApiError(caught, 'تعذر تنفيذ الاسترداد.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <section className="space-y-6">
       <header className="space-y-2">
@@ -106,6 +182,18 @@ export function OwnerPaymentDetailPage() {
           <dt className="text-xs text-slate-500">المبلغ</dt>
           <dd className="font-semibold">{formatPaymentAmount(payment.amount, payment.currency)}</dd>
         </div>
+        {payment.net_paid != null ? (
+          <div>
+            <dt className="text-xs text-slate-500">صافي المدفوع</dt>
+            <dd>{formatPaymentAmount(String(payment.net_paid), payment.currency)}</dd>
+          </div>
+        ) : null}
+        {payment.refundable_amount != null ? (
+          <div>
+            <dt className="text-xs text-slate-500">قابل للاسترداد</dt>
+            <dd>{formatPaymentAmount(String(payment.refundable_amount), payment.currency)}</dd>
+          </div>
+        ) : null}
         <div>
           <dt className="text-xs text-slate-500">طريقة الدفع</dt>
           <dd>{payment.payment_method_label}</dd>
@@ -146,6 +234,90 @@ export function OwnerPaymentDetailPage() {
         </div>
       </dl>
 
+      {canRefund ? (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">الاسترداد</h2>
+            <button
+              type="button"
+              className="rounded-xl bg-amber-800 px-4 py-2 text-sm text-white"
+              onClick={() => {
+                setRefundAmount(String(refundable ?? payment.refundable_amount ?? payment.amount))
+                setRefundOpen(true)
+              }}
+            >
+              طلب استرداد
+            </button>
+          </div>
+          {refunds.length === 0 ? (
+            <p className="text-sm text-slate-500">لا طلبات استرداد بعد.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {refunds.map((row) => (
+                <li key={row.id} className="rounded-lg border border-slate-100 px-3 py-2">
+                  #{row.id} · {formatPaymentAmount(String(row.amount), row.currency || payment.currency)} ·{' '}
+                  {row.status}
+                  {row.reason ? <span className="text-xs text-slate-500"> · {row.reason}</span> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
+      {refundOpen ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+          <form
+            onSubmit={(event) => void submitRefund(event)}
+            className="w-full max-w-md space-y-4 rounded-2xl bg-white p-5 shadow-xl"
+          >
+            <h3 className="text-lg font-semibold">تأكيد طلب الاسترداد</h3>
+            <label className="block space-y-1 text-sm">
+              <span>المبلغ</span>
+              <input
+                required
+                value={refundAmount}
+                onChange={(event) => setRefundAmount(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                dir="ltr"
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>السبب</span>
+              <textarea
+                value={refundReason}
+                onChange={(event) => setRefundReason(event.target.value)}
+                className="min-h-20 w-full rounded-xl border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={refundManual}
+                onChange={(event) => setRefundManual(event.target.checked)}
+              />
+              استرداد يدوي (بدون PayTabs)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="submit"
+                disabled={busy || !refundAmount.trim()}
+                className="rounded-xl bg-amber-800 px-4 py-2 text-sm text-white disabled:opacity-50"
+              >
+                تأكيد الاسترداد
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                onClick={() => setRefundOpen(false)}
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
       {canVerify ? (
         <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <h2 className="font-semibold">مراجعة التحويل ({payment.payment_method_label})</h2>
@@ -181,9 +353,14 @@ export function OwnerPaymentDetailPage() {
         </div>
       ) : null}
 
-      <Link to="/owner/payments" className="inline-block text-sm underline">
-        كل المدفوعات
-      </Link>
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Link to="/owner/payments" className="underline">
+          كل المدفوعات
+        </Link>
+        <Link to="/owner/payments/reconciliation" className="underline">
+          المطابقة
+        </Link>
+      </div>
     </section>
   )
 }

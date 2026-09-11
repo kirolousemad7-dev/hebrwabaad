@@ -8,7 +8,7 @@ export function NotFoundPage() {
       <BrandWatermark />
       <section className="relative z-10 mx-auto max-w-md space-y-4 px-6 py-16 text-center">
         <BrandLogo size="mark" to={null} className="justify-center" />
-        <h1 className="text-2xl font-semibold">الصفحة غير موجودة</h1>
+        <h1 className="text-2xl font-semibold">الصفحة التي تبحث عنها غير موجودة</h1>
         <p className="text-sm text-slate-600">قد يكون الرابط غير صحيح أو أن الصفحة نُقلت.</p>
         <PublicCta to="/">العودة للرئيسية</PublicCta>
       </section>

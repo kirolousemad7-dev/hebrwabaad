@@ -1,4 +1,4 @@
-import { apiDownload, apiGet, apiPatch, apiPostForm } from './api'
+import { apiDownload, apiGet, apiPatch, apiPost, apiPostForm } from './api'
 import type { PrintingRequest } from '../types/api'
 
 export type PrintingRequestInput = {
@@ -34,8 +34,10 @@ export function createPrintingRequest(input: PrintingRequestInput) {
   body.append('material', input.material)
   body.append('quantity', input.quantity)
   body.append('printing_method', input.printingMethod)
-  body.append('finishing', JSON.stringify(input.finishing))
-  body.append('file', input.file)
+  input.finishing.forEach((value, index) => {
+    body.append(`finishing[${index}]`, value)
+  })
+  body.append('file', input.file, input.file.name)
   body.append('required_date', input.requiredDate)
 
   if (input.notes.trim() !== '') {
@@ -55,6 +57,10 @@ export function getCustomerPrintingRequest(id: number) {
 
 export function downloadCustomerPrintingRequestFile(id: number, filename: string) {
   return apiDownload(`/api/printing-requests/${id}/file`, filename)
+}
+
+export function reorderCustomerPrintingRequest(id: number, quantity?: number) {
+  return apiPost<PrintingRequest>(`/api/printing-requests/${id}/reorder`, quantity != null ? { quantity } : {})
 }
 
 function adminQuery(filters: AdminPrintingRequestFilters = {}): string {

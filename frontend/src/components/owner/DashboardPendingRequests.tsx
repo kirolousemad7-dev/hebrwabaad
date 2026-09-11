@@ -45,7 +45,7 @@ export function DashboardPendingRequests({ items }: DashboardPendingRequestsProp
             </div>
             <Link
               to={item.href}
-              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-ink-900 px-4 py-2 text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
             >
               مراجعة
             </Link>

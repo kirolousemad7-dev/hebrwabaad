@@ -16,19 +16,19 @@ export function BuilderProgress({ current }: BuilderProgressProps) {
             <span
               aria-current={isCurrent ? 'step' : undefined}
               className={[
-                'inline-flex min-h-11 items-center gap-2 rounded-full px-3 py-1.5',
+                'inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-1.5',
                 isCurrent
-                  ? 'bg-slate-900 font-semibold text-white shadow-sm'
+                  ? 'bg-brand-cobalt-500 font-semibold text-white shadow-sm'
                   : isDone
-                    ? 'bg-amber-100 font-medium text-amber-900'
-                    : 'bg-slate-100 text-slate-500',
+                    ? 'bg-brand-cobalt-100 font-medium text-brand-cobalt-700'
+                    : 'bg-brand-ink-100 text-brand-ink-500',
               ].join(' ')}
             >
               <span
                 aria-hidden="true"
                 className={[
-                  'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs',
-                  isCurrent ? 'bg-amber-400 text-slate-900' : 'bg-white/80 text-slate-700',
+                  'inline-flex h-6 w-6 items-center justify-center rounded-lg text-xs font-latin',
+                  isCurrent ? 'bg-white text-brand-cobalt-500' : 'bg-white/90 text-brand-ink-700',
                 ].join(' ')}
               >
                 {step.id}
