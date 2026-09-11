@@ -111,7 +111,11 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->index(['recommendation_goal_id', 'item_type']);
+            // Explicit short name: auto name is exactly 64 chars (MariaDB limit).
+            $table->index(
+                ['recommendation_goal_id', 'item_type'],
+                'rec_goal_items_goal_type_idx',
+            );
             $table->index(['item_type', 'item_slug']);
         });
 

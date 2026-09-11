@@ -51,7 +51,11 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->unique(['source_type', 'source_id', 'rule_key']);
+            // Explicit short name: MariaDB identifier limit is 64 chars.
+            $table->unique(
+                ['source_type', 'source_id', 'rule_key'],
+                'ops_escalation_source_rule_uq',
+            );
             $table->index(['next_eligible_at', 'level']);
         });
 

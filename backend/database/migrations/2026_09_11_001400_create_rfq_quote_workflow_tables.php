@@ -108,7 +108,11 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->index(['commercial_quotation_id', 'sort_order']);
+            // Explicit short name: auto name exceeds MariaDB's 64-char limit.
+            $table->index(
+                ['commercial_quotation_id', 'sort_order'],
+                'cq_items_quotation_sort_idx',
+            );
         });
 
         Schema::create('commercial_quotation_events', function (Blueprint $table) {

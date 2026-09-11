@@ -55,7 +55,11 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->index(['printing_quotation_id', 'created_at']);
+            // Explicit short name: auto name is exactly 64 chars (MariaDB limit).
+            $table->index(
+                ['printing_quotation_id', 'created_at'],
+                'pq_events_quotation_created_idx',
+            );
         });
 
         Schema::table('payments', function (Blueprint $table): void {
