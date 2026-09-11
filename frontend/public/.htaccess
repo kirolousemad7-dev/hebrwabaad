@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Do not rewrite the SPA entry document itself.
+  RewriteRule ^index\.html$ - [L]
+
+  # Serve real files and directories as-is (assets, favicon, images, robots, etc.).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+
+  # History API fallback: hand all other paths to React Router.
+  RewriteRule . /index.html [L]
+</IfModule>
