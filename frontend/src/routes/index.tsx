@@ -19,6 +19,9 @@ import { CustomerProfilePage } from '../pages/customer/CustomerProfilePage'
 import { CustomerProjectDetailPage } from '../pages/customer/CustomerProjectDetailPage'
 import { CustomerProjectsPage } from '../pages/customer/CustomerProjectsPage'
 import { ConsultantPage } from '../pages/ConsultantPage'
+import { PortfolioPage } from '../pages/PortfolioPage'
+import { PortfolioDetailPage } from '../pages/PortfolioDetailPage'
+import { OwnerMarketingPage } from '../pages/owner/OwnerMarketingPage'
 import { HomePage } from '../pages/HomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
@@ -70,7 +73,9 @@ export function AppRoutes() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/consultant" element={<ConsultantPage />} />
+        <Route path="/consultant" element={<ConsultantPage />
+        <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route path="/portfolio/:slug" element={<PortfolioDetailPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/packages" element={<PackagesPage />} />
         <Route path="/marketing-packages" element={<MarketingPackagesPage />} />
@@ -168,7 +173,8 @@ export function AppRoutes() {
 
       <Route element={<RoleProtectedRoute roles={CATALOG_MANAGER_ROLES} />}>
         <Route element={<OwnerLayout />}>
-          <Route path="/owner/services" element={<OwnerServicesPage />} />
+          <Route path="/owner/services" element={<OwnerServicesPage />
+          <Route path="/owner/marketing" element={<OwnerMarketingPage />} />
           <Route path="/owner/packages" element={<OwnerPackagesPage />} />
         </Route>
       </Route>

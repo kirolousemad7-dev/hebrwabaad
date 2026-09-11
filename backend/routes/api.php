@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Catalog\PackageController;
 use App\Http\Controllers\Api\Catalog\ServiceController;
+use App\Http\Controllers\Api\Catalog\PublicPortfolioController;
+use App\Http\Controllers\Api\Admin\PortfolioItemController as AdminPortfolioItemController;
 use App\Http\Controllers\Api\Catalog\SupplierController;
 use App\Http\Controllers\Api\Consultant\ConsultationController;
 use App\Http\Controllers\Api\Customer\CustomerConversationController;
@@ -57,6 +59,8 @@ Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{service}', [ServiceController::class, 'show']);
 Route::get('/packages', [PackageController::class, 'index']);
 Route::get('/packages/{package}', [PackageController::class, 'show']);
+Route::get('/portfolio', [PublicPortfolioController::class, 'index']);
+Route::get('/portfolio/{slug}', [PublicPortfolioController::class, 'show']);
 Route::get('/suppliers', [SupplierController::class, 'index']);
 Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
 
@@ -185,6 +189,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
 
     Route::middleware('role:OWNER,ADMIN_MANAGER')->group(function (): void {
         Route::apiResource('services', AdminServiceController::class);
+        Route::get('/portfolio', [AdminPortfolioItemController::class, 'index']);
+        Route::post('/portfolio', [AdminPortfolioItemController::class, 'store']);
+        Route::put('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'update']);
+        Route::delete('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'destroy']);
         Route::apiResource('packages', AdminPackageController::class);
     });
 
