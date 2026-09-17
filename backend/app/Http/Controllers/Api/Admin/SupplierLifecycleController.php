@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Enums\SupplierVerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Content\TransitionSupplierStatusRequest;
+use App\Http\Requests\Content\UpdateSupplierLockedFieldsRequest;
 use App\Http\Resources\AdminSupplierResource;
 use App\Models\Supplier;
 use App\Services\SupplierManagementService;
@@ -45,6 +46,45 @@ class SupplierLifecycleController extends Controller
             $request->user(),
             $supplier,
             $request->validated('notes'),
+        );
+
+        return ApiResponse::success(AdminSupplierResource::make($supplier)->resolve($request));
+    }
+
+    public function requestChanges(TransitionSupplierStatusRequest $request, Supplier $supplier): JsonResponse
+    {
+        $this->authorize('approve', $supplier);
+        $notes = $request->validated('notes');
+        if (! is_string($notes) || trim($notes) === '') {
+            return ApiResponse::error('notes is required.', 422);
+        }
+
+        $supplier = $this->management->requestChanges($request->user(), $supplier, $notes);
+
+        return ApiResponse::success(AdminSupplierResource::make($supplier)->resolve($request));
+    }
+
+    public function block(TransitionSupplierStatusRequest $request, Supplier $supplier): JsonResponse
+    {
+        $this->authorize('suspend', $supplier);
+
+        $supplier = $this->management->block(
+            $request->user(),
+            $supplier,
+            $request->validated('notes'),
+        );
+
+        return ApiResponse::success(AdminSupplierResource::make($supplier)->resolve($request));
+    }
+
+    public function lockFields(UpdateSupplierLockedFieldsRequest $request, Supplier $supplier): JsonResponse
+    {
+        $this->authorize('update', $supplier);
+
+        $supplier = $this->management->lockFields(
+            $request->user(),
+            $supplier,
+            $request->validated('locked_fields'),
         );
 
         return ApiResponse::success(AdminSupplierResource::make($supplier)->resolve($request));

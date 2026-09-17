@@ -61,6 +61,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'review_notes',
     'notes',
     'internal_notes',
+    'locked_fields',
+    'contact_person',
+    'owner_change_request',
     'reviewed_by',
     'reviewed_at',
     'published_at',
@@ -114,6 +117,7 @@ class Supplier extends Model
             'status' => SupplierStatus::class,
             'verification_status' => SupplierVerificationStatus::class,
             'onboarding_status' => SupplierOnboardingStatus::class,
+            'locked_fields' => 'array',
             'reviewed_at' => 'datetime',
             'published_at' => 'datetime',
         ];

@@ -116,6 +116,9 @@ use App\Http\Controllers\Api\Quotes\CommercialQuotationController;
 use App\Http\Controllers\Api\Quotes\CustomerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\OwnerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\PublicCommercialQuotationController;
+use App\Http\Controllers\Api\Supplier\SupplierAuthController;
+use App\Http\Controllers\Api\Supplier\SupplierPortalController;
+use App\Http\Controllers\Api\Supplier\SupplierRegistrationController;
 use App\Http\Controllers\Api\Supplier\SupplierWorkspaceController;
 use App\Http\Controllers\Api\SupportConversationController;
 use App\Http\Controllers\Api\Webhooks\InboundWebhookController;
@@ -146,6 +149,13 @@ Route::prefix('auth')->group(function (): void {
             Route::get('/me', [AuthController::class, 'me']);
         });
     });
+});
+
+Route::prefix('supplier')->group(function (): void {
+    Route::post('/register', [SupplierRegistrationController::class, 'store'])->middleware('throttle:hebr-register');
+    Route::post('/login', [SupplierAuthController::class, 'login'])->middleware('throttle:hebr-login');
+    Route::post('/otp/request', [SupplierAuthController::class, 'requestOtp'])->middleware('throttle:hebr-supplier-otp');
+    Route::post('/otp/verify', [SupplierAuthController::class, 'verifyOtp'])->middleware('throttle:hebr-login');
 });
 
 Route::get('/services', [ServiceController::class, 'index']);
@@ -606,6 +616,24 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:SUPPLIER'])->group(function (): void {
+    Route::get('/supplier/dashboard', [SupplierPortalController::class, 'dashboard']);
+    Route::get('/supplier/completion', [SupplierPortalController::class, 'completion']);
+    Route::get('/supplier/settings', [SupplierPortalController::class, 'settings']);
+
+    Route::get('/supplier/contacts', [SupplierPortalController::class, 'contacts']);
+    Route::post('/supplier/contacts', [SupplierPortalController::class, 'storeContact']);
+    Route::put('/supplier/contacts/{contact}', [SupplierPortalController::class, 'updateContact']);
+    Route::delete('/supplier/contacts/{contact}', [SupplierPortalController::class, 'destroyContact']);
+
+    Route::get('/supplier/services', [SupplierPortalController::class, 'services']);
+    Route::post('/supplier/services', [SupplierPortalController::class, 'storeService']);
+    Route::put('/supplier/services/{service}', [SupplierPortalController::class, 'updateService']);
+    Route::delete('/supplier/services/{service}', [SupplierPortalController::class, 'destroyService']);
+
+    Route::get('/supplier/documents', [SupplierPortalController::class, 'documents']);
+    Route::post('/supplier/documents', [SupplierPortalController::class, 'storeDocument']);
+    Route::delete('/supplier/documents/{document}', [SupplierPortalController::class, 'destroyDocument']);
+
     Route::get('/supplier/profile', [SupplierWorkspaceController::class, 'profile']);
     Route::put('/supplier/profile', [SupplierWorkspaceController::class, 'updateProfile']);
     Route::post('/supplier/profile/submit', [SupplierWorkspaceController::class, 'submitProfile']);
@@ -747,7 +775,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
         Route::post('/suppliers/{supplier}/approve', [SupplierLifecycleController::class, 'approve']);
         Route::post('/suppliers/{supplier}/reject', [SupplierLifecycleController::class, 'reject']);
         Route::post('/suppliers/{supplier}/suspend', [SupplierLifecycleController::class, 'suspend']);
+        Route::post('/suppliers/{supplier}/block', [SupplierLifecycleController::class, 'block']);
+        Route::post('/suppliers/{supplier}/request-changes', [SupplierLifecycleController::class, 'requestChanges']);
         Route::post('/suppliers/{supplier}/verify', [SupplierLifecycleController::class, 'verify']);
+        Route::put('/suppliers/{supplier}/locked-fields', [SupplierLifecycleController::class, 'lockFields']);
 
         Route::get('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'index']);
         Route::post('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'store']);

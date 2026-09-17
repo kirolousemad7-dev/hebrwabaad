@@ -72,7 +72,7 @@ Customers and public catalog consumers see only **published** supplier marketing
 
 ## Remaining after Phase 1 foundation
 
-- Supplier self-registration + application queue (beyond owner-provisioned accounts).
-- Deep links: quotations / projects / tasks / execution assignment pivots.
-- Bulk actions and full activity timeline UI.
-- Formal invite emails and KYC document verification workflows.
+- ~~Supplier self-registration + application queue~~ → **Phase 2 done** (`/supplier/register`, OTP login, owner approve/reject/request-changes/block)
+- Deep links: quotations / projects / tasks / execution assignment pivots (portal placeholders ready)
+- Bulk actions and full activity timeline UI
+- Formal invite emails and KYC document verification workflows

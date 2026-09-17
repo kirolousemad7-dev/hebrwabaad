@@ -10,7 +10,9 @@ class StoreSupplierDocumentRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->canReviewContent() ?? false;
+        $user = $this->user();
+
+        return $user !== null && ($user->canReviewContent() || $user->role?->value === 'SUPPLIER');
     }
 
     /**

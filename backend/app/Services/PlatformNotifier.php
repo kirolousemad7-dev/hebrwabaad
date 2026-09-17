@@ -349,6 +349,62 @@ class PlatformNotifier
     /**
      * @return Collection<int, User>
      */
+    public function supplierRegistrationReviewers(): Collection
+    {
+        return $this->contentReviewers();
+    }
+
+    public function supplierRegistrationApproved(Supplier $supplier): void
+    {
+        $user = $supplier->user;
+        if (! $this->canReceive($user)) {
+            return;
+        }
+
+        $user->notify(new ContentWorkflowNotification([
+            'type' => 'supplier_registration_approved',
+            'title' => 'تمت الموافقة على حساب المورد',
+            'body' => 'يمكنك الآن استخدام بوابة الموردين.',
+            'href' => '/supplier',
+            'supplier_id' => $supplier->id,
+        ]));
+    }
+
+    public function supplierRegistrationRejected(Supplier $supplier, ?string $notes = null): void
+    {
+        $user = $supplier->user;
+        if (! $this->canReceive($user)) {
+            return;
+        }
+
+        $user->notify(new ContentWorkflowNotification([
+            'type' => 'supplier_registration_rejected',
+            'title' => 'تم رفض طلب تسجيل المورد',
+            'body' => $notes ?: 'راجع ملاحظات الإدارة.',
+            'href' => '/supplier',
+            'supplier_id' => $supplier->id,
+        ]));
+    }
+
+    public function supplierChangesRequested(Supplier $supplier, string $notes): void
+    {
+        $user = $supplier->user;
+        if (! $this->canReceive($user)) {
+            return;
+        }
+
+        $user->notify(new ContentWorkflowNotification([
+            'type' => 'supplier_changes_requested',
+            'title' => 'مطلوب تعديل بيانات المورد',
+            'body' => $notes,
+            'href' => '/supplier/profile',
+            'supplier_id' => $supplier->id,
+        ]));
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
     private function contentReviewers(): Collection
     {
         return User::query()

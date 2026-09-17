@@ -11,6 +11,7 @@ import {
   createAdminSupplierService,
   getAdminSupplier,
   publishAdminSupplier,
+  rejectAdminSupplier,
   suspendAdminSupplier,
   updateAdminSupplier,
   verifyAdminSupplier,
@@ -140,6 +141,7 @@ export function OwnerSupplierDetailPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="rounded-lg border px-3 py-2 text-sm" onClick={() => void approveAdminSupplier(supplierId).then(() => { toast.success('تمت الموافقة.'); return reload() })}>موافقة</button>
+          <button type="button" className="rounded-lg border px-3 py-2 text-sm" onClick={() => void rejectAdminSupplier(supplierId, 'مرفوض من لوحة المالك').then(() => { toast.success('تم الرفض.'); return reload() })}>رفض</button>
           <button type="button" className="rounded-lg border px-3 py-2 text-sm" onClick={() => void verifyAdminSupplier(supplierId, 'FULLY_VERIFIED').then(() => { toast.success('تم التحقق.'); return reload() })}>تحقق كامل</button>
           <button type="button" className="rounded-lg border px-3 py-2 text-sm" onClick={() => void suspendAdminSupplier(supplierId, 'إيقاف من لوحة المالك').then(() => { toast.success('تم الإيقاف.'); return reload() })}>إيقاف</button>
           <button type="button" className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white" onClick={() => void publishAdminSupplier(supplierId).then(() => { toast.success('تم النشر.'); return reload() })}>نشر الملف</button>

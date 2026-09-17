@@ -112,6 +112,13 @@ class AppServiceProvider extends ServiceProvider
             return $this->perMinute(5, (string) $request->ip());
         });
 
+        RateLimiter::for('hebr-supplier-otp', function (Request $request) {
+            return $this->perMinute(
+                5,
+                Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip()),
+            );
+        });
+
         RateLimiter::for('hebr-consultations', function (Request $request) {
             return $this->perMinute(20, (string) $request->ip());
         });

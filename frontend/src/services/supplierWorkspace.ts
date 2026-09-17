@@ -183,6 +183,18 @@ export function suspendAdminSupplier(id: number, notes?: string) {
   return apiPost<AdminSupplier>(`/api/admin/suppliers/${id}/suspend`, { notes })
 }
 
+export function blockAdminSupplier(id: number, notes?: string) {
+  return apiPost<AdminSupplier>(`/api/admin/suppliers/${id}/block`, { notes })
+}
+
+export function requestAdminSupplierChanges(id: number, notes: string) {
+  return apiPost<AdminSupplier>(`/api/admin/suppliers/${id}/request-changes`, { notes })
+}
+
+export function lockAdminSupplierFields(id: number, locked_fields: string[]) {
+  return apiPut<AdminSupplier>(`/api/admin/suppliers/${id}/locked-fields`, { locked_fields })
+}
+
 export function verifyAdminSupplier(id: number, verification_status: string) {
   return apiPost<AdminSupplier>(`/api/admin/suppliers/${id}/verify`, { verification_status })
 }

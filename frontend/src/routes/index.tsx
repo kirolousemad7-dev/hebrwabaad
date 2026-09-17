@@ -108,8 +108,18 @@ import { SuppliersPage } from '../pages/SuppliersPage'
 import { SupplierDetailPage } from '../pages/SupplierDetailPage'
 import { SupplierProductPage } from '../pages/SupplierProductPage'
 import { SupplierHomePage } from '../pages/supplier/SupplierHomePage'
+import { SupplierLoginPage } from '../pages/supplier/SupplierLoginPage'
 import { SupplierNotificationsPage } from '../pages/supplier/SupplierNotificationsPage'
+import {
+  SupplierContactsPage,
+  SupplierDashboardPage,
+  SupplierDocumentsPage,
+  SupplierModulePlaceholderPage,
+  SupplierServicesPage,
+} from '../pages/supplier/SupplierPortalPages'
 import { SupplierProfilePage } from '../pages/supplier/SupplierProfilePage'
+import { SupplierRegisterPage } from '../pages/supplier/SupplierRegisterPage'
+import { SupplierSettingsPage } from '../pages/supplier/SupplierSettingsPage'
 import { CrmDashboardPage } from '../pages/crm/CrmDashboardPage'
 import { CrmLeadsPage } from '../pages/crm/CrmLeadsPage'
 import { CrmLeadDetailPage } from '../pages/crm/CrmLeadDetailPage'
@@ -169,6 +179,8 @@ export function AppRoutes() {
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/supplier/login" element={<SupplierLoginPage />} />
+          <Route path="/supplier/register" element={<SupplierRegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
@@ -305,9 +317,21 @@ export function AppRoutes() {
 
       <Route element={<RoleProtectedRoute roles={['SUPPLIER']} />}>
         <Route element={<SupplierLayout />}>
-          <Route path="/supplier" element={<SupplierHomePage />} />
+          <Route path="/supplier" element={<SupplierDashboardPage />} />
+          <Route path="/supplier/content" element={<SupplierHomePage />} />
           <Route path="/supplier/profile" element={<SupplierProfilePage />} />
+          <Route path="/supplier/services" element={<SupplierServicesPage />} />
+          <Route path="/supplier/products" element={<SupplierHomePage />} />
+          <Route path="/supplier/portfolio" element={<SupplierHomePage />} />
+          <Route path="/supplier/documents" element={<SupplierDocumentsPage />} />
+          <Route path="/supplier/contacts" element={<SupplierContactsPage />} />
+          <Route path="/supplier/quotations" element={<SupplierModulePlaceholderPage title="عروض الأسعار" description="عروض مرتبطة بالمورد فقط عند الربط التشغيلي." />} />
+          <Route path="/supplier/projects" element={<SupplierModulePlaceholderPage title="المشاريع" description="مشاريع التنفيذ المرتبطة بالمورد." />} />
+          <Route path="/supplier/tasks" element={<SupplierModulePlaceholderPage title="المهام" description="مهام التنفيذ المرتبطة بالمورد." />} />
+          <Route path="/supplier/calendar" element={<SupplierModulePlaceholderPage title="التقويم" description="مواعيد المورد التشغيلية." />} />
+          <Route path="/supplier/messages" element={<SupplierModulePlaceholderPage title="الرسائل" description="مراسلات المورد مع المنصة." />} />
           <Route path="/supplier/notifications" element={<SupplierNotificationsPage />} />
+          <Route path="/supplier/settings" element={<SupplierSettingsPage />} />
         </Route>
       </Route>
 

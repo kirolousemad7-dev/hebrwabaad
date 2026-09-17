@@ -31,10 +31,14 @@ class SupplierContentService
         'description',
         'phone',
         'email',
+        'whatsapp',
         'website',
         'location',
+        'country',
+        'city',
         'address',
         'category',
+        'contact_person',
         'services',
         'specialties',
         'years_experience',
@@ -72,7 +76,9 @@ class SupplierContentService
     public function updateProfile(User $user, array $payload): Supplier
     {
         $supplier = $this->supplierFor($user);
+        $this->assertNotBlocked($supplier);
         $safe = $this->onlyProfile($payload);
+        $safe = $this->withoutLockedFields($supplier, $safe);
 
         if ($supplier->isPubliclyVisible()) {
             $version = $supplier->pendingProfileVersion ?? new SupplierProfileVersion([
@@ -732,6 +738,31 @@ class SupplierContentService
         if ($user->role !== UserRole::Supplier || (int) $this->supplierFor($user)->id !== $supplierId) {
             throw new ContentWorkflowException('Forbidden.', 403);
         }
+    }
+
+    private function assertNotBlocked(Supplier $supplier): void
+    {
+        if ($supplier->status === SupplierStatus::Blocked) {
+            throw new ContentWorkflowException('تم حظر حساب المورد.', 403);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function withoutLockedFields(Supplier $supplier, array $payload): array
+    {
+        $locked = array_map('strval', $supplier->locked_fields ?? []);
+        if ($locked === []) {
+            return $payload;
+        }
+
+        foreach ($locked as $field) {
+            unset($payload[$field]);
+        }
+
+        return $payload;
     }
 
     private function assertReviewable(ContentStatus $status): void

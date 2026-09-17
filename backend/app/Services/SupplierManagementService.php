@@ -25,6 +25,7 @@ class SupplierManagementService
     public function __construct(
         private readonly ContentReviewLogger $logger,
         private readonly SupplierAdminService $admin,
+        private readonly PlatformNotifier $notifier,
     ) {}
 
     /**
@@ -166,10 +167,16 @@ class SupplierManagementService
             'status' => SupplierStatus::Active,
             'is_active' => true,
             'onboarding_status' => SupplierOnboardingStatus::Completed,
+            'owner_change_request' => null,
             'updated_by' => $actor->id,
         ])->save();
 
+        if ($supplier->user) {
+            $supplier->user->forceFill(['is_active' => true])->save();
+        }
+
         $this->logger->record($supplier, $actor, ContentReviewAction::Approved, $supplier->profile_status, $supplier->profile_status);
+        $this->notifier->supplierRegistrationApproved($supplier);
 
         return $supplier->refresh();
     }
@@ -186,6 +193,7 @@ class SupplierManagementService
         ])->save();
 
         $this->logger->record($supplier, $actor, ContentReviewAction::Rejected, $supplier->profile_status, $supplier->profile_status);
+        $this->notifier->supplierRegistrationRejected($supplier, $notes);
 
         return $supplier->refresh();
     }
@@ -196,6 +204,52 @@ class SupplierManagementService
             'status' => SupplierStatus::Suspended,
             'is_active' => false,
             'notes' => $notes ?? $supplier->notes,
+            'updated_by' => $actor->id,
+        ])->save();
+
+        return $supplier->refresh();
+    }
+
+    public function block(User $actor, Supplier $supplier, ?string $notes = null): Supplier
+    {
+        $supplier->forceFill([
+            'status' => SupplierStatus::Blocked,
+            'is_active' => false,
+            'is_published' => false,
+            'review_notes' => $notes ?? $supplier->review_notes,
+            'updated_by' => $actor->id,
+        ])->save();
+
+        if ($supplier->user) {
+            $supplier->user->forceFill(['is_active' => false])->save();
+            $supplier->user->tokens()->delete();
+        }
+
+        return $supplier->refresh();
+    }
+
+    public function requestChanges(User $actor, Supplier $supplier, string $notes): Supplier
+    {
+        $supplier->forceFill([
+            'onboarding_status' => SupplierOnboardingStatus::InReview,
+            'owner_change_request' => $notes,
+            'review_notes' => $notes,
+            'updated_by' => $actor->id,
+        ])->save();
+
+        $this->notifier->supplierChangesRequested($supplier, $notes);
+
+        return $supplier->refresh();
+    }
+
+    /**
+     * @param  list<string>  $fields
+     */
+    public function lockFields(User $actor, Supplier $supplier, array $fields): Supplier
+    {
+        $allowed = array_values(array_intersect($fields, SupplierContentService::PROFILE_FIELDS));
+        $supplier->forceFill([
+            'locked_fields' => $allowed,
             'updated_by' => $actor->id,
         ])->save();
 
