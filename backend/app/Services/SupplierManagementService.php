@@ -71,6 +71,27 @@ class SupplierManagementService
                         ->orWhereHas('offeredServices', fn ($s) => $s->where('name', 'like', $term));
                 });
             })
+            ->when(is_string($filters['country'] ?? null), fn ($q) => $q->where('country', $filters['country']))
+            ->when(is_string($filters['availability'] ?? null), fn ($q) => $q->where('availability', $filters['availability']))
+            ->when(is_string($filters['visibility'] ?? null), fn ($q) => $q->where('visibility', $filters['visibility']))
+            ->when(is_string($filters['product'] ?? null), function ($q) use ($filters): void {
+                $term = '%'.$filters['product'].'%';
+                $q->whereHas('products', fn ($p) => $p->where('name', 'like', $term)->orWhere('sku', 'like', $term));
+            })
+            ->when(is_string($filters['tag'] ?? null), function ($q) use ($filters): void {
+                $term = $filters['tag'];
+                $q->whereHas('tags', fn ($t) => $t->where('slug', $term)->orWhere('name', $term));
+            })
+            ->when(isset($filters['price_min']) || isset($filters['price_max']), function ($q) use ($filters): void {
+                $q->whereHas('products', function ($p) use ($filters): void {
+                    if (isset($filters['price_min'])) {
+                        $p->where('price', '>=', (float) $filters['price_min']);
+                    }
+                    if (isset($filters['price_max'])) {
+                        $p->where('price', '<=', (float) $filters['price_max']);
+                    }
+                });
+            })
             ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN)))
             ->when(isset($filters['is_published']), fn ($q) => $q->where('is_published', filter_var($filters['is_published'], FILTER_VALIDATE_BOOLEAN)))
             ->orderByDesc('is_featured')
@@ -101,6 +122,7 @@ class SupplierManagementService
             $payload['status'] = $payload['status'] ?? SupplierStatus::Pending->value;
             $payload['verification_status'] = $payload['verification_status'] ?? SupplierVerificationStatus::Unverified->value;
             $payload['is_published'] = false;
+            $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Private->value;
             $payload['profile_status'] = ContentStatus::Draft->value;
 
             $supplier = $this->admin->create($actor, $payload);
@@ -289,34 +311,52 @@ class SupplierManagementService
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function upsertService(Supplier $supplier, array $payload, ?SupplierService $service = null): SupplierService
-    {
-        if ($service === null) {
-            return $supplier->offeredServices()->create($payload);
-        }
-
-        $service->fill($payload)->save();
-
-        return $service->refresh();
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
     public function upsertAdminProduct(Supplier $supplier, array $payload, ?SupplierProduct $product = null): SupplierProduct
     {
+        $tagIds = $payload['tag_ids'] ?? null;
+        unset($payload['tag_ids']);
+
         $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Internal->value;
         if ($product === null) {
             $name = (string) $payload['name'];
             $payload['slug'] = $payload['slug'] ?? SupplierProduct::uniqueSlug($name);
             $payload['status'] = $payload['status'] ?? ContentStatus::Draft->value;
 
-            return $supplier->products()->create($payload);
+            $product = $supplier->products()->create($payload);
+        } else {
+            $product->fill($payload)->save();
+            $product = $product->refresh();
         }
 
-        $product->fill($payload)->save();
+        if (is_array($tagIds)) {
+            $product->tags()->sync($tagIds);
+        }
 
-        return $product->refresh();
+        return $product->load('tags');
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function upsertService(Supplier $supplier, array $payload, ?SupplierService $service = null): SupplierService
+    {
+        $tagIds = $payload['tag_ids'] ?? null;
+        unset($payload['tag_ids']);
+
+        $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Internal->value;
+
+        if ($service === null) {
+            $service = $supplier->offeredServices()->create($payload);
+        } else {
+            $service->fill($payload)->save();
+            $service = $service->refresh();
+        }
+
+        if (is_array($tagIds)) {
+            $service->tags()->sync($tagIds);
+        }
+
+        return $service->load('tags');
     }
 
     /**
@@ -324,16 +364,24 @@ class SupplierManagementService
      */
     public function upsertAdminPortfolio(Supplier $supplier, array $payload, ?SupplierPortfolioItem $item = null): SupplierPortfolioItem
     {
+        $tagIds = $payload['tag_ids'] ?? null;
+        unset($payload['tag_ids']);
+
         $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Internal->value;
         if ($item === null) {
             $payload['status'] = $payload['status'] ?? ContentStatus::Draft->value;
 
-            return $supplier->portfolioItems()->create($payload);
+            $item = $supplier->portfolioItems()->create($payload);
+        } else {
+            $item->fill($payload)->save();
+            $item = $item->refresh();
         }
 
-        $item->fill($payload)->save();
+        if (is_array($tagIds)) {
+            $item->catalogTags()->sync($tagIds);
+        }
 
-        return $item->refresh();
+        return $item->load('catalogTags');
     }
 
     /**

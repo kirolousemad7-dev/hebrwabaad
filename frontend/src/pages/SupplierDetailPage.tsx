@@ -1,12 +1,14 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
+import { ProfileChip, SupplierProfileView } from '../components/suppliers/SupplierProfileView'
 import { SupplierPortfolioGrid } from '../components/suppliers/SupplierPortfolioGrid'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicSupplier } from '../services/suppliers'
 import type { Supplier } from '../types/api'
 import { APP_NAME } from '../utils/constants'
 import { absoluteAssetUrl, siteOrigin } from '../utils/seo'
+import { supplierPublicSections } from '../utils/suppliersProfile'
 
 function SupplierPublicSeo({ supplier }: { supplier: Supplier }) {
   useEffect(() => {
@@ -72,105 +74,109 @@ function SupplierDetailBody({ slug }: SupplierDetailBodyProps) {
   const supplier = state.data
   const portfolio = supplier.portfolio ?? supplier.portfolio_preview ?? []
   const products = supplier.products ?? []
-  const whyPoints = [
-    supplier.years_experience ? `${supplier.years_experience} سنة خبرة` : null,
-    supplier.min_order_info,
-    supplier.brand_description,
-    ...supplier.specialties.slice(0, 3),
-  ].filter((value): value is string => Boolean(value && value.trim()))
+  const sectionsMeta = supplierPublicSections(supplier)
 
   return (
     <article className="space-y-8">
       <SupplierPublicSeo supplier={supplier} />
-      <header
-        className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 text-white"
-        style={supplier.cover_image ? { backgroundImage: `url(${supplier.cover_image})`, backgroundSize: 'cover' } : undefined}
-      >
-        <div className="flex min-w-0 flex-col gap-4 bg-slate-950/70 p-6 sm:flex-row sm:items-start">
-          <img src={supplier.logo} alt={`شعار ${supplier.name}`} width={80} height={80} className="h-20 w-20 shrink-0 rounded-2xl object-cover" />
-          <div className="min-w-0 space-y-2">
-            <p className="text-sm text-brand-primary">المورد</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold">{supplier.name}</h1>
-              {supplier.featured ? <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّز</span> : null}
-            </div>
-            <p className="text-sm text-white/70">{supplier.location}{supplier.category ? ` · ${supplier.category}` : ''}</p>
-            <p className="max-w-2xl text-sm leading-7 text-white/80">{supplier.short_description}</p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              {supplier.phone ? <a className="rounded-full bg-brand-primary px-4 py-2 text-sm text-white" href={`tel:${supplier.phone}`}>تواصل</a> : null}
-              <Link to="/contact" className="rounded-full border border-white/30 px-4 py-2 text-sm">طلب عبر حبر وأبعاد</Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">عن المورد</h2>
-        <p className="max-w-3xl leading-8 text-slate-600">{supplier.description ?? supplier.short_description}</p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">التخصصات</h2>
-        <ul className="flex flex-wrap gap-2">
-          {supplier.specialties.map((specialty) => (
-            <li key={specialty} className="rounded-full bg-slate-100 px-3 py-1.5 text-sm text-slate-800">
-              {specialty}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">الخدمات</h2>
-        <ul className="flex flex-wrap gap-2">
-          {supplier.services.map((service) => (
-            <li key={service} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">
-              {service}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <SupplierPortfolioGrid items={portfolio} />
-
-      {whyPoints.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">لماذا تختارنا</h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {whyPoints.map((point) => (
-              <li key={point} className="rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700">
-                {point}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {products.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">المنتجات</h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {products.map((product) => (
-              <li key={product.slug} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="font-medium">{product.name}</p>
-                <p className="text-sm text-slate-600">{product.short_description}</p>
-                <Link className="mt-2 inline-block text-sm underline" to={`/suppliers/${encodeURIComponent(slug)}/products/${encodeURIComponent(product.slug)}`}>
-                  عرض المنتج
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {(supplier.phone || supplier.email || supplier.website) ? (
-        <section className="space-y-2 rounded-2xl border bg-white p-5">
-          <h2 className="text-xl font-semibold">تواصل</h2>
-          {supplier.phone ? <p>هاتف: {supplier.phone}</p> : null}
-          {supplier.email ? <p>بريد: {supplier.email}</p> : null}
-          {supplier.website ? <p>موقع: {supplier.website}</p> : null}
-        </section>
-      ) : null}
+      <SupplierProfileView
+        name={supplier.name}
+        logo={supplier.logo}
+        coverImage={supplier.cover_image}
+        shortDescription={supplier.short_description}
+        statusBadges={
+          <>
+            {supplier.featured ? <ProfileChip>مميّز</ProfileChip> : null}
+            {supplier.category ? <ProfileChip>{supplier.category}</ProfileChip> : null}
+            {supplier.city || supplier.location ? <ProfileChip>{supplier.city || supplier.location}</ProfileChip> : null}
+          </>
+        }
+        actions={
+          <>
+            {supplier.phone ? <a className="rounded-full bg-slate-900 px-4 py-2 text-sm text-white" href={`tel:${supplier.phone}`}>تواصل</a> : null}
+            <Link to="/contact" className="rounded-full border px-4 py-2 text-sm">طلب عبر حبر وأبعاد</Link>
+          </>
+        }
+        sections={[
+          {
+            id: 'about',
+            title: 'عن المورد',
+            body: <p className="leading-8">{sectionsMeta.find((s) => s.id === 'about')?.content}</p>,
+          },
+          {
+            id: 'services',
+            title: 'الخدمات',
+            body: (
+              <ul className="flex flex-wrap gap-2">
+                {(supplier.services ?? []).map((service) => (
+                  <li key={service}><ProfileChip>{service}</ProfileChip></li>
+                ))}
+              </ul>
+            ),
+          },
+          {
+            id: 'specialties',
+            title: 'التخصصات',
+            body: (
+              <ul className="flex flex-wrap gap-2">
+                {(supplier.specialties ?? []).map((specialty) => (
+                  <li key={specialty}><ProfileChip>{specialty}</ProfileChip></li>
+                ))}
+              </ul>
+            ),
+          },
+          {
+            id: 'products',
+            title: 'المنتجات',
+            body: products.length > 0 ? (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {products.map((product) => (
+                  <li key={product.slug} className="rounded-xl border p-3">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-slate-600">{product.short_description}</p>
+                    <Link className="mt-2 inline-block underline" to={`/suppliers/${encodeURIComponent(slug)}/products/${encodeURIComponent(product.slug)}`}>عرض المنتج</Link>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-slate-500">لا منتجات منشورة.</p>,
+          },
+          {
+            id: 'portfolio',
+            title: 'المعرض',
+            body: <SupplierPortfolioGrid items={portfolio} />,
+          },
+          {
+            id: 'areas',
+            title: 'مناطق الخدمة',
+            body: (supplier.service_areas ?? []).length ? (
+              <ul className="flex flex-wrap gap-2">{(supplier.service_areas ?? []).map((area) => <li key={area}><ProfileChip>{area}</ProfileChip></li>)}</ul>
+            ) : undefined,
+          },
+          {
+            id: 'certs',
+            title: 'الشهادات',
+            body: (supplier.certifications ?? []).length ? (
+              <ul className="flex flex-wrap gap-2">{(supplier.certifications ?? []).map((cert) => <li key={cert}><ProfileChip>{cert}</ProfileChip></li>)}</ul>
+            ) : undefined,
+          },
+          {
+            id: 'availability',
+            title: 'التوفر ومدة التسليم',
+            body: sectionsMeta.find((s) => s.id === 'availability')?.content || undefined,
+          },
+          {
+            id: 'contact',
+            title: 'التواصل',
+            body: (supplier.phone || supplier.email || supplier.website) ? (
+              <div className="space-y-1">
+                {supplier.phone ? <p>هاتف: {supplier.phone}</p> : null}
+                {supplier.email ? <p>بريد: {supplier.email}</p> : null}
+                {supplier.website ? <p>موقع: {supplier.website}</p> : null}
+              </div>
+            ) : <p className="text-slate-500">بيانات التواصل غير ظاهرة للعامة.</p>,
+          },
+        ]}
+      />
 
       <section className="rounded-3xl bg-slate-900 p-6 text-white">
         <h2 className="text-2xl font-semibold">ابدأ طلبك مع حبر وأبعاد</h2>
@@ -179,12 +185,7 @@ function SupplierDetailBody({ slug }: SupplierDetailBodyProps) {
       </section>
 
       <p className="text-sm text-slate-600">
-        <Link
-          to="/suppliers"
-          className="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-        >
-          العودة إلى الموردين
-        </Link>
+        <Link to="/suppliers" className="underline">العودة إلى الموردين</Link>
       </p>
     </article>
   )

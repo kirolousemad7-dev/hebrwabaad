@@ -5,6 +5,7 @@ namespace App\Http\Requests\Content;
 use App\Enums\SupplierOnboardingStatus;
 use App\Enums\SupplierStatus;
 use App\Enums\SupplierVerificationStatus;
+use App\Enums\SupplierVisibility;
 use App\Http\Requests\ApiFormRequest;
 use App\Support\SeoPages;
 use Illuminate\Validation\Rule;
@@ -59,6 +60,13 @@ class UpdateAdminSupplierRequest extends ApiFormRequest
             'onboarding_status' => ['sometimes', 'string', Rule::enum(SupplierOnboardingStatus::class)],
             'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'show_public_contact' => ['sometimes', 'boolean'],
+            'visibility' => ['sometimes', 'string', Rule::enum(SupplierVisibility::class)],
+            'availability' => ['nullable', 'string', 'max:40'],
+            'delivery_time' => ['nullable', 'string', 'max:120'],
+            'service_areas' => ['nullable', 'array'],
+            'service_areas.*' => ['string', 'max:120'],
+            'certifications' => ['nullable', 'array'],
+            'certifications.*' => ['string', 'max:255'],
             'company_id' => ['nullable', 'integer', 'exists:crm_companies,id'],
             'is_active' => ['sometimes', 'boolean'],
             'is_featured' => ['sometimes', 'boolean'],

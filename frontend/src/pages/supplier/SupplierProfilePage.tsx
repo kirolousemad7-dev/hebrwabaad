@@ -31,6 +31,10 @@ export function SupplierProfilePage() {
         phone: String(form.get('phone') ?? '') || null,
         email: String(form.get('email') ?? '') || null,
         website: String(form.get('website') ?? '') || null,
+        availability: String(form.get('availability') ?? '') || null,
+        delivery_time: String(form.get('delivery_time') ?? '') || null,
+        service_areas: String(form.get('service_areas') || '').split(',').map((s) => s.trim()).filter(Boolean),
+        certifications: String(form.get('certifications') || '').split(',').map((s) => s.trim()).filter(Boolean),
         seo_title: String(form.get('seo_title') ?? '') || null,
         seo_description: String(form.get('seo_description') ?? '') || null,
       })
@@ -52,6 +56,10 @@ export function SupplierProfilePage() {
         <label className="text-sm">وصف قصير<input name="short_description" defaultValue={profile.short_description} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
         <label className="text-sm">الوصف<textarea name="description" defaultValue={profile.description ?? ''} className="mt-1 min-h-28 w-full rounded-md border px-3 py-2" /></label>
         <label className="text-sm">الموقع<input name="location" defaultValue={profile.location} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
+        <label className="text-sm">التوفر<input name="availability" defaultValue={String(profile.availability ?? '')} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
+        <label className="text-sm">مدة التسليم<input name="delivery_time" defaultValue={String(profile.delivery_time ?? '')} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
+        <label className="text-sm">مناطق الخدمة<input name="service_areas" defaultValue={(profile.service_areas as string[] | undefined)?.join(', ') ?? ''} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
+        <label className="text-sm">الشهادات<input name="certifications" defaultValue={(profile.certifications as string[] | undefined)?.join(', ') ?? ''} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
         <label className="text-sm">الهاتف<input name="phone" defaultValue={profile.phone ?? ''} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
         <label className="text-sm">البريد<input name="email" defaultValue={profile.email ?? ''} className="mt-1 w-full rounded-md border px-3 py-2" /></label>
         <label className="text-sm">الموقع الإلكتروني<input name="website" defaultValue={profile.website ?? ''} className="mt-1 w-full rounded-md border px-3 py-2" /></label>

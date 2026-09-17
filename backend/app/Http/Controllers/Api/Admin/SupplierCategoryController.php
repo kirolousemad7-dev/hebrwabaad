@@ -21,12 +21,20 @@ class SupplierCategoryController extends Controller
         $this->authorize('viewAny', Supplier::class);
 
         $categories = SupplierCategory::query()
+            ->with('children')
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $flat = SupplierCategory::query()
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
         return ApiResponse::success([
-            'items' => $categories->map(fn (SupplierCategory $category) => $this->serialize($category))->all(),
+            'items' => $flat->map(fn (SupplierCategory $category) => $this->serialize($category))->all(),
+            'tree' => $categories->map(fn (SupplierCategory $category) => $this->serialize($category, withChildren: true))->all(),
         ]);
     }
 
@@ -61,17 +69,29 @@ class SupplierCategoryController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function serialize(SupplierCategory $category): array
+    private function serialize(SupplierCategory $category, bool $withChildren = false): array
     {
-        return [
+        $payload = [
             'id' => $category->id,
+            'parent_id' => $category->parent_id,
             'name' => $category->name,
             'slug' => $category->slug,
             'description' => $category->description,
+            'icon' => $category->icon,
             'is_active' => $category->is_active,
             'sort_order' => $category->sort_order,
+            'seo_title' => $category->seo_title,
+            'seo_description' => $category->seo_description,
             'created_at' => $category->created_at?->toIso8601String(),
             'updated_at' => $category->updated_at?->toIso8601String(),
         ];
+
+        if ($withChildren) {
+            $payload['children'] = $category->children
+                ->map(fn (SupplierCategory $child) => $this->serialize($child))
+                ->all();
+        }
+
+        return $payload;
     }
 }

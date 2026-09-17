@@ -52,6 +52,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'is_active',
     'is_featured',
     'is_published',
+    'visibility',
+    'availability',
+    'delivery_time',
+    'service_areas',
+    'certifications',
     'show_public_contact',
     'status',
     'verification_status',
@@ -91,6 +96,7 @@ class Supplier extends Model
         'is_active' => true,
         'is_featured' => false,
         'is_published' => true,
+        'visibility' => SupplierVisibility::Private->value,
         'show_public_contact' => false,
         'profile_status' => ContentStatus::Published->value,
         'status' => SupplierStatus::Pending->value,
@@ -111,6 +117,9 @@ class Supplier extends Model
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
+            'visibility' => SupplierVisibility::class,
+            'service_areas' => 'array',
+            'certifications' => 'array',
             'show_public_contact' => 'boolean',
             'sort_order' => 'integer',
             'years_experience' => 'integer',
@@ -280,13 +289,16 @@ class Supplier extends Model
      */
     public function scopePubliclyVisible(Builder $query): void
     {
-        $query->active()->published();
+        $query->active()
+            ->published()
+            ->where('visibility', SupplierVisibility::Public);
     }
 
     public function isPubliclyVisible(): bool
     {
         return $this->is_active
             && $this->is_published
+            && $this->visibility === SupplierVisibility::Public
             && $this->profile_status === ContentStatus::Published;
     }
 

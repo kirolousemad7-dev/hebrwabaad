@@ -21,12 +21,18 @@ class SupplierTagController extends Controller
         $this->authorize('viewAny', Supplier::class);
 
         $tags = Tag::query()
-            ->forSuppliers()
+            ->reusable()
+            ->when(
+                is_string($request->query('scope')) && $request->query('scope') !== '',
+                fn ($q) => $q->where('scope', $request->query('scope')),
+                fn ($q) => $q->whereIn('scope', Tag::SCOPES),
+            )
             ->orderBy('name')
             ->get();
 
         return ApiResponse::success([
             'items' => $tags->map(fn (Tag $tag) => $this->serialize($tag))->all(),
+            'scopes' => Tag::SCOPES,
         ]);
     }
 
@@ -55,6 +61,9 @@ class SupplierTagController extends Controller
         $this->assertSupplierScope($tag);
 
         $tag->suppliers()->detach();
+        $tag->products()->detach();
+        $tag->services()->detach();
+        $tag->portfolioItems()->detach();
         $tag->delete();
 
         return ApiResponse::success(null);
@@ -62,7 +71,7 @@ class SupplierTagController extends Controller
 
     private function assertSupplierScope(Tag $tag): void
     {
-        if ($tag->scope !== 'supplier') {
+        if (! in_array($tag->scope, Tag::SCOPES, true)) {
             abort(404);
         }
     }

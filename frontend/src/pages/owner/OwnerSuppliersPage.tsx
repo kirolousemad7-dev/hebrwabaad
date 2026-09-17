@@ -20,8 +20,15 @@ export function OwnerSuppliersPage() {
     status: '',
     verification_status: '',
     city: '',
+    country: '',
     category: '',
     service: '',
+    product: '',
+    tag: '',
+    availability: '',
+    visibility: '',
+    price_min: '',
+    price_max: '',
   })
   const [applied, setApplied] = useState(filters)
   const query = useMemo(() => ({
@@ -29,8 +36,15 @@ export function OwnerSuppliersPage() {
     status: applied.status || undefined,
     verification_status: applied.verification_status || undefined,
     city: applied.city || undefined,
+    country: applied.country || undefined,
     category: applied.category || undefined,
     service: applied.service || undefined,
+    product: applied.product || undefined,
+    tag: applied.tag || undefined,
+    availability: applied.availability || undefined,
+    visibility: applied.visibility || undefined,
+    price_min: applied.price_min || undefined,
+    price_max: applied.price_max || undefined,
   }), [applied])
 
   const { state, reload } = useAsyncData(() => getAdminSuppliers(query), [query])
@@ -42,19 +56,19 @@ export function OwnerSuppliersPage() {
   return (
     <DashboardSection
       title="الموردين"
-      description="إدارة الموردين الداخليين. لا يظهر للعامة إلا النشط المنشور المعتمد، وبيانات الاتصال الداخلية مخفية عن العملاء."
+      description="البحث حسب الاسم / الخدمة / المنتج / التصنيف / الوسم / المدينة / الدولة / السعر / التوفر / التحقق / الحالة. الظهور العام افتراضياً PRIVATE."
       action={<Link to="/owner/suppliers/new" className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm leading-11 text-white">مورد جديد</Link>}
     >
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
 
       <form
-        className="grid gap-2 rounded-2xl border bg-white p-4 sm:grid-cols-3 lg:grid-cols-6"
+        className="grid gap-2 rounded-2xl border bg-white p-4 sm:grid-cols-3 lg:grid-cols-4"
         onSubmit={(event) => {
           event.preventDefault()
           setApplied({ ...filters })
         }}
       >
-        <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))} placeholder="بحث" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))} placeholder="بحث بالاسم" className="rounded-md border px-3 py-2 text-sm" />
         <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="rounded-md border px-3 py-2 text-sm">
           <option value="">كل الحالات</option>
           <option value="PENDING">PENDING</option>
@@ -70,57 +84,45 @@ export function OwnerSuppliersPage() {
           <option value="PHONE_VERIFIED">PHONE_VERIFIED</option>
           <option value="FULLY_VERIFIED">FULLY_VERIFIED</option>
         </select>
+        <select value={filters.visibility} onChange={(e) => setFilters((f) => ({ ...f, visibility: e.target.value }))} className="rounded-md border px-3 py-2 text-sm">
+          <option value="">كل الظهور</option>
+          <option value="PRIVATE">PRIVATE</option>
+          <option value="INTERNAL">INTERNAL</option>
+          <option value="PUBLIC">PUBLIC</option>
+        </select>
         <input value={filters.city} onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))} placeholder="المدينة" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.country} onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value }))} placeholder="الدولة" className="rounded-md border px-3 py-2 text-sm" />
         <input value={filters.category} onChange={(e) => setFilters((f) => ({ ...f, category: e.target.value }))} placeholder="التصنيف" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.tag} onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))} placeholder="وسم" className="rounded-md border px-3 py-2 text-sm" />
         <input value={filters.service} onChange={(e) => setFilters((f) => ({ ...f, service: e.target.value }))} placeholder="خدمة" className="rounded-md border px-3 py-2 text-sm" />
-        <button type="submit" className="min-h-11 rounded-xl border px-4 text-sm sm:col-span-3 lg:col-span-6">تطبيق الفلاتر</button>
+        <input value={filters.product} onChange={(e) => setFilters((f) => ({ ...f, product: e.target.value }))} placeholder="منتج" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.availability} onChange={(e) => setFilters((f) => ({ ...f, availability: e.target.value }))} placeholder="التوفر" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.price_min} onChange={(e) => setFilters((f) => ({ ...f, price_min: e.target.value }))} placeholder="سعر من" className="rounded-md border px-3 py-2 text-sm" />
+        <input value={filters.price_max} onChange={(e) => setFilters((f) => ({ ...f, price_max: e.target.value }))} placeholder="سعر إلى" className="rounded-md border px-3 py-2 text-sm" />
+        <button type="submit" className="min-h-11 rounded-xl border px-4 text-sm sm:col-span-3 lg:col-span-4">تطبيق الفلاتر</button>
       </form>
 
       {state.status === 'loading' ? <DashboardPanelSkeleton label="جاري تحميل الموردين..." /> : null}
       {state.status === 'error' ? <DashboardErrorState message={state.message} onRetry={() => void reload()} /> : null}
+      {state.status === 'ready' && items.length === 0 ? <DashboardEmptyState title="لا يوجد موردون" description="جرّب فلاتر أخرى أو أنشئ مورداً." /> : null}
 
-      {items.length === 0 && state.status === 'ready' ? (
-        <DashboardEmptyState title="لا يوجد موردون." description="أنشئ مورداً ثم اعتمد ملفه قبل ظهوره للعامة." />
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-right">
-              <tr>
-                <th className="px-3 py-2">الكود</th>
-                <th className="px-3 py-2">الاسم</th>
-                <th className="px-3 py-2">الحالة</th>
-                <th className="px-3 py-2">التحقق</th>
-                <th className="px-3 py-2">المدينة</th>
-                <th className="px-3 py-2">منشور</th>
-                <th className="px-3 py-2">المحتوى</th>
-                <th className="px-3 py-2">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((supplier) => (
-                <tr key={supplier.id} className="border-t">
-                  <td className="px-3 py-2 font-mono text-xs">{supplier.supplier_code ?? '—'}</td>
-                  <td className="px-3 py-2 font-medium">{supplier.display_name || supplier.name}</td>
-                  <td className="px-3 py-2">{supplier.status ?? supplier.profile_status}</td>
-                  <td className="px-3 py-2">{supplier.verification_status ?? '—'}</td>
-                  <td className="px-3 py-2">{supplier.city ?? supplier.location ?? '—'}</td>
-                  <td className="px-3 py-2">{supplier.is_published ? 'نعم' : 'لا'}</td>
-                  <td className="px-3 py-2">{supplier.content_count} / {supplier.products_count}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      <Link className="rounded-lg border px-2 py-1" to={`/owner/suppliers/${supplier.id}`}>إدارة</Link>
-                      <button type="button" className="rounded-lg border px-2 py-1" onClick={() => void publishAdminSupplier(supplier.id).then(() => reload()).catch((caught) => setError(describeApiError(caught, 'تعذر النشر.')))}>نشر</button>
-                      <button type="button" className="rounded-lg border px-2 py-1" onClick={() => void unpublishAdminSupplier(supplier.id).then(() => reload())}>إلغاء نشر</button>
-                      <button type="button" className="rounded-lg border px-2 py-1" onClick={() => void (supplier.is_active ? deactivateAdminSupplier(supplier.id) : activateAdminSupplier(supplier.id)).then(() => reload())}>{supplier.is_active ? 'إيقاف' : 'تفعيل'}</button>
-                      <button type="button" className="rounded-lg border px-2 py-1 text-rose-700" onClick={() => void deleteAdminSupplier(supplier.id).then(() => { toast.success('تم الحذف.'); return reload() }).catch((caught) => setError(describeApiError(caught, 'تعذر الحذف.')))}>حذف</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ul className="space-y-2">
+        {items.map((supplier) => (
+          <li key={supplier.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4">
+            <div>
+              <Link to={`/owner/suppliers/${supplier.id}`} className="font-medium underline">{supplier.display_name || supplier.name}</Link>
+              <p className="text-sm text-slate-600">{supplier.status} · {supplier.verification_status} · {supplier.visibility ?? 'PRIVATE'} · {supplier.city ?? supplier.location}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <button type="button" className="rounded-lg border px-3 py-1.5" onClick={() => void activateAdminSupplier(supplier.id).then(() => reload()).catch((c) => setError(describeApiError(c, 'تعذر التفعيل.')))}>تفعيل</button>
+              <button type="button" className="rounded-lg border px-3 py-1.5" onClick={() => void deactivateAdminSupplier(supplier.id).then(() => reload()).catch((c) => setError(describeApiError(c, 'تعذر التعطيل.')))}>تعطيل</button>
+              <button type="button" className="rounded-lg border px-3 py-1.5" onClick={() => void publishAdminSupplier(supplier.id).then(() => { toast.success('نُشر'); return reload() }).catch((c) => setError(describeApiError(c, 'تعذر النشر.')))}>نشر</button>
+              <button type="button" className="rounded-lg border px-3 py-1.5" onClick={() => void unpublishAdminSupplier(supplier.id).then(() => reload()).catch((c) => setError(describeApiError(c, 'تعذر إلغاء النشر.')))}>إخفاء</button>
+              <button type="button" className="rounded-lg border border-red-200 px-3 py-1.5 text-red-700" onClick={() => void deleteAdminSupplier(supplier.id).then(() => reload()).catch((c) => setError(describeApiError(c, 'تعذر الحذف.')))}>حذف</button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </DashboardSection>
   )
 }

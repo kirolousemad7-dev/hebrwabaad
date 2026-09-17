@@ -62,6 +62,8 @@ export const OWNER_DASHBOARD_NAV: DashboardNavItem[] = [
   { to: '/owner/marketing', label: 'المحتوى التسويقي', icon: 'files' },
   { to: '/owner/work-reviews', label: 'مراجعة الأعمال', icon: 'work' },
   { to: '/owner/suppliers', label: 'الموردين', icon: 'suppliers' },
+  { to: '/owner/supplier-categories', label: 'تصنيفات الموردين', icon: 'packages' },
+  { to: '/owner/tags', label: 'الوسوم', icon: 'seo' },
   { to: '/owner/supplier-reviews', label: 'مراجعة الموردين', icon: 'work' },
   { to: '/crm', label: 'المبيعات / CRM', icon: 'crm' },
   { to: '/printing-requests', label: 'طلبات الطباعة', icon: 'printing' },

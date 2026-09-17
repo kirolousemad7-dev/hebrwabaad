@@ -22,6 +22,7 @@ class UpdateTagRequest extends ApiFormRequest
         return [
             'name' => ['sometimes', 'string', 'max:120'],
             'slug' => ['sometimes', 'string', 'max:255', Rule::unique('tags', 'slug')->ignore($tagId)],
+            'scope' => ['sometimes', 'string', 'in:supplier,service,product,portfolio,project,task,shared'],
             'color' => ['nullable', 'string', 'max:32'],
             'is_active' => ['sometimes', 'boolean'],
         ];

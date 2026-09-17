@@ -53,8 +53,10 @@ import { OwnerSeoPage } from '../pages/owner/OwnerSeoPage'
 import { OwnerCatalogControlPage } from '../pages/owner/OwnerCatalogControlPage'
 import { OwnerServicesPage } from '../pages/owner/OwnerServicesPage'
 import { OwnerSupplierDetailPage } from '../pages/owner/OwnerSupplierDetailPage'
+import { OwnerSupplierCategoriesPage } from '../pages/owner/OwnerSupplierCategoriesPage'
 import { OwnerSupplierNewPage } from '../pages/owner/OwnerSupplierNewPage'
 import { OwnerSupplierReviewsPage } from '../pages/owner/OwnerSupplierReviewsPage'
+import { OwnerTagsPage } from '../pages/owner/OwnerTagsPage'
 import { OwnerSuppliersPage } from '../pages/owner/OwnerSuppliersPage'
 import { OwnerWorkReviewsPage } from '../pages/owner/OwnerWorkReviewsPage'
 import { OwnerDepartmentsPage } from '../pages/owner/OwnerDepartmentsPage'
@@ -316,6 +318,8 @@ export function AppRoutes() {
           <Route path="/owner/suppliers" element={<OwnerSuppliersPage />} />
           <Route path="/owner/suppliers/new" element={<OwnerSupplierNewPage />} />
           <Route path="/owner/suppliers/:id" element={<OwnerSupplierDetailPage />} />
+          <Route path="/owner/supplier-categories" element={<OwnerSupplierCategoriesPage />} />
+          <Route path="/owner/tags" element={<OwnerTagsPage />} />
           <Route path="/owner/supplier-reviews" element={<OwnerSupplierReviewsPage />} />
         </Route>
       </Route>

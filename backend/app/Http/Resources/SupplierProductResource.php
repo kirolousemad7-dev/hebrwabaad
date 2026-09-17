@@ -54,6 +54,12 @@ class SupplierProductResource extends JsonResource
             'og_image' => $this->og_image,
             'canonical_url' => $this->canonical_url,
             'robots' => $this->robots,
+            'tags' => $this->when($this->relationLoaded('tags'), fn () => $this->tags->map(fn ($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+                'color' => $tag->color,
+            ])->all()),
         ];
     }
 }

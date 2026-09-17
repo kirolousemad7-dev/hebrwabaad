@@ -19,6 +19,7 @@ class StoreTagRequest extends ApiFormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:tags,slug'],
+            'scope' => ['nullable', 'string', 'in:supplier,service,product,portfolio,project,task,shared'],
             'color' => ['nullable', 'string', 'max:32'],
             'is_active' => ['sometimes', 'boolean'],
         ];

@@ -49,6 +49,11 @@ export type AdminSupplier = {
   is_active: boolean
   is_featured: boolean
   is_published: boolean
+  visibility?: string
+  availability?: string | null
+  delivery_time?: string | null
+  service_areas?: string[]
+  certifications?: string[]
   show_public_contact: boolean
   status: string
   verification_status: string
@@ -213,12 +218,98 @@ export function createAdminSupplierDocument(supplierId: number, payload: Record<
   return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/documents`, payload)
 }
 
-export function getSupplierCategories() {
-  return apiGet<{ items: SupplierTaxonomy[] } | SupplierTaxonomy[]>('/api/admin/supplier-categories')
+export function createAdminSupplierProduct(supplierId: number, payload: Record<string, unknown>) {
+  return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/products`, payload)
 }
 
-export function getSupplierTags() {
-  return apiGet<{ items: SupplierTaxonomy[] } | SupplierTaxonomy[]>('/api/admin/tags')
+export function updateAdminSupplierProduct(supplierId: number, productId: number, payload: Record<string, unknown>) {
+  return apiPut<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/products/${productId}`, payload)
+}
+
+export function deleteAdminSupplierProduct(supplierId: number, productId: number) {
+  return apiDelete(`/api/admin/suppliers/${supplierId}/products/${productId}`)
+}
+
+export function duplicateAdminSupplierProduct(supplierId: number, productId: number) {
+  return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/products/${productId}/duplicate`)
+}
+
+export function archiveAdminSupplierProduct(supplierId: number, productId: number) {
+  return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/products/${productId}/archive`)
+}
+
+export function exportAdminSupplierProducts(supplierId: number) {
+  return apiGet<{ items: Record<string, unknown>[] }>(`/api/admin/suppliers/${supplierId}/products/export`)
+}
+
+export function importAdminSupplierProducts(supplierId: number, rows: Record<string, unknown>[]) {
+  return apiPost<{ created: number; skipped: number }>(`/api/admin/suppliers/${supplierId}/products/import`, { rows })
+}
+
+export function duplicateAdminSupplierService(supplierId: number, serviceId: number) {
+  return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/services/${serviceId}/duplicate`)
+}
+
+export function archiveAdminSupplierService(supplierId: number, serviceId: number) {
+  return apiPost<Record<string, unknown>>(`/api/admin/suppliers/${supplierId}/services/${serviceId}/archive`)
+}
+
+export function exportAdminSupplierServices(supplierId: number) {
+  return apiGet<{ items: Record<string, unknown>[] }>(`/api/admin/suppliers/${supplierId}/services/export`)
+}
+
+export function importAdminSupplierServices(supplierId: number, rows: Record<string, unknown>[]) {
+  return apiPost<{ created: number; skipped: number }>(`/api/admin/suppliers/${supplierId}/services/import`, { rows })
+}
+
+export type SupplierCategoryRow = SupplierTaxonomy & {
+  parent_id?: number | null
+  description?: string | null
+  icon?: string | null
+  is_active?: boolean
+  sort_order?: number
+  seo_title?: string | null
+  seo_description?: string | null
+  children?: SupplierCategoryRow[]
+}
+
+export type SupplierTagRow = SupplierTaxonomy & {
+  scope?: string
+  color?: string | null
+  is_active?: boolean
+}
+
+export function getSupplierCategories() {
+  return apiGet<{ items: SupplierCategoryRow[]; tree?: SupplierCategoryRow[] }>('/api/admin/supplier-categories')
+}
+
+export function createSupplierCategory(payload: Record<string, unknown>) {
+  return apiPost<SupplierCategoryRow>('/api/admin/supplier-categories', payload)
+}
+
+export function updateSupplierCategory(id: number, payload: Record<string, unknown>) {
+  return apiPut<SupplierCategoryRow>(`/api/admin/supplier-categories/${id}`, payload)
+}
+
+export function deleteSupplierCategory(id: number) {
+  return apiDelete(`/api/admin/supplier-categories/${id}`)
+}
+
+export function getSupplierTags(scope?: string) {
+  const query = scope ? `?scope=${encodeURIComponent(scope)}` : ''
+  return apiGet<{ items: SupplierTagRow[]; scopes?: string[] }>(`/api/admin/tags${query}`)
+}
+
+export function createSupplierTag(payload: Record<string, unknown>) {
+  return apiPost<SupplierTagRow>('/api/admin/tags', payload)
+}
+
+export function updateSupplierTag(id: number, payload: Record<string, unknown>) {
+  return apiPut<SupplierTagRow>(`/api/admin/tags/${id}`, payload)
+}
+
+export function deleteSupplierTag(id: number) {
+  return apiDelete(`/api/admin/tags/${id}`)
 }
 
 export function getSupplierReviews() {

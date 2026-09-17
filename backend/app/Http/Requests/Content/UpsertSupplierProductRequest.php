@@ -36,6 +36,8 @@ class UpsertSupplierProductRequest extends ApiFormRequest
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:9999'],
             'visibility' => ['sometimes', 'string', Rule::enum(SupplierVisibility::class)],
             'internal_notes' => ['nullable', 'string', 'max:4000'],
+            'tag_ids' => ['sometimes', 'array'],
+            'tag_ids.*' => ['integer', 'exists:tags,id'],
             'seo_title' => ['nullable', 'string', 'max:70'],
             'seo_description' => ['nullable', 'string', 'max:320'],
             'og_title' => ['nullable', 'string', 'max:70'],

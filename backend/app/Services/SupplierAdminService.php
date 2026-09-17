@@ -7,6 +7,7 @@ use App\Enums\ContentStatus;
 use App\Enums\SupplierOnboardingStatus;
 use App\Enums\SupplierStatus;
 use App\Enums\SupplierVerificationStatus;
+use App\Enums\SupplierVisibility;
 use App\Enums\UserRole;
 use App\Models\Supplier;
 use App\Models\User;
@@ -161,7 +162,7 @@ class SupplierAdminService
     public function unpublish(User $actor, Supplier $supplier): Supplier
     {
         $from = $supplier->profile_status;
-        $supplier->forceFill(['is_published' => false])->save();
+        $supplier->forceFill(['is_published' => false, 'visibility' => SupplierVisibility::Private])->save();
         $this->logger->record($supplier, $actor, ContentReviewAction::Unpublished, $from, $from);
 
         return $supplier->refresh();

@@ -799,15 +799,23 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
         Route::put('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'update']);
         Route::delete('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'destroy']);
 
+        Route::get('/suppliers/{supplier}/services/export', [SupplierServiceController::class, 'export']);
+        Route::post('/suppliers/{supplier}/services/import', [SupplierServiceController::class, 'import']);
         Route::get('/suppliers/{supplier}/services', [SupplierServiceController::class, 'index']);
         Route::post('/suppliers/{supplier}/services', [SupplierServiceController::class, 'store']);
         Route::put('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'update']);
         Route::delete('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'destroy']);
+        Route::post('/suppliers/{supplier}/services/{service}/duplicate', [SupplierServiceController::class, 'duplicate']);
+        Route::post('/suppliers/{supplier}/services/{service}/archive', [SupplierServiceController::class, 'archive']);
 
+        Route::get('/suppliers/{supplier}/products/export', [SupplierProductAdminController::class, 'export']);
+        Route::post('/suppliers/{supplier}/products/import', [SupplierProductAdminController::class, 'import']);
         Route::get('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'index']);
         Route::post('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'store']);
         Route::put('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'update']);
         Route::delete('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'destroy']);
+        Route::post('/suppliers/{supplier}/products/{product}/duplicate', [SupplierProductAdminController::class, 'duplicate']);
+        Route::post('/suppliers/{supplier}/products/{product}/archive', [SupplierProductAdminController::class, 'archive']);
 
         Route::get('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'index']);
         Route::post('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'store']);

@@ -176,10 +176,16 @@ export type Supplier = {
   specialties: string[]
   services: string[]
   location: string
+  country?: string | null
+  city?: string | null
   address?: string | null
   category?: string | null
   years_experience?: number | null
   min_order_info?: string | null
+  availability?: string | null
+  delivery_time?: string | null
+  service_areas?: string[]
+  certifications?: string[]
   brand_colors?: string[] | null
   brand_description?: string | null
   phone?: string | null

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -19,7 +20,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'image',
     'gallery',
     'videos',
+    'documents',
     'category',
+    'client_type',
     'tags',
     'external_url',
     'completion_date',
@@ -58,6 +61,7 @@ class SupplierPortfolioItem extends Model
         return [
             'gallery' => 'array',
             'videos' => 'array',
+            'documents' => 'array',
             'tags' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
@@ -93,5 +97,13 @@ class SupplierPortfolioItem extends Model
     public function reviews(): MorphMany
     {
         return $this->morphMany(ContentReview::class, 'subject')->orderByDesc('id');
+    }
+
+    /**
+     * @return MorphToMany<Tag, $this>
+     */
+    public function catalogTags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable')->withTimestamps();
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\ContentStatus;
 use App\Enums\SupplierOnboardingStatus;
 use App\Enums\SupplierStatus;
 use App\Enums\SupplierVerificationStatus;
+use App\Enums\SupplierVisibility;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -36,6 +37,7 @@ class SupplierFactory extends Factory
             'is_active' => true,
             'is_featured' => false,
             'is_published' => true,
+            'visibility' => SupplierVisibility::Public,
             'show_public_contact' => false,
             'profile_status' => ContentStatus::Published,
             'status' => SupplierStatus::Active,
@@ -64,6 +66,7 @@ class SupplierFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_published' => false,
+            'visibility' => SupplierVisibility::Private,
             'profile_status' => ContentStatus::Draft,
             'status' => SupplierStatus::Pending,
             'onboarding_status' => SupplierOnboardingStatus::Draft,
