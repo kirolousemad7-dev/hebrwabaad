@@ -45,4 +45,24 @@ class SupplierPolicy
     {
         return $user->is_active && $user->canReviewContent();
     }
+
+    public function approve(User $user, Supplier $supplier): bool
+    {
+        return $user->is_active && $user->canReviewContent();
+    }
+
+    public function suspend(User $user, Supplier $supplier): bool
+    {
+        return $user->is_active && $user->canReviewContent();
+    }
+
+    public function verify(User $user, Supplier $supplier): bool
+    {
+        return $user->is_active && $user->canReviewContent();
+    }
+
+    public function viewInternal(User $user, Supplier $supplier): bool
+    {
+        return $user->is_active && $user->canReviewContent();
+    }
 }

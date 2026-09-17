@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContentStatus;
+use App\Enums\SupplierVisibility;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\SupplierProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -25,12 +26,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'variants',
     'price',
     'currency',
+    'unit',
+    'minimum_quantity',
+    'sku',
     'contact_for_price',
     'availability',
+    'lead_time',
     'is_featured',
     'sort_order',
     'status',
+    'visibility',
     'review_notes',
+    'internal_notes',
     'reviewed_by',
     'reviewed_at',
     'published_at',
@@ -57,6 +64,7 @@ class SupplierProduct extends Model
         'is_featured' => false,
         'sort_order' => 0,
         'status' => ContentStatus::Draft->value,
+        'visibility' => SupplierVisibility::Internal->value,
         'currency' => 'SAR',
     ];
 
@@ -73,7 +81,9 @@ class SupplierProduct extends Model
             'contact_for_price' => 'boolean',
             'is_featured' => 'boolean',
             'sort_order' => 'integer',
+            'minimum_quantity' => 'integer',
             'status' => ContentStatus::class,
+            'visibility' => SupplierVisibility::class,
             'reviewed_at' => 'datetime',
             'published_at' => 'datetime',
             'submitted_at' => 'datetime',

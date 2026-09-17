@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ContentStatus;
+use App\Enums\SupplierVisibility;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -37,6 +38,7 @@ class SupplierProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => ContentStatus::Published,
+            'visibility' => SupplierVisibility::Public,
             'published_at' => now(),
             'is_featured' => false,
         ]);

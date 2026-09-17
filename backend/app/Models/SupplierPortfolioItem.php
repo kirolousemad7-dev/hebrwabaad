@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContentStatus;
+use App\Enums\SupplierVisibility;
 use Database\Factories\SupplierPortfolioItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,13 +18,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'description',
     'image',
     'gallery',
+    'videos',
     'category',
     'tags',
     'external_url',
+    'completion_date',
     'sort_order',
     'is_active',
     'is_featured',
     'status',
+    'visibility',
     'review_notes',
     'reviewed_by',
     'reviewed_at',
@@ -43,6 +47,7 @@ class SupplierPortfolioItem extends Model
         'is_active' => true,
         'is_featured' => false,
         'status' => ContentStatus::Draft->value,
+        'visibility' => SupplierVisibility::Internal->value,
     ];
 
     /**
@@ -52,11 +57,14 @@ class SupplierPortfolioItem extends Model
     {
         return [
             'gallery' => 'array',
+            'videos' => 'array',
             'tags' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'status' => ContentStatus::class,
+            'visibility' => SupplierVisibility::class,
+            'completion_date' => 'date',
             'reviewed_at' => 'datetime',
             'published_at' => 'datetime',
             'submitted_at' => 'datetime',

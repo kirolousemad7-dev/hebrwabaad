@@ -53,6 +53,7 @@ import { OwnerSeoPage } from '../pages/owner/OwnerSeoPage'
 import { OwnerCatalogControlPage } from '../pages/owner/OwnerCatalogControlPage'
 import { OwnerServicesPage } from '../pages/owner/OwnerServicesPage'
 import { OwnerSupplierDetailPage } from '../pages/owner/OwnerSupplierDetailPage'
+import { OwnerSupplierNewPage } from '../pages/owner/OwnerSupplierNewPage'
 import { OwnerSupplierReviewsPage } from '../pages/owner/OwnerSupplierReviewsPage'
 import { OwnerSuppliersPage } from '../pages/owner/OwnerSuppliersPage'
 import { OwnerWorkReviewsPage } from '../pages/owner/OwnerWorkReviewsPage'
@@ -296,6 +297,7 @@ export function AppRoutes() {
           <Route path="/owner/marketing" element={<OwnerMarketingPage />} />
           <Route path="/owner/work-reviews" element={<OwnerWorkReviewsPage />} />
           <Route path="/owner/suppliers" element={<OwnerSuppliersPage />} />
+          <Route path="/owner/suppliers/new" element={<OwnerSupplierNewPage />} />
           <Route path="/owner/suppliers/:id" element={<OwnerSupplierDetailPage />} />
           <Route path="/owner/supplier-reviews" element={<OwnerSupplierReviewsPage />} />
         </Route>

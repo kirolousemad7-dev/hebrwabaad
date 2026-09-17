@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Content;
 
+use App\Enums\SupplierVisibility;
 use App\Http\Requests\ApiFormRequest;
+use Illuminate\Validation\Rule;
 
 class UpsertSupplierPortfolioRequest extends ApiFormRequest
 {
@@ -17,11 +19,17 @@ class UpsertSupplierPortfolioRequest extends ApiFormRequest
             'image' => ['required', 'string', 'max:2048'],
             'gallery' => ['nullable', 'array', 'max:12'],
             'gallery.*' => ['string', 'max:2048'],
+            'videos' => ['nullable', 'array', 'max:12'],
+            'videos.*' => ['string', 'max:2048'],
             'category' => ['required', 'string', 'max:120'],
             'tags' => ['nullable', 'array', 'max:16'],
             'tags.*' => ['string', 'max:40'],
             'external_url' => ['nullable', 'url', 'max:2048'],
+            'completion_date' => ['nullable', 'date'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:9999'],
+            'is_active' => ['sometimes', 'boolean'],
+            'is_featured' => ['sometimes', 'boolean'],
+            'visibility' => ['sometimes', 'string', Rule::enum(SupplierVisibility::class)],
         ];
     }
 }

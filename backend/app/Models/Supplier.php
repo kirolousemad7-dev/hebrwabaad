@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use App\Enums\ContentStatus;
+use App\Enums\SupplierOnboardingStatus;
+use App\Enums\SupplierStatus;
+use App\Enums\SupplierVerificationStatus;
+use App\Enums\SupplierVisibility;
 use App\Enums\UserRole;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\SupplierFactory;
@@ -11,13 +15,19 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
     'user_id',
+    'company_id',
+    'supplier_code',
     'name',
+    'legal_name',
+    'display_name',
     'slug',
     'logo',
     'cover_image',
@@ -26,9 +36,12 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'specialties',
     'services',
     'location',
+    'country',
+    'city',
     'address',
     'email',
     'phone',
+    'whatsapp',
     'website',
     'category',
     'brand_colors',
@@ -39,11 +52,20 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'is_active',
     'is_featured',
     'is_published',
+    'show_public_contact',
+    'status',
+    'verification_status',
+    'onboarding_status',
+    'rating',
     'profile_status',
     'review_notes',
+    'notes',
+    'internal_notes',
     'reviewed_by',
     'reviewed_at',
     'published_at',
+    'created_by',
+    'updated_by',
     'seo_title',
     'seo_description',
     'og_title',
@@ -55,7 +77,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Supplier extends Model
 {
     /** @use HasFactory<SupplierFactory> */
-    use HasFactory, HasSlug;
+    use HasFactory, HasSlug, SoftDeletes;
 
     /**
      * @var array<string, mixed>
@@ -64,7 +86,11 @@ class Supplier extends Model
         'is_active' => true,
         'is_featured' => false,
         'is_published' => true,
+        'show_public_contact' => false,
         'profile_status' => ContentStatus::Published->value,
+        'status' => SupplierStatus::Pending->value,
+        'verification_status' => SupplierVerificationStatus::Unverified->value,
+        'onboarding_status' => SupplierOnboardingStatus::Draft->value,
         'sort_order' => 0,
     ];
 
@@ -80,9 +106,14 @@ class Supplier extends Model
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
+            'show_public_contact' => 'boolean',
             'sort_order' => 'integer',
             'years_experience' => 'integer',
+            'rating' => 'decimal:2',
             'profile_status' => ContentStatus::class,
+            'status' => SupplierStatus::class,
+            'verification_status' => SupplierVerificationStatus::class,
+            'onboarding_status' => SupplierOnboardingStatus::class,
             'reviewed_at' => 'datetime',
             'published_at' => 'datetime',
         ];
@@ -97,11 +128,35 @@ class Supplier extends Model
     }
 
     /**
+     * @return BelongsTo<CrmCompany, $this>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(CrmCompany::class, 'company_id');
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     /**
@@ -118,6 +173,46 @@ class Supplier extends Model
     public function products(): HasMany
     {
         return $this->hasMany(SupplierProduct::class);
+    }
+
+    /**
+     * @return HasMany<SupplierContact, $this>
+     */
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(SupplierContact::class);
+    }
+
+    /**
+     * @return HasMany<SupplierService, $this>
+     */
+    public function offeredServices(): HasMany
+    {
+        return $this->hasMany(SupplierService::class);
+    }
+
+    /**
+     * @return HasMany<SupplierDocument, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SupplierDocument::class);
+    }
+
+    /**
+     * @return BelongsToMany<SupplierCategory, $this>
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(SupplierCategory::class, 'supplier_category_supplier')->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<Tag, $this>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class)->withTimestamps();
     }
 
     /**
@@ -195,6 +290,7 @@ class Supplier extends Model
         return $this->portfolioItems()
             ->where('is_active', true)
             ->where('status', ContentStatus::Published)
+            ->where('visibility', SupplierVisibility::Public)
             ->orderBy('sort_order')
             ->orderBy('id');
     }
@@ -206,6 +302,7 @@ class Supplier extends Model
     {
         return $this->products()
             ->published()
+            ->where('visibility', SupplierVisibility::Public)
             ->orderByDesc('is_featured')
             ->orderBy('sort_order')
             ->orderBy('id');
@@ -225,5 +322,10 @@ class Supplier extends Model
             && $user->role === UserRole::Supplier
             && $this->user_id !== null
             && $this->user_id === $user->id;
+    }
+
+    public function publicDisplayName(): string
+    {
+        return $this->display_name ?: $this->name;
     }
 }

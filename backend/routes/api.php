@@ -21,7 +21,15 @@ use App\Http\Controllers\Api\Admin\SectorAdminController;
 use App\Http\Controllers\Api\Admin\SeoPageController as AdminSeoPageController;
 use App\Http\Controllers\Api\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\Admin\SupplierAdminController;
+use App\Http\Controllers\Api\Admin\SupplierCategoryController;
+use App\Http\Controllers\Api\Admin\SupplierContactController;
+use App\Http\Controllers\Api\Admin\SupplierDocumentController;
+use App\Http\Controllers\Api\Admin\SupplierLifecycleController;
+use App\Http\Controllers\Api\Admin\SupplierPortfolioAdminController;
+use App\Http\Controllers\Api\Admin\SupplierProductAdminController;
 use App\Http\Controllers\Api\Admin\SupplierReviewController;
+use App\Http\Controllers\Api\Admin\SupplierServiceController;
+use App\Http\Controllers\Api\Admin\SupplierTagController;
 use App\Http\Controllers\Api\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Api\Admin\WorkReviewController;
 use App\Http\Controllers\Api\Auth\AuthController;
@@ -736,6 +744,45 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
         Route::post('/suppliers/{supplier}/deactivate', [SupplierAdminController::class, 'deactivate']);
         Route::post('/suppliers/{supplier}/publish', [SupplierAdminController::class, 'publish']);
         Route::post('/suppliers/{supplier}/unpublish', [SupplierAdminController::class, 'unpublish']);
+        Route::post('/suppliers/{supplier}/approve', [SupplierLifecycleController::class, 'approve']);
+        Route::post('/suppliers/{supplier}/reject', [SupplierLifecycleController::class, 'reject']);
+        Route::post('/suppliers/{supplier}/suspend', [SupplierLifecycleController::class, 'suspend']);
+        Route::post('/suppliers/{supplier}/verify', [SupplierLifecycleController::class, 'verify']);
+
+        Route::get('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'index']);
+        Route::post('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'store']);
+        Route::put('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'update']);
+        Route::delete('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'destroy']);
+
+        Route::get('/suppliers/{supplier}/services', [SupplierServiceController::class, 'index']);
+        Route::post('/suppliers/{supplier}/services', [SupplierServiceController::class, 'store']);
+        Route::put('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'update']);
+        Route::delete('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'destroy']);
+
+        Route::get('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'index']);
+        Route::post('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'store']);
+        Route::put('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'update']);
+        Route::delete('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'destroy']);
+
+        Route::get('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'index']);
+        Route::post('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'store']);
+        Route::put('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'update']);
+        Route::delete('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'destroy']);
+
+        Route::get('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
+        Route::post('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
+        Route::delete('/suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
+
+        Route::get('/supplier-categories', [SupplierCategoryController::class, 'index']);
+        Route::post('/supplier-categories', [SupplierCategoryController::class, 'store']);
+        Route::put('/supplier-categories/{category}', [SupplierCategoryController::class, 'update']);
+        Route::delete('/supplier-categories/{category}', [SupplierCategoryController::class, 'destroy']);
+
+        Route::get('/tags', [SupplierTagController::class, 'index']);
+        Route::post('/tags', [SupplierTagController::class, 'store']);
+        Route::put('/tags/{tag}', [SupplierTagController::class, 'update']);
+        Route::delete('/tags/{tag}', [SupplierTagController::class, 'destroy']);
+
         Route::get('/supplier-reviews', [SupplierReviewController::class, 'index']);
         Route::post('/supplier-reviews/{type}/{id}/approve-publish', [SupplierReviewController::class, 'approvePublish']);
         Route::post('/supplier-reviews/{type}/{id}/reject', [SupplierReviewController::class, 'reject']);

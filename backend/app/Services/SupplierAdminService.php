@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Enums\ContentReviewAction;
 use App\Enums\ContentStatus;
+use App\Enums\SupplierOnboardingStatus;
+use App\Enums\SupplierStatus;
+use App\Enums\SupplierVerificationStatus;
 use App\Enums\UserRole;
 use App\Models\Supplier;
 use App\Models\User;
@@ -73,6 +76,8 @@ class SupplierAdminService
             $supplier = Supplier::query()->create([
                 'user_id' => $userId,
                 'name' => $payload['name'],
+                'legal_name' => $payload['legal_name'] ?? $payload['name'],
+                'display_name' => $payload['display_name'] ?? $payload['name'],
                 'slug' => $payload['slug'] ?? Supplier::uniqueSlug($payload['name']),
                 'logo' => $payload['logo'] ?? '/brand/logo.png',
                 'cover_image' => $payload['cover_image'] ?? null,
@@ -81,9 +86,12 @@ class SupplierAdminService
                 'specialties' => $payload['specialties'] ?? [],
                 'services' => $payload['services'] ?? [],
                 'location' => $payload['location'] ?? '',
+                'country' => $payload['country'] ?? null,
+                'city' => $payload['city'] ?? null,
                 'address' => $payload['address'] ?? null,
                 'email' => $payload['email'] ?? null,
                 'phone' => $payload['phone'] ?? null,
+                'whatsapp' => $payload['whatsapp'] ?? null,
                 'website' => $payload['website'] ?? null,
                 'category' => $payload['category'] ?? null,
                 'brand_colors' => $payload['brand_colors'] ?? null,
@@ -94,12 +102,25 @@ class SupplierAdminService
                 'is_active' => (bool) ($payload['is_active'] ?? true),
                 'is_featured' => (bool) ($payload['is_featured'] ?? false),
                 'is_published' => false,
+                'show_public_contact' => (bool) ($payload['show_public_contact'] ?? false),
+                'status' => $payload['status'] ?? SupplierStatus::Pending->value,
+                'verification_status' => $payload['verification_status'] ?? SupplierVerificationStatus::Unverified->value,
+                'onboarding_status' => $payload['onboarding_status'] ?? SupplierOnboardingStatus::Draft->value,
+                'notes' => $payload['notes'] ?? null,
+                'internal_notes' => $payload['internal_notes'] ?? null,
+                'company_id' => $payload['company_id'] ?? null,
                 'profile_status' => ContentStatus::Draft,
+                'created_by' => $actor->id,
+                'updated_by' => $actor->id,
             ]);
+
+            $supplier->forceFill([
+                'supplier_code' => $payload['supplier_code'] ?? 'SUP-'.str_pad((string) $supplier->id, 5, '0', STR_PAD_LEFT),
+            ])->save();
 
             $this->logger->record($supplier, $actor, ContentReviewAction::Created, null, ContentStatus::Draft);
 
-            return $supplier;
+            return $supplier->refresh();
         });
     }
 

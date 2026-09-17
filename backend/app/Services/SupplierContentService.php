@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Enums\ContentReviewAction;
 use App\Enums\ContentStatus;
 use App\Enums\SupplierContentType;
+use App\Enums\SupplierOnboardingStatus;
+use App\Enums\SupplierStatus;
+use App\Enums\SupplierVisibility;
 use App\Enums\UserRole;
 use App\Exceptions\ContentWorkflowException;
 use App\Models\Supplier;
@@ -140,6 +143,9 @@ class SupplierContentService
             $supplier->fill($this->onlyProfile($version->payload ?? []));
             $supplier->forceFill([
                 'is_published' => true,
+                'is_active' => true,
+                'status' => SupplierStatus::Active,
+                'onboarding_status' => SupplierOnboardingStatus::Completed,
                 'profile_status' => ContentStatus::Published,
                 'published_at' => now(),
                 'reviewed_by' => $reviewer->id,
@@ -167,6 +173,8 @@ class SupplierContentService
         $supplier->forceFill([
             'is_published' => true,
             'is_active' => true,
+            'status' => SupplierStatus::Active,
+            'onboarding_status' => SupplierOnboardingStatus::Completed,
             'profile_status' => ContentStatus::Published,
             'published_at' => now(),
             'reviewed_by' => $reviewer->id,
@@ -249,6 +257,7 @@ class SupplierContentService
         $from = $item->status;
         $item->forceFill([
             'status' => ContentStatus::Published,
+            'visibility' => SupplierVisibility::Public,
             'is_active' => true,
             'published_at' => now(),
             'reviewed_by' => $reviewer->id,
@@ -331,6 +340,7 @@ class SupplierContentService
         $from = $product->status;
         $product->forceFill([
             'status' => ContentStatus::Published,
+            'visibility' => SupplierVisibility::Public,
             'published_at' => now(),
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
