@@ -7,6 +7,8 @@ use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\GoogleCalendar\GoogleCalendarTaskSyncService;
+use App\Services\GoogleCalendar\TaskReminderService;
 use App\Services\Operations\Work\TaskCalendarLinkService;
 use App\Support\Operations\TaskCalendarSyncContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -113,10 +115,20 @@ class TaskService
             'priority' => $attributes['priority'],
             'status' => $attributes['status'] ?? TaskStatus::Todo->value,
             'deadline' => $attributes['deadline'] ?? null,
+            'start_at' => $attributes['start_at'] ?? null,
+            'due_at' => $attributes['due_at'] ?? null,
+            'timezone' => $attributes['timezone'] ?? config('app.timezone'),
+            'location' => $attributes['location'] ?? null,
+            'supplier_id' => $attributes['supplier_id'] ?? null,
         ]);
 
-        $task = $task->load(['assignee', 'creator', 'project']);
+        $task = $task->load(['assignee', 'creator', 'project', 'supplier']);
         app(PlatformNotifier::class)->taskAssigned($task);
+        app(PlatformNotifier::class)->taskSupplierAssigned($task);
+
+        if (isset($attributes['reminders']) && is_array($attributes['reminders'])) {
+            app(TaskReminderService::class)->syncReminders($task, $attributes['reminders']);
+        }
 
         return $task;
     }
@@ -134,6 +146,12 @@ class TaskService
             ? $task->status
             : TaskStatus::tryFrom((string) $task->status);
 
+        $previousSupplierId = $task->supplier_id;
+        $scheduleChanged = array_key_exists('start_at', $attributes)
+            || array_key_exists('due_at', $attributes)
+            || array_key_exists('deadline', $attributes);
+        $shouldQueueGoogle = (bool) $task->google_sync_enabled;
+
         $task->update([
             'title' => $attributes['title'],
             'description' => $attributes['description'] ?? null,
@@ -142,10 +160,30 @@ class TaskService
             'priority' => $attributes['priority'],
             'status' => $attributes['status'],
             'deadline' => $attributes['deadline'] ?? null,
+            'start_at' => $attributes['start_at'] ?? $task->start_at,
+            'due_at' => $attributes['due_at'] ?? $task->due_at,
+            'timezone' => $attributes['timezone'] ?? $task->timezone,
+            'location' => $attributes['location'] ?? $task->location,
+            'supplier_id' => array_key_exists('supplier_id', $attributes)
+                ? $attributes['supplier_id']
+                : $task->supplier_id,
         ]);
 
-        $task = $task->fresh(['assignee', 'creator', 'project']);
+        $changedForGoogle = $shouldQueueGoogle && $task->wasChanged([
+            'title', 'description', 'start_at', 'due_at', 'deadline', 'location', 'status', 'assigned_to',
+        ]);
+
+        $task = $task->fresh(['assignee', 'creator', 'project', 'supplier']);
         app(PlatformNotifier::class)->taskAssigned($task, $previousAssigneeId);
+        if ((int) $previousSupplierId !== (int) $task->supplier_id) {
+            app(PlatformNotifier::class)->taskSupplierAssigned($task);
+        }
+
+        if (isset($attributes['reminders']) && is_array($attributes['reminders'])) {
+            app(TaskReminderService::class)->syncReminders($task, $attributes['reminders']);
+        } elseif ($scheduleChanged) {
+            app(TaskReminderService::class)->ensureDefaultReminders($task);
+        }
 
         if (! TaskCalendarSyncContext::isSyncing()) {
             $newStatus = $task->status instanceof TaskStatus
@@ -161,6 +199,10 @@ class TaskService
             }
         }
 
+        if ($changedForGoogle) {
+            app(GoogleCalendarTaskSyncService::class)->queueSync($task);
+        }
+
         return $task;
     }
 
@@ -169,6 +211,7 @@ class TaskService
         $previousStatus = $task->status instanceof TaskStatus
             ? $task->status
             : TaskStatus::tryFrom((string) $task->status);
+        $shouldQueueGoogle = (bool) $task->google_sync_enabled;
 
         $task->update(['status' => $status]);
 
@@ -180,6 +223,10 @@ class TaskService
             && $previousStatus !== TaskStatus::Completed
         ) {
             app(TaskCalendarLinkService::class)->syncCompletionFromTask($task);
+        }
+
+        if ($shouldQueueGoogle) {
+            app(GoogleCalendarTaskSyncService::class)->queueSync($task);
         }
 
         return $task;

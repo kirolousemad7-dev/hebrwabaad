@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { TaskGoogleCalendarPanel } from '../../components/workspace/TaskGoogleCalendarPanel'
 import { TaskStatusSelect } from '../../components/workspace/WorkspaceListControls'
 import { WorkspaceErrorState, WorkspaceSkeleton } from '../../components/workspace/WorkspaceStatus'
 import { useAuth } from '../../context/AuthContext'
@@ -98,6 +99,8 @@ export function WorkspaceTaskDetailPage() {
           </dd>
         </div>
       </dl>
+
+      <TaskGoogleCalendarPanel taskId={task.id} onChanged={() => void reload()} />
 
       {isManager ? (
         <ManagerTaskForm

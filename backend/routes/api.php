@@ -77,6 +77,8 @@ use App\Http\Controllers\Api\Customer\CustomerFileController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerPaymentController;
 use App\Http\Controllers\Api\Employee\EmployeeWorkController;
+use App\Http\Controllers\Api\GoogleCalendar\GoogleCalendarOAuthController;
+use App\Http\Controllers\Api\GoogleCalendar\TaskGoogleCalendarController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\HrDirectoryController;
 use App\Http\Controllers\Api\NotificationController;
@@ -134,6 +136,9 @@ use App\Http\Controllers\Api\WorkspaceTaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'show']);
+
+Route::get('/google-calendar/callback', [GoogleCalendarOAuthController::class, 'callback'])
+    ->middleware('throttle:hebr-login');
 
 Route::post('/webhooks/paytabs', [PayTabsWebhookController::class, 'handle']);
 Route::post('/webhooks/inbound/{inboundWebhook}', [InboundWebhookController::class, 'handle'])
@@ -609,6 +614,16 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/workspace/tasks', [WorkspaceTaskController::class, 'index']);
     Route::get('/workspace/tasks/{task}', [WorkspaceTaskController::class, 'show']);
     Route::patch('/workspace/tasks/{task}/status', [WorkspaceTaskController::class, 'updateStatus']);
+
+    Route::get('/google-calendar/status', [GoogleCalendarOAuthController::class, 'status']);
+    Route::post('/google-calendar/connect', [GoogleCalendarOAuthController::class, 'connect']);
+    Route::delete('/google-calendar/disconnect', [GoogleCalendarOAuthController::class, 'disconnect']);
+    Route::patch('/google-calendar/settings', [GoogleCalendarOAuthController::class, 'updateSettings']);
+    Route::get('/workspace/tasks/{task}/google-calendar', [TaskGoogleCalendarController::class, 'status']);
+    Route::post('/workspace/tasks/{task}/google-calendar/enable', [TaskGoogleCalendarController::class, 'enable']);
+    Route::post('/workspace/tasks/{task}/google-calendar/sync', [TaskGoogleCalendarController::class, 'sync']);
+    Route::post('/workspace/tasks/{task}/google-calendar/disable', [TaskGoogleCalendarController::class, 'disable']);
+    Route::put('/workspace/tasks/{task}/reminders', [TaskGoogleCalendarController::class, 'updateReminders']);
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:ACCOUNT_MANAGER'])->group(function (): void {

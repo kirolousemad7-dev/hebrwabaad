@@ -9,6 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('calendar:dispatch-reminders')->everyMinute()->withoutOverlapping(5);
+Schedule::command('tasks:dispatch-reminders')->everyMinute()->withoutOverlapping(5);
 Schedule::command('calendar:daily-digest')->dailyAt('07:00')->withoutOverlapping();
 Schedule::command('workflows:run-scheduled-triggers')->dailyAt('06:30')->withoutOverlapping();
 Schedule::command('operations:process-escalations')->hourly()->withoutOverlapping();

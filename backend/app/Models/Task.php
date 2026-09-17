@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GoogleCalendarSyncStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use Database\Factories\TaskFactory;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 #[Fillable([
@@ -26,6 +28,20 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'priority',
     'status',
     'deadline',
+    'start_at',
+    'due_at',
+    'timezone',
+    'location',
+    'google_meet_enabled',
+    'google_event_id',
+    'google_calendar_id',
+    'google_sync_status',
+    'google_synced_at',
+    'google_sync_error',
+    'google_html_link',
+    'google_etag',
+    'google_sync_version',
+    'google_sync_enabled',
     'calendar_item_id',
 ])]
 class Task extends Model
@@ -42,6 +58,13 @@ class Task extends Model
             'priority' => TaskPriority::class,
             'status' => TaskStatus::class,
             'deadline' => 'date',
+            'start_at' => 'datetime',
+            'due_at' => 'datetime',
+            'google_meet_enabled' => 'boolean',
+            'google_sync_status' => GoogleCalendarSyncStatus::class,
+            'google_synced_at' => 'datetime',
+            'google_sync_version' => 'integer',
+            'google_sync_enabled' => 'boolean',
         ];
     }
 
@@ -122,6 +145,14 @@ class Task extends Model
     }
 
     /**
+     * @return HasMany<TaskReminder, $this>
+     */
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(TaskReminder::class);
+    }
+
+    /**
      * @return MorphToMany<Tag, $this>
      */
     public function tags(): MorphToMany
@@ -131,7 +162,15 @@ class Task extends Model
 
     public function isOverdue(): bool
     {
-        if ($this->deadline === null || $this->status === TaskStatus::Completed) {
+        if ($this->status === TaskStatus::Completed) {
+            return false;
+        }
+
+        if ($this->due_at !== null) {
+            return $this->due_at->isPast();
+        }
+
+        if ($this->deadline === null) {
             return false;
         }
 

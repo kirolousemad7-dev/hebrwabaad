@@ -45,6 +45,7 @@ export const CALENDAR_SOURCE_LABELS: Record<CalendarSource, string> = {
   PAYMENT: 'دفع',
   CONTENT: 'محتوى',
   SUPPLIER: 'مورد',
+  GOOGLE: 'Google',
 }
 
 export const CALENDAR_VISIBILITY_LABELS: Record<CalendarVisibility, string> = {
@@ -171,6 +172,8 @@ export function calendarSourceBadgeClass(source: string | null | undefined): str
       return 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900'
     case 'SUPPLIER':
       return 'border-amber-300 bg-amber-50 text-amber-950'
+    case 'GOOGLE':
+      return 'border-blue-300 bg-blue-50 text-blue-900'
     default:
       return 'border-slate-200 bg-slate-50 text-slate-700'
   }

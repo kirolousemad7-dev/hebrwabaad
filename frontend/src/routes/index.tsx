@@ -95,6 +95,7 @@ import { HrDirectoryPage } from '../pages/employee/HrDirectoryPage'
 import { WorkspaceProjectDetailPage } from '../pages/employee/WorkspaceProjectDetailPage'
 import { WorkspaceProjectsPage } from '../pages/employee/WorkspaceProjectsPage'
 import { WorkspaceTaskDetailPage } from '../pages/employee/WorkspaceTaskDetailPage'
+import { GoogleCalendarSettingsPage } from '../pages/employee/GoogleCalendarSettingsPage'
 import { WorkspaceTasksPage } from '../pages/employee/WorkspaceTasksPage'
 import { PackagesPage } from '../pages/PackagesPage'
 import { PrintingRequestReviewPage } from '../pages/PrintingRequestReviewPage'
@@ -233,6 +234,7 @@ export function AppRoutes() {
           <Route path="/workspace/team" element={<TeamDashboardPage />} />
           <Route path="/workspace/tasks" element={<WorkspaceTasksPage />} />
           <Route path="/workspace/tasks/:taskId" element={<WorkspaceTaskDetailPage />} />
+          <Route path="/workspace/settings/google-calendar" element={<GoogleCalendarSettingsPage />} />
           <Route path="/workspace/files" element={<WorkspaceFilesPage />} />
           <Route path="/workspace/notifications" element={<WorkspaceNotificationsPage />} />
         </Route>

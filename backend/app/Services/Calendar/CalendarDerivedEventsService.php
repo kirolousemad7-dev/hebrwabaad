@@ -7,11 +7,13 @@ use App\Enums\CalendarItemStatus;
 use App\Enums\CalendarItemType;
 use App\Enums\CalendarSource;
 use App\Enums\CalendarVisibility;
+use App\Enums\GoogleCalendarSyncStatus;
 use App\Enums\UserRole;
 use App\Models\CrmQuotation;
 use App\Models\Order;
 use App\Models\PrintingRequest;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use App\Support\Calendar\CalendarRelatedEntityUrlResolver;
 use Carbon\Carbon;
@@ -35,6 +37,7 @@ class CalendarDerivedEventsService
         $events = array_merge($events, $this->projectEvents($actor, $from, $to));
         $events = array_merge($events, $this->printingEvents($actor, $from, $to));
         $events = array_merge($events, $this->orderDeliveryEvents($actor, $from, $to));
+        $events = array_merge($events, $this->googleSyncedTaskEvents($actor, $from, $to));
 
         if ($actor->role instanceof UserRole && $actor->role->canAccessCrm()) {
             $events = array_merge($events, $this->quotationEvents($actor, $from, $to));
@@ -212,6 +215,62 @@ class CalendarDerivedEventsService
                 relatedId: (int) $quotation->id,
                 href: $this->relatedUrls->resolve($actor, 'crm_quotation', (int) $quotation->id),
             );
+        }
+
+        return $events;
+    }
+
+    /**
+     * Local tasks synced to Google Calendar — shown alongside internal calendar items.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function googleSyncedTaskEvents(User $actor, Carbon $from, Carbon $to): array
+    {
+        $query = Task::query()
+            ->where('google_sync_enabled', true)
+            ->where('google_sync_status', GoogleCalendarSyncStatus::Synced->value)
+            ->where(function ($builder) use ($from, $to): void {
+                $builder->whereBetween('start_at', [$from, $to])
+                    ->orWhereBetween('due_at', [$from, $to])
+                    ->orWhereBetween('deadline', [$from->toDateString(), $to->toDateString()]);
+            });
+
+        if (! ($actor->role instanceof UserRole && ($actor->role === UserRole::Owner || $actor->role->canOverseeProjects()))) {
+            $query->where(function ($inner) use ($actor): void {
+                $inner->where('assigned_to', $actor->id)
+                    ->orWhere('created_by', $actor->id)
+                    ->orWhereHas('project', fn ($p) => $p->where('account_manager_id', $actor->id));
+            });
+        }
+
+        $events = [];
+        foreach ($query->get(['id', 'title', 'start_at', 'due_at', 'deadline', 'google_html_link', 'location']) as $task) {
+            $start = $task->start_at
+                ? Carbon::parse($task->start_at)
+                : ($task->due_at
+                    ? Carbon::parse($task->due_at)->subHour()
+                    : ($task->deadline ? Carbon::parse($task->deadline)->startOfDay() : null));
+
+            if ($start === null || ! $start->betweenIncluded($from->copy()->startOfDay(), $to->copy()->endOfDay())) {
+                continue;
+            }
+
+            $href = $this->relatedUrls->resolve($actor, 'task', (int) $task->id) ?? '/workspace/tasks/'.$task->id;
+            $event = $this->derived(
+                id: 'google-task-'.$task->id,
+                title: 'Google: '.$task->title,
+                type: CalendarItemType::Task->value,
+                source: CalendarSource::Google->value,
+                startsAt: $start,
+                allDay: $task->start_at === null && $task->due_at === null,
+                relatedType: 'task',
+                relatedId: (int) $task->id,
+                href: $href,
+            );
+            $event['meeting_url'] = $task->google_html_link;
+            $event['location'] = $task->location;
+            $events[] = $event;
         }
 
         return $events;

@@ -86,6 +86,17 @@ class PlatformNotifier
         $assignee->notify(new TaskAssignedNotification($task));
     }
 
+    public function taskSupplierAssigned(Task $task): void
+    {
+        $task->loadMissing(['supplier.user']);
+        $supplierUser = $task->supplier?->user;
+        if (! $this->canReceive($supplierUser)) {
+            return;
+        }
+
+        $supplierUser->notify(new TaskAssignedNotification($task));
+    }
+
     public function paymentPaid(Payment $payment): void
     {
         $payment->loadMissing(['customer', 'order']);

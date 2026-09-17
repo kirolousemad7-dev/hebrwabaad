@@ -26,6 +26,7 @@ export type CalendarSource =
   | 'PAYMENT'
   | 'CONTENT'
   | 'SUPPLIER'
+  | 'GOOGLE'
 
 export type CalendarReminderOffset =
   | 'AT_START'

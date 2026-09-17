@@ -214,6 +214,14 @@ class User extends Authenticatable
         return $this->hasOne(Supplier::class);
     }
 
+    /**
+     * @return HasOne<GoogleCalendarConnection, $this>
+     */
+    public function googleCalendarConnection(): HasOne
+    {
+        return $this->hasOne(GoogleCalendarConnection::class);
+    }
+
     public function canReviewContent(): bool
     {
         return $this->role instanceof UserRole && $this->role->canReviewContent();

@@ -12,6 +12,7 @@ enum CalendarSource: string
     case Payment = 'PAYMENT';
     case Content = 'CONTENT';
     case Supplier = 'SUPPLIER';
+    case Google = 'GOOGLE';
 
     /**
      * @return list<string>
@@ -32,6 +33,7 @@ enum CalendarSource: string
             self::Payment => 'دفع',
             self::Content => 'محتوى',
             self::Supplier => 'مورد',
+            self::Google => 'Google Calendar',
         };
     }
 }

@@ -21,7 +21,13 @@ class StoreWorkspaceTaskRequest extends ApiFormRequest
             'assigned_to' => ['required', 'integer', 'exists:users,id'],
             'priority' => ['required', 'string', Rule::enum(TaskPriority::class)],
             'deadline' => ['nullable', 'date'],
+            'start_at' => ['nullable', 'date'],
+            'due_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+            'timezone' => ['nullable', 'timezone'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'status' => ['sometimes', 'string', Rule::enum(TaskStatus::class)],
+            'reminders' => ['nullable', 'array', 'max:10'],
         ];
     }
 }
