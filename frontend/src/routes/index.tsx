@@ -120,6 +120,9 @@ import {
 import { SupplierProfilePage } from '../pages/supplier/SupplierProfilePage'
 import { SupplierRegisterPage } from '../pages/supplier/SupplierRegisterPage'
 import { SupplierSettingsPage } from '../pages/supplier/SupplierSettingsPage'
+import { LoginCodePage } from '../pages/verification/LoginCodePage'
+import { VerifyEmailPage } from '../pages/verification/VerifyEmailPage'
+import { VerifyPhonePage } from '../pages/verification/VerifyPhonePage'
 import { CrmDashboardPage } from '../pages/crm/CrmDashboardPage'
 import { CrmLeadsPage } from '../pages/crm/CrmLeadsPage'
 import { CrmLeadDetailPage } from '../pages/crm/CrmLeadDetailPage'
@@ -181,6 +184,8 @@ export function AppRoutes() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/supplier/login" element={<SupplierLoginPage />} />
           <Route path="/supplier/register" element={<SupplierRegisterPage />} />
+          <Route path="/login/code" element={<LoginCodePage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
@@ -320,6 +325,7 @@ export function AppRoutes() {
           <Route path="/supplier" element={<SupplierDashboardPage />} />
           <Route path="/supplier/content" element={<SupplierHomePage />} />
           <Route path="/supplier/profile" element={<SupplierProfilePage />} />
+          <Route path="/verify-phone" element={<VerifyPhonePage />} />
           <Route path="/supplier/services" element={<SupplierServicesPage />} />
           <Route path="/supplier/products" element={<SupplierHomePage />} />
           <Route path="/supplier/portfolio" element={<SupplierHomePage />} />

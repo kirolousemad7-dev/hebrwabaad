@@ -178,6 +178,9 @@ class SupplierPortalController extends Controller
             'onboarding_status' => $supplier->onboarding_status?->value,
             'owner_change_request' => $supplier->owner_change_request,
             'show_public_contact' => $supplier->show_public_contact,
+            'email_verified_at' => $supplier->email_verified_at?->toIso8601String()
+                ?? $request->user()?->email_verified_at?->toIso8601String(),
+            'phone_verified_at' => $supplier->phone_verified_at?->toIso8601String(),
         ]);
     }
 

@@ -13,7 +13,10 @@ export function PublicRoute() {
 
   if (isAuthenticated) {
     const allowWhileAuthenticated =
-      location.pathname === '/forgot-password' || location.pathname === '/reset-password'
+      location.pathname === '/forgot-password'
+      || location.pathname === '/reset-password'
+      || location.pathname === '/verify-email'
+      || location.pathname === '/login/code'
 
     if (!allowWhileAuthenticated) {
       const from = (location.state as { from?: string } | null)?.from

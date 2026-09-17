@@ -117,6 +117,8 @@ use App\Http\Controllers\Api\Quotes\CustomerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\OwnerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\PublicCommercialQuotationController;
 use App\Http\Controllers\Api\Supplier\SupplierAuthController;
+use App\Http\Controllers\Api\Supplier\SupplierEmailVerificationController;
+use App\Http\Controllers\Api\Supplier\SupplierPhoneVerificationController;
 use App\Http\Controllers\Api\Supplier\SupplierPortalController;
 use App\Http\Controllers\Api\Supplier\SupplierRegistrationController;
 use App\Http\Controllers\Api\Supplier\SupplierWorkspaceController;
@@ -156,6 +158,9 @@ Route::prefix('supplier')->group(function (): void {
     Route::post('/login', [SupplierAuthController::class, 'login'])->middleware('throttle:hebr-login');
     Route::post('/otp/request', [SupplierAuthController::class, 'requestOtp'])->middleware('throttle:hebr-supplier-otp');
     Route::post('/otp/verify', [SupplierAuthController::class, 'verifyOtp'])->middleware('throttle:hebr-login');
+    Route::get('/email/verify', [SupplierEmailVerificationController::class, 'verify'])
+        ->middleware('throttle:hebr-email-verify')
+        ->name('supplier.email.verify');
 });
 
 Route::get('/services', [ServiceController::class, 'index']);
@@ -619,6 +624,15 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:SUPPLIER'])->group(fu
     Route::get('/supplier/dashboard', [SupplierPortalController::class, 'dashboard']);
     Route::get('/supplier/completion', [SupplierPortalController::class, 'completion']);
     Route::get('/supplier/settings', [SupplierPortalController::class, 'settings']);
+
+    Route::get('/supplier/email/status', [SupplierEmailVerificationController::class, 'status']);
+    Route::post('/supplier/email/resend', [SupplierEmailVerificationController::class, 'resend'])
+        ->middleware('throttle:hebr-email-verify-resend');
+
+    Route::post('/supplier/phone/otp/request', [SupplierPhoneVerificationController::class, 'requestCode'])
+        ->middleware('throttle:hebr-phone-otp');
+    Route::post('/supplier/phone/otp/verify', [SupplierPhoneVerificationController::class, 'verify'])
+        ->middleware('throttle:hebr-login');
 
     Route::get('/supplier/contacts', [SupplierPortalController::class, 'contacts']);
     Route::post('/supplier/contacts', [SupplierPortalController::class, 'storeContact']);

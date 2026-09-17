@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\SmsSender;
 use App\Models\CalendarItem;
 use App\Models\ContentMedia;
 use App\Models\ManagedFile;
@@ -15,6 +16,7 @@ use App\Services\Delivery\DeliveryProviderManager;
 use App\Services\Notifications\NotificationChannelManager;
 use App\Services\Payments\CardPaymentGateway;
 use App\Services\Payments\PayTabsCheckoutGateway;
+use App\Services\Sms\SmsManager;
 use App\Support\Calendar\CalendarOccurrenceReference;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -36,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CardPaymentGateway::class, PayTabsCheckoutGateway::class);
         $this->app->singleton(NotificationChannelManager::class);
         $this->app->singleton(DeliveryProviderManager::class);
+        $this->app->singleton(SmsManager::class);
+        $this->app->bind(SmsSender::class, fn ($app) => $app->make(SmsManager::class)->driver());
     }
 
     /**
@@ -117,6 +121,30 @@ class AppServiceProvider extends ServiceProvider
                 5,
                 Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip()),
             );
+        });
+
+        RateLimiter::for('hebr-email-verify', function (Request $request) {
+            return $this->perMinute(20, (string) $request->ip());
+        });
+
+        RateLimiter::for('hebr-email-verify-resend', function (Request $request) {
+            $userId = $request->user()?->id;
+
+            return $this->perMinute(3, $userId !== null ? 'user:'.$userId : (string) $request->ip());
+        });
+
+        RateLimiter::for('hebr-phone-otp', function (Request $request) {
+            $userId = $request->user()?->id;
+            $key = $userId !== null ? 'user:'.$userId : (string) $request->ip();
+
+            if (app()->runningUnitTests() && config('testing.force_rate_limits') !== true) {
+                return Limit::none();
+            }
+
+            return [
+                Limit::perMinute(3)->by('phone-otp-min:'.$key),
+                Limit::perHour(10)->by('phone-otp-hour:'.$key),
+            ];
         });
 
         RateLimiter::for('hebr-consultations', function (Request $request) {

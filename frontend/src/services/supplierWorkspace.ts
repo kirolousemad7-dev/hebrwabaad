@@ -52,6 +52,8 @@ export type AdminSupplier = {
   show_public_contact: boolean
   status: string
   verification_status: string
+  email_verified_at?: string | null
+  phone_verified_at?: string | null
   onboarding_status: string
   rating: number | null
   notes: string | null

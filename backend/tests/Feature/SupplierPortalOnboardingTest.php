@@ -30,6 +30,7 @@ class SupplierPortalOnboardingTest extends TestCase
     public function test_supplier_can_self_register_as_pending_and_notifies_owner(): void
     {
         Notification::fake();
+        Mail::fake();
         $owner = User::factory()->owner()->create();
 
         $response = $this->postJson('/api/supplier/register', [

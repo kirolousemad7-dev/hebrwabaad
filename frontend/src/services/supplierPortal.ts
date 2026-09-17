@@ -68,4 +68,37 @@ export function getSupplierPortalSettings() {
   return apiGet<Record<string, unknown>>('/api/supplier/settings')
 }
 
+export type EmailVerificationStatus = {
+  status: 'verified' | 'pending' | 'expired'
+  verified: boolean
+  expires_at: string | null
+  sent_at: string | null
+}
+
+export function getSupplierEmailStatus() {
+  return apiGet<EmailVerificationStatus>('/api/supplier/email/status')
+}
+
+export function resendSupplierEmailVerification() {
+  return apiPost<EmailVerificationStatus>('/api/supplier/email/resend')
+}
+
+export function verifySupplierEmail(params: {
+  id: string
+  hash: string
+  expires: string
+  signature: string
+}) {
+  const query = new URLSearchParams(params).toString()
+  return apiGet<{ status: string; user: AuthUser }>(`/api/supplier/email/verify?${query}`)
+}
+
+export function requestSupplierPhoneOtp(phone?: string) {
+  return apiPost<{ status: string }>('/api/supplier/phone/otp/request', phone ? { phone } : {})
+}
+
+export function verifySupplierPhoneOtp(payload: { code: string; phone?: string }) {
+  return apiPost<{ status: string; supplier: AdminSupplier }>('/api/supplier/phone/otp/verify', payload)
+}
+
 export type { AuthUser }

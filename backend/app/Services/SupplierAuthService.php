@@ -8,12 +8,23 @@ use App\Mail\SupplierLoginOtpMail;
 use App\Models\Supplier;
 use App\Models\SupplierLoginOtp;
 use App\Models\User;
+use App\Services\Identity\SupplierVerificationSync;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class SupplierAuthService
 {
+    public const OTP_TTL_MINUTES = 10;
+
+    public const OTP_MAX_ATTEMPTS = 5;
+
+    public const OTP_RESEND_COOLDOWN_SECONDS = 60;
+
+    public function __construct(
+        private readonly SupplierVerificationSync $verificationSync,
+    ) {}
+
     /**
      * @return array{user: User, supplier: Supplier, token: string}
      */
@@ -47,6 +58,18 @@ class SupplierAuthService
             return ['status' => 'accepted'];
         }
 
+        $latest = SupplierLoginOtp::query()
+            ->where('email', $email)
+            ->whereNull('consumed_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latest?->sent_at !== null
+            && $latest->sent_at->copy()->addSeconds(self::OTP_RESEND_COOLDOWN_SECONDS)->isFuture()) {
+            // Do not reveal existence; still return accepted but skip send.
+            return ['status' => 'accepted'];
+        }
+
         $code = (string) random_int(100000, 999999);
 
         SupplierLoginOtp::query()->where('email', $email)->whereNull('consumed_at')->delete();
@@ -55,7 +78,8 @@ class SupplierAuthService
             'email' => $email,
             'code_hash' => Hash::make($code),
             'attempts' => 0,
-            'expires_at' => now()->addMinutes(10),
+            'expires_at' => now()->addMinutes(self::OTP_TTL_MINUTES),
+            'sent_at' => now(),
         ]);
 
         Mail::to($email)->queue(new SupplierLoginOtpMail(
@@ -83,7 +107,7 @@ class SupplierAuthService
             ]);
         }
 
-        if ($otp->attempts >= 5) {
+        if ($otp->attempts >= self::OTP_MAX_ATTEMPTS) {
             throw ValidationException::withMessages([
                 'code' => ['تم تجاوز عدد المحاولات. اطلب رمزاً جديداً.'],
             ]);
@@ -98,6 +122,11 @@ class SupplierAuthService
 
         $otp->forceFill(['consumed_at' => now()])->save();
 
+        SupplierLoginOtp::query()
+            ->where('email', $email)
+            ->whereNull('consumed_at')
+            ->update(['consumed_at' => now()]);
+
         $user = User::query()->where('email', $email)->where('role', UserRole::Supplier)->first();
         if ($user === null) {
             throw ValidationException::withMessages([
@@ -105,7 +134,17 @@ class SupplierAuthService
             ]);
         }
 
-        return $this->issueSession($user);
+        if ($user->email_verified_at === null) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        $supplier = Supplier::query()->where('user_id', $user->id)->first();
+        if ($supplier !== null && $supplier->email_verified_at === null) {
+            $supplier->forceFill(['email_verified_at' => now()])->save();
+            $this->verificationSync->sync($supplier);
+        }
+
+        return $this->issueSession($user->refresh());
     }
 
     /**

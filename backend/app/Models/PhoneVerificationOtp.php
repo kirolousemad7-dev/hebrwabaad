@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SupplierLoginOtp extends Model
+class PhoneVerificationOtp extends Model
 {
     /**
      * @var list<string>
      */
     protected $fillable = [
-        'email',
+        'user_id',
+        'phone',
         'code_hash',
         'attempts',
         'expires_at',
@@ -29,5 +31,13 @@ class SupplierLoginOtp extends Model
             'sent_at' => 'datetime',
             'consumed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

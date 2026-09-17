@@ -53,6 +53,8 @@ class AdminSupplierResource extends JsonResource
             'show_public_contact' => $this->show_public_contact,
             'status' => $this->status?->value,
             'verification_status' => $this->verification_status?->value,
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
+            'phone_verified_at' => $this->phone_verified_at?->toIso8601String(),
             'onboarding_status' => $this->onboarding_status?->value,
             'rating' => $this->rating,
             'profile_status' => $this->profile_status?->value,

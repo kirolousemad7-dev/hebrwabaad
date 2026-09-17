@@ -10,6 +10,7 @@ use App\Enums\UserRole;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Notifications\SupplierRegistrationPendingNotification;
+use App\Services\Identity\EmailVerificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ class SupplierOnboardingService
 {
     public function __construct(
         private readonly PlatformNotifier $notifier,
+        private readonly EmailVerificationService $emailVerification,
     ) {}
 
     /**
@@ -26,7 +28,7 @@ class SupplierOnboardingService
      */
     public function register(array $payload): array
     {
-        return DB::transaction(function () use ($payload): array {
+        $result = DB::transaction(function () use ($payload): array {
             $passwordless = (bool) ($payload['passwordless'] ?? false);
             $password = $passwordless
                 ? Str::password(32)
@@ -38,6 +40,7 @@ class SupplierOnboardingService
                 'password' => $password,
                 'role' => UserRole::Supplier,
                 'is_active' => true,
+                'email_verified_at' => null,
             ]);
 
             $companyName = (string) $payload['company_name'];
@@ -95,5 +98,9 @@ class SupplierOnboardingService
                 'token' => $token,
             ];
         });
+
+        $this->emailVerification->send($result['user'], force: true);
+
+        return $result;
     }
 }

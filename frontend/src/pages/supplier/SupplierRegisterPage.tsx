@@ -39,9 +39,12 @@ export function SupplierRegisterPage() {
       if (response.data.token) {
         persistSession({ user: response.data.user, token: response.data.token })
         await refreshUser()
-        navigate('/supplier', { replace: true })
+        navigate('/verify-email', { replace: true })
       } else {
-        navigate('/supplier/login', { replace: true, state: { registered: true } })
+        navigate(`/login/code?email=${encodeURIComponent(String(form.get('email') || ''))}`, {
+          replace: true,
+          state: { registered: true },
+        })
       }
     } catch (caught) {
       setError(describeApiError(caught, 'تعذر تسجيل المورد.'))

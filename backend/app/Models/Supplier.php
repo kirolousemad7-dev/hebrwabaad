@@ -55,6 +55,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'show_public_contact',
     'status',
     'verification_status',
+    'email_verified_at',
+    'phone_verified_at',
     'onboarding_status',
     'rating',
     'profile_status',
@@ -118,6 +120,8 @@ class Supplier extends Model
             'verification_status' => SupplierVerificationStatus::class,
             'onboarding_status' => SupplierOnboardingStatus::class,
             'locked_fields' => 'array',
+            'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'published_at' => 'datetime',
         ];
