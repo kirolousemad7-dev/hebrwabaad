@@ -6,6 +6,7 @@ import {
   DashboardPanelSkeleton,
   DashboardSection,
 } from '../../components/owner/DashboardSection'
+import { QuotationSourcingPanel } from '../../components/quotes/QuotationSourcingPanel'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import {
   downloadCommercialQuotationPdf,
@@ -130,6 +131,7 @@ export function OwnerCommercialQuotationEditorPage() {
   const [dirty, setDirty] = useState(false)
   const [showSendConfirm, setShowSendConfirm] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [activeTab, setActiveTab] = useState<'customer' | 'internal' | 'sourcing'>('internal')
 
   const [lines, setLines] = useState<DraftLine[]>([newLine()])
   const [discount, setDiscount] = useState('')
@@ -421,6 +423,82 @@ export function OwnerCommercialQuotationEditorPage() {
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
       {notice ? <FeedbackBanner kind="success">{notice}</FeedbackBanner> : null}
 
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+        {(
+          [
+            ['customer', 'عرض العميل'],
+            ['internal', 'العرض الداخلي'],
+            ['sourcing', 'توريد الموردين'],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`rounded-lg px-3 py-2 text-sm ${
+              activeTab === key ? 'bg-[#315CFF] text-white' : 'border border-slate-300 bg-white text-slate-700'
+            }`}
+            onClick={() => setActiveTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'customer' ? (
+        <DashboardSection title="معاينة العميل (بدون بيانات الموردين)">
+          {preview ? (
+            <div className="space-y-4 text-sm">
+              <p className="text-slate-600">
+                هذه المعاينة تطابق ما يراه العميل عبر الرابط العام أو PDF — دون هوية المورد أو التكلفة أو الهوامش.
+              </p>
+              <dl className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-slate-500">المرجع</dt>
+                  <dd className="font-mono" dir="ltr">
+                    {preview.reference}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">الإجمالي</dt>
+                  <dd className="font-semibold text-[#315CFF]">{formatMoney(Number(preview.total), currency)}</dd>
+                </div>
+              </dl>
+              <ul className="space-y-2">
+                {(preview.items || []).map((item, index) => (
+                  <li key={`${item.description}-${index}`} className="rounded-lg border border-slate-100 bg-[#F7F5EF] px-3 py-2">
+                    <div className="font-medium text-[#111318]">{item.description}</div>
+                    <div className="mt-1 text-xs text-slate-600">
+                      الكمية: {item.quantity} · سعر العميل: {formatMoney(Number(item.unit_price), currency)} ·{' '}
+                      {formatMoney(Number(item.subtotal), currency)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <SummaryRows
+                currency={currency}
+                subtotal={Number(preview.subtotal ?? 0)}
+                discount={Number(preview.discount_amount ?? 0)}
+                tax={Number(preview.tax_amount ?? 0)}
+                shipping={Number(preview.shipping_amount ?? 0)}
+                rental={Number(preview.rental_amount ?? 0)}
+                total={Number(preview.total ?? 0)}
+                estimated={false}
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">احفظ العرض أولاً لتحميل معاينة العميل.</p>
+          )}
+        </DashboardSection>
+      ) : null}
+
+      {activeTab === 'sourcing' ? (
+        <DashboardSection title="توريد الموردين">
+          <QuotationSourcingPanel quotationId={quotation.id} currency={currency} />
+        </DashboardSection>
+      ) : null}
+
+      {activeTab === 'internal' ? (
+        <>
       {publicLink ? (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
           <span className="break-all font-mono text-xs" dir="ltr">
@@ -895,6 +973,8 @@ export function OwnerCommercialQuotationEditorPage() {
           </div>
         </aside>
       </div>
+        </>
+      ) : null}
 
       {showSendConfirm ? (
         <div

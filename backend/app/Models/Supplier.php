@@ -217,6 +217,14 @@ class Supplier extends Model
     }
 
     /**
+     * @return HasMany<QuotationSupplierQuote, $this>
+     */
+    public function quotationQuotes(): HasMany
+    {
+        return $this->hasMany(QuotationSupplierQuote::class);
+    }
+
+    /**
      * @return BelongsToMany<SupplierCategory, $this>
      */
     public function categories(): BelongsToMany

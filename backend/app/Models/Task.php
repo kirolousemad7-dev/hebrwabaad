@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'project_id',
     'department_id',
     'order_item_id',
+    'supplier_id',
+    'quotation_supplier_quote_id',
+    'commercial_quotation_item_id',
     'source',
     'assigned_to',
     'created_by',
@@ -64,6 +67,32 @@ class Task extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    /**
+     * Internal execution partner — never exposed on customer APIs.
+     *
+     * @return BelongsTo<Supplier, $this>
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * @return BelongsTo<QuotationSupplierQuote, $this>
+     */
+    public function quotationSupplierQuote(): BelongsTo
+    {
+        return $this->belongsTo(QuotationSupplierQuote::class);
+    }
+
+    /**
+     * @return BelongsTo<CommercialQuotationItem, $this>
+     */
+    public function commercialQuotationItem(): BelongsTo
+    {
+        return $this->belongsTo(CommercialQuotationItem::class);
     }
 
     /**

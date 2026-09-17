@@ -600,6 +600,19 @@ class CommercialQuotationService
         $loaded = $this->load($quotation, includeInternal: true);
         $public = $this->publicPayload($loaded);
         $public['internal_notes'] = $loaded->internal_notes;
+        $public['execution_project_id'] = $loaded->execution_project_id;
+        $public['items'] = $loaded->items->map(fn (CommercialQuotationItem $item): array => [
+            'id' => $item->id,
+            'description' => $item->description,
+            'quantity' => $item->quantity,
+            'unit_price' => $item->unit_price,
+            'subtotal' => $item->subtotal,
+            'category' => $item->category instanceof QuotationLineCategory
+                ? $item->category->value
+                : $item->category,
+            'meta' => $item->meta,
+            'selected_supplier_quote_id' => $item->selected_supplier_quote_id,
+        ])->values()->all();
         $public['events'] = $loaded->events->map(fn (CommercialQuotationEvent $event): array => [
             'id' => $event->id,
             'event_type' => $event->event_type,
@@ -618,6 +631,7 @@ class CommercialQuotationService
                 : (string) $payment->status,
             'created_at' => $payment->created_at?->toIso8601String(),
         ])->values()->all();
+        $public['sourcing'] = app(QuotationSupplierSourcingService::class)->sourcingPayload($loaded);
 
         return $public;
     }
@@ -756,6 +770,13 @@ class CommercialQuotationService
             $this->recordEvent($quotation, 'accepted', null, 'customer');
 
             $loaded = $this->load($quotation->fresh() ?? $quotation, includeInternal: false);
+
+            $ownerActor = $loaded->creator ?? User::query()->find($loaded->created_by);
+            if ($ownerActor !== null) {
+                app(QuotationSupplierSourcingService::class)
+                    ->attachSelectedSuppliersOnAccept($loaded, $ownerActor);
+                $loaded = $this->load($loaded->fresh() ?? $loaded, includeInternal: false);
+            }
 
             $this->notifyStaff(
                 $loaded,
@@ -1566,7 +1587,7 @@ class CommercialQuotationService
             'quote_request_id' => $quotation->quote_request_id,
             'printing_request_id' => $source === QuoteRequestSource::PrintingRequest ? $request?->source_id : null,
             'event_request_id' => $source === QuoteRequestSource::EventRequest ? $request?->source_id : null,
-            'project_id' => null,
+            'project_id' => $quotation->execution_project_id,
         ];
     }
 
@@ -1599,6 +1620,9 @@ class CommercialQuotationService
             'expired' => 'انتهت صلاحية العرض',
             'checkout_created' => 'تم بدء عملية الدفع',
             'payment_recorded' => 'تم استلام الدفعة',
+            'supplier_quote_requested' => 'تم طلب عرض سعر من مورد',
+            'supplier_quote_selected' => 'تم اختيار مورد للتنفيذ',
+            'supplier_quote_rejected' => 'تم رفض عرض مورد',
             default => $event,
         };
     }

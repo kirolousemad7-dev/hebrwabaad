@@ -15,7 +15,7 @@ export function SupplierLayout() {
         { to: '/supplier/products', label: 'المنتجات', icon: 'packages' },
         { to: '/supplier/portfolio', label: 'المعرض', icon: 'work' },
         { to: '/supplier/documents', label: 'المستندات', icon: 'files' },
-        { to: '/supplier/quotations', label: 'عروض الأسعار', icon: 'orders' },
+        { to: '/supplier/quotations', label: 'طلبات التوريد', icon: 'orders' },
         { to: '/supplier/projects', label: 'المشاريع', icon: 'projects' },
         { to: '/supplier/tasks', label: 'المهام', icon: 'tasks' },
         { to: '/supplier/calendar', label: 'التقويم', icon: 'calendar' },

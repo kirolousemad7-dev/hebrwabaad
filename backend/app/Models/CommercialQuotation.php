@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'quote_request_id',
     'customer_id',
     'order_id',
+    'execution_project_id',
     'created_by',
     'status',
     'currency',
@@ -153,11 +154,27 @@ class CommercialQuotation extends Model
     }
 
     /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function executionProject(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'execution_project_id');
+    }
+
+    /**
      * @return HasMany<CommercialQuotationItem, $this>
      */
     public function items(): HasMany
     {
         return $this->hasMany(CommercialQuotationItem::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return HasMany<QuotationSupplierQuote, $this>
+     */
+    public function supplierQuotes(): HasMany
+    {
+        return $this->hasMany(QuotationSupplierQuote::class);
     }
 
     /**

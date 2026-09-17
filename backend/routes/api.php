@@ -116,11 +116,13 @@ use App\Http\Controllers\Api\Quotes\CommercialQuotationController;
 use App\Http\Controllers\Api\Quotes\CustomerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\OwnerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\PublicCommercialQuotationController;
+use App\Http\Controllers\Api\Quotes\QuotationSupplierSourcingController;
 use App\Http\Controllers\Api\Supplier\SupplierAuthController;
 use App\Http\Controllers\Api\Supplier\SupplierEmailVerificationController;
 use App\Http\Controllers\Api\Supplier\SupplierPhoneVerificationController;
 use App\Http\Controllers\Api\Supplier\SupplierPortalController;
 use App\Http\Controllers\Api\Supplier\SupplierRegistrationController;
+use App\Http\Controllers\Api\Supplier\SupplierSourcingController;
 use App\Http\Controllers\Api\Supplier\SupplierWorkspaceController;
 use App\Http\Controllers\Api\SupportConversationController;
 use App\Http\Controllers\Api\Webhooks\InboundWebhookController;
@@ -395,6 +397,15 @@ Route::prefix('operations')->middleware([
     Route::get('/commercial-quotations/{commercial_quotation}/preview', [CommercialQuotationController::class, 'preview']);
     Route::get('/commercial-quotations/{commercial_quotation}/pdf', [CommercialQuotationController::class, 'pdf']);
 
+    Route::get('/sourcing/suppliers', [QuotationSupplierSourcingController::class, 'suppliers']);
+    Route::get('/commercial-quotations/{commercial_quotation}/sourcing', [QuotationSupplierSourcingController::class, 'index']);
+    Route::post('/commercial-quotations/{commercial_quotation}/items/{item}/supplier-quotes', [QuotationSupplierSourcingController::class, 'requestQuote']);
+    Route::get('/commercial-quotation-items/{item}/supplier-quotes/compare', [QuotationSupplierSourcingController::class, 'compare']);
+    Route::post('/supplier-quotes/{quote}/under-review', [QuotationSupplierSourcingController::class, 'markUnderReview']);
+    Route::post('/supplier-quotes/{quote}/select', [QuotationSupplierSourcingController::class, 'select']);
+    Route::post('/supplier-quotes/{quote}/reject', [QuotationSupplierSourcingController::class, 'reject']);
+    Route::post('/supplier-quotes/{quote}/replace', [QuotationSupplierSourcingController::class, 'replace']);
+
     Route::get('/command-center', [OperationsCommandCenterController::class, 'show']);
     Route::get('/my-day', [MyDayController::class, 'show']);
 
@@ -661,6 +672,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:SUPPLIER'])->group(fu
     Route::put('/supplier/content/products/{product}', [SupplierWorkspaceController::class, 'updateProduct']);
     Route::post('/supplier/content/products/{product}/submit', [SupplierWorkspaceController::class, 'submitProduct']);
     Route::post('/supplier/content/products/{product}/resubmit', [SupplierWorkspaceController::class, 'submitProduct']);
+
+    Route::get('/supplier/sourcing-requests', [SupplierSourcingController::class, 'index']);
+    Route::get('/supplier/sourcing-requests/{quote}', [SupplierSourcingController::class, 'show']);
+    Route::post('/supplier/sourcing-requests/{quote}/respond', [SupplierSourcingController::class, 'respond']);
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:HR'])->group(function (): void {

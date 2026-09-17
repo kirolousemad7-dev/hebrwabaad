@@ -122,6 +122,7 @@ import {
 import { SupplierProfilePage } from '../pages/supplier/SupplierProfilePage'
 import { SupplierRegisterPage } from '../pages/supplier/SupplierRegisterPage'
 import { SupplierSettingsPage } from '../pages/supplier/SupplierSettingsPage'
+import { SupplierSourcingPage } from '../pages/supplier/SupplierSourcingPage'
 import { LoginCodePage } from '../pages/verification/LoginCodePage'
 import { VerifyEmailPage } from '../pages/verification/VerifyEmailPage'
 import { VerifyPhonePage } from '../pages/verification/VerifyPhonePage'
@@ -335,7 +336,8 @@ export function AppRoutes() {
           <Route path="/supplier/portfolio" element={<SupplierHomePage />} />
           <Route path="/supplier/documents" element={<SupplierDocumentsPage />} />
           <Route path="/supplier/contacts" element={<SupplierContactsPage />} />
-          <Route path="/supplier/quotations" element={<SupplierModulePlaceholderPage title="عروض الأسعار" description="عروض مرتبطة بالمورد فقط عند الربط التشغيلي." />} />
+          <Route path="/supplier/quotations" element={<SupplierSourcingPage />} />
+          <Route path="/supplier/sourcing" element={<SupplierSourcingPage />} />
           <Route path="/supplier/projects" element={<SupplierModulePlaceholderPage title="المشاريع" description="مشاريع التنفيذ المرتبطة بالمورد." />} />
           <Route path="/supplier/tasks" element={<SupplierModulePlaceholderPage title="المهام" description="مهام التنفيذ المرتبطة بالمورد." />} />
           <Route path="/supplier/calendar" element={<SupplierModulePlaceholderPage title="التقويم" description="مواعيد المورد التشغيلية." />} />

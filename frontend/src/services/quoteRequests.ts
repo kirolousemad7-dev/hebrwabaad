@@ -152,6 +152,16 @@ export type CommercialQuotation = {
     created_at?: string | null
     actor?: { id: number; name?: string | null } | null
   }>
+  sourcing?: {
+    items?: Array<Record<string, unknown>>
+    totals?: {
+      customer_total?: string
+      selected_supplier_cost?: string
+      gross_margin?: string
+      margin_percentage?: number | null
+    }
+  } | null
+  execution_project_id?: number | null
 }
 
 export type QuoteRequest = {
