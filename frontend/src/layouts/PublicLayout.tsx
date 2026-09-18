@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { BrandWatermark } from '../components/brand/BrandWatermark'
+import { NeedsDiscoveryWidget } from '../components/needs-discovery/NeedsDiscoveryWidget'
 import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicNav } from '../components/public/PublicNav'
 
@@ -20,6 +21,7 @@ export function PublicLayout() {
         </main>
         <PublicFooter />
       </div>
+      <NeedsDiscoveryWidget />
     </div>
   )
 }

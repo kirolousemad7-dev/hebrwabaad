@@ -4,6 +4,7 @@ const ACTIONS = [
   { to: '/owner/employees', label: 'إدارة الموظفين' },
   { to: '/owner/orders', label: 'الطلبات' },
   { to: '/owner/quote-requests', label: 'طلبات التسعير' },
+  { to: '/owner/requirements', label: 'اكتشف احتياجك' },
   { to: '/owner/payments', label: 'المدفوعات' },
   { to: '/owner/support', label: 'الدعم' },
   { to: '/owner/services', label: 'إدارة الخدمات' },

@@ -38,6 +38,7 @@ export const OWNER_DASHBOARD_NAV: DashboardNavItem[] = [
   { to: '/owner/printing-ops', label: 'تشغيل الطباعة', icon: 'printing' },
   { to: '/owner/printing-quotations', label: 'عروض الطباعة', icon: 'printing' },
   { to: '/owner/quote-requests', label: 'طلبات التسعير', icon: 'orders' },
+  { to: '/owner/requirements', label: 'اكتشف احتياجك', icon: 'messages' },
   { to: '/owner/printing-catalog', label: 'كتالوج الطباعة', icon: 'printing' },
   { to: '/owner/departments', label: 'الأقسام', icon: 'employees' },
   { to: '/owner/projects', label: 'المشاريع', icon: 'projects' },
@@ -101,6 +102,7 @@ export function ownerNavForRole(role: string | undefined): DashboardNavItem[] {
         item.to !== '/owner/orders' &&
         item.to !== '/owner/payments' &&
         item.to !== '/owner/support' &&
+        item.to !== '/owner/requirements' &&
         item.to !== '/owner/files' &&
         item.to !== '/owner/notifications'),
   )

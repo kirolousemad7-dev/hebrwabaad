@@ -11,6 +11,7 @@ use App\Models\CrmLead;
 use App\Models\CrmQuotation;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Requirement;
 use App\Models\Supplier;
 use App\Models\Task;
 use App\Models\User;
@@ -266,6 +267,22 @@ class PlatformNotifier
             'message' => 'Lead '.$lead->reference.' ('.$lead->full_name.') was assigned to you.',
             'href' => '/crm/leads/'.$lead->id,
             'lead_id' => $lead->id,
+        ]));
+    }
+
+    public function requirementReceived(Requirement $requirement, User $recipient): void
+    {
+        if (! $this->canReceive($recipient) || ! $this->allowsCrmAlerts($recipient)) {
+            return;
+        }
+
+        $recipient->notify(new CrmNotification([
+            'type' => 'requirement_received',
+            'title' => 'طلب اكتشف احتياجك جديد',
+            'message' => ($requirement->summary ?: $requirement->name).' · '.$requirement->reference,
+            'href' => '/owner/requirements',
+            'requirement_id' => $requirement->id,
+            'lead_id' => $requirement->crm_lead_id,
         ]));
     }
 

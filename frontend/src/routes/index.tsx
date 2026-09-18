@@ -72,6 +72,7 @@ import { OwnerPrintingOpsPage } from '../pages/owner/OwnerPrintingOpsPage'
 import { OwnerPrintingQuotationsPage } from '../pages/owner/OwnerPrintingQuotationsPage'
 import { OwnerQuoteRequestDetailPage } from '../pages/owner/OwnerQuoteRequestDetailPage'
 import { OwnerQuoteRequestsPage } from '../pages/owner/OwnerQuoteRequestsPage'
+import { OwnerRequirementsPage } from '../pages/owner/OwnerRequirementsPage'
 import { OwnerCommercialQuotationEditorPage } from '../pages/owner/OwnerCommercialQuotationEditorPage'
 import { OwnerPaymentsReconciliationPage } from '../pages/owner/OwnerPaymentsReconciliationPage'
 import { OwnerIntegrationsWebhooksPage } from '../pages/owner/OwnerIntegrationsWebhooksPage'
@@ -290,6 +291,8 @@ export function AppRoutes() {
           <Route path="/owner/payments/:paymentId" element={<OwnerPaymentDetailPage />} />
           <Route path="/owner/support" element={<OwnerSupportPage />} />
           <Route path="/owner/support/:conversationId" element={<OwnerSupportPage />} />
+          <Route path="/owner/requirements" element={<OwnerRequirementsPage />} />
+          <Route path="/owner/requirements/:id" element={<OwnerRequirementsPage />} />
           <Route path="/owner/files" element={<OwnerFilesPage />} />
           <Route path="/owner/notifications" element={<OwnerNotificationsPage />} />
         </Route>

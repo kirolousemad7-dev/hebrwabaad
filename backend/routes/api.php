@@ -118,6 +118,8 @@ use App\Http\Controllers\Api\PublicPrinting\PublicPrintingQuotationController;
 use App\Http\Controllers\Api\PublicPrinting\PublicPrintingTrackController;
 use App\Http\Controllers\Api\Quotes\CommercialQuotationController;
 use App\Http\Controllers\Api\Quotes\CustomerQuoteRequestController;
+use App\Http\Controllers\Api\NeedsDiscovery\NeedsDiscoveryController;
+use App\Http\Controllers\Api\Owner\OwnerRequirementController;
 use App\Http\Controllers\Api\Quotes\OwnerQuoteRequestController;
 use App\Http\Controllers\Api\Quotes\PublicCommercialQuotationController;
 use App\Http\Controllers\Api\Quotes\QuotationSupplierSourcingController;
@@ -194,6 +196,22 @@ Route::get('/content-media/{uuid}', [ContentMediaController::class, 'show']);
 Route::get('/platform-settings', [PublicPlatformSettingController::class, 'show']);
 Route::get('/printing-catalog', [PublicPrintingCatalogController::class, 'index']);
 Route::post('/contact', [ContactInquiryController::class, 'store'])->middleware('throttle:hebr-contact');
+
+Route::prefix('needs-discovery')->middleware('throttle:hebr-contact')->group(function (): void {
+    Route::get('/steps', [NeedsDiscoveryController::class, 'steps']);
+    Route::post('/', [NeedsDiscoveryController::class, 'store'])->middleware('throttle:hebr-uploads');
+});
+
+Route::prefix('owner')->middleware([
+    'auth:sanctum',
+    'account.active',
+    'role:OWNER,ADMIN_MANAGER,ACCOUNT_MANAGER,SALES_MANAGER',
+])->group(function (): void {
+    Route::get('/requirements', [OwnerRequirementController::class, 'index']);
+    Route::get('/requirements/{requirement}', [OwnerRequirementController::class, 'show']);
+    Route::patch('/requirements/{requirement}', [OwnerRequirementController::class, 'update']);
+    Route::get('/requirements/{requirement}/attachments/{index}', [OwnerRequirementController::class, 'downloadAttachment']);
+});
 
 Route::prefix('public')->group(function (): void {
     Route::get('/quotations/{token}', [PublicQuotationController::class, 'show']);

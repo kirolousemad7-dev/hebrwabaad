@@ -17,6 +17,7 @@ class CrmSettingsSeeder extends Seeder
         $sources = [
             ['name' => 'Website Contact', 'slug' => 'website-contact'],
             ['name' => 'AI Consultant', 'slug' => 'ai-consultant'],
+            ['name' => 'Needs Discovery', 'slug' => 'needs-discovery'],
             ['name' => 'Referral', 'slug' => 'referral'],
             ['name' => 'Cold Call', 'slug' => 'cold-call'],
             ['name' => 'WhatsApp', 'slug' => 'whatsapp'],

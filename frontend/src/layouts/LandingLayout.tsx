@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { NeedsDiscoveryWidget } from '../components/needs-discovery/NeedsDiscoveryWidget'
 import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicNav } from '../components/public/PublicNav'
 
@@ -18,6 +19,7 @@ export function LandingLayout() {
         </main>
         <PublicFooter />
       </div>
+      <NeedsDiscoveryWidget />
     </div>
   )
 }
