@@ -18,11 +18,13 @@ class ServiceController extends Controller
 
         $services = Service::query()
             ->active()
+            ->public()
             ->when(
                 is_string($category) && in_array($category, ServiceCategory::values(), true),
                 fn ($query) => $query->where('category', $category),
             )
             ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
@@ -35,15 +37,47 @@ class ServiceController extends Controller
     {
         $model = Service::query()
             ->active()
+            ->public()
             ->when(
                 ctype_digit($service),
                 fn ($query) => $query->whereKey((int) $service),
                 fn ($query) => $query->where('slug', $service),
             )
+            ->with([
+                'packages' => fn ($query) => $query->active()->public()->orderBy('sort_order')->orderBy('name'),
+                'addons' => fn ($query) => $query->active()->public()->orderBy('sort_order')->orderBy('name'),
+                'portfolioItems' => fn ($query) => $query->published(),
+                'suppliers' => fn ($query) => $query->publiclyVisible(),
+                'products' => fn ($query) => $query->published(),
+            ])
             ->firstOrFail();
 
-        return ApiResponse::success(
-            ServiceResource::make($model)->resolve($request)
-        );
+        $related = Service::query()
+            ->active()
+            ->public()
+            ->where('category', $model->category)
+            ->whereKeyNot($model->id)
+            ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->limit(6)
+            ->get();
+
+        $payload = ServiceResource::make($model)->resolve($request);
+        $payload['related_services'] = $related->map(fn (Service $item) => [
+            'id' => $item->id,
+            'name' => $item->name,
+            'slug' => $item->slug,
+            'summary' => $item->summary,
+            'category' => $item->category->value,
+            'base_price' => $item->base_price,
+            'currency' => $item->currency,
+            'pricing_mode' => $item->pricingMode()->value,
+            'pricing_label' => $item->pricingMode()->label(),
+            'is_chargeable' => $item->isChargeable(),
+            'duration_days' => $item->duration_days,
+        ])->values()->all();
+
+        return ApiResponse::success($payload);
     }
 }

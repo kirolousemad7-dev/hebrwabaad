@@ -245,6 +245,10 @@ export function seoKeyFromPath(pathname: string): SeoPageKey | null {
     return null
   }
 
+  if (pathname.startsWith('/services/') && pathname !== '/services') {
+    return null
+  }
+
   const match = (Object.entries(SEO_PAGE_PATHS) as Array<[SeoPageKey, string]>).find(
     ([key, path]) => key !== 'home' && key !== 'suppliers' && (pathname === path || pathname.startsWith(`${path}/`)),
   )

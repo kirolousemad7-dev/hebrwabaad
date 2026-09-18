@@ -13,7 +13,7 @@ import { PRICING_MODES, SERVICE_CATEGORIES, type PricingMode, type Service } fro
 import { PRICING_MODE_LABELS, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../../utils/catalog'
 import { describeApiError } from '../../utils/errors'
 
-type FormTab = 'commercial' | 'operations'
+type FormTab = 'commercial' | 'marketing' | 'seo' | 'operations'
 
 type FormState = {
   id: number | null
@@ -22,12 +22,29 @@ type FormState = {
   summary: string
   description: string
   category: ServiceInput['category']
+  subcategory: string
   base_price: string
   pricing_mode: PricingMode
   duration_days: string
   revision_rounds: string
   is_active: boolean
   is_featured: boolean
+  is_public: boolean
+  sort_order: string
+  hero_image: string
+  gallery: string
+  features: string
+  process_steps: string
+  faq: string
+  tags: string
+  seo_title: string
+  seo_description: string
+  og_title: string
+  og_description: string
+  og_image: string
+  canonical_url: string
+  robots: string
+  supplier_ids: string
   department_id: string
   task_title_template: string
   default_task_priority: string
@@ -43,12 +60,29 @@ const emptyForm: FormState = {
   summary: '',
   description: '',
   category: 'STRATEGY',
+  subcategory: '',
   base_price: '0',
   pricing_mode: 'QUOTE',
   duration_days: '',
   revision_rounds: '',
   is_active: true,
   is_featured: false,
+  is_public: true,
+  sort_order: '0',
+  hero_image: '',
+  gallery: '',
+  features: '',
+  process_steps: '',
+  faq: '',
+  tags: '',
+  seo_title: '',
+  seo_description: '',
+  og_title: '',
+  og_description: '',
+  og_image: '',
+  canonical_url: '',
+  robots: 'index,follow',
+  supplier_ids: '',
   department_id: '',
   task_title_template: '',
   default_task_priority: '',
@@ -65,12 +99,31 @@ function toFormState(service: Service): FormState {
     summary: service.summary ?? '',
     description: service.description ?? '',
     category: service.category,
+    subcategory: service.subcategory ?? '',
     base_price: service.base_price,
     pricing_mode: service.pricing_mode,
     duration_days: service.duration_days === null ? '' : String(service.duration_days),
     revision_rounds: service.revision_rounds == null ? '' : String(service.revision_rounds),
     is_active: service.is_active ?? true,
     is_featured: service.is_featured,
+    is_public: service.is_public ?? true,
+    sort_order: String(service.sort_order ?? 0),
+    hero_image: service.hero_image ?? '',
+    gallery: (service.gallery ?? []).join('\n'),
+    features: (service.features ?? []).join('\n'),
+    process_steps: (service.process_steps ?? [])
+      .map((step) => `${step.title}|${step.description ?? ''}`)
+      .join('\n'),
+    faq: (service.faq ?? []).map((item) => `${item.question}|${item.answer}`).join('\n'),
+    tags: (service.tags ?? []).join(', '),
+    seo_title: service.seo_title ?? service.seo?.title ?? '',
+    seo_description: service.seo_description ?? service.seo?.description ?? '',
+    og_title: service.og_title ?? service.seo?.og_title ?? '',
+    og_description: service.og_description ?? service.seo?.og_description ?? '',
+    og_image: service.og_image ?? service.seo?.og_image ?? '',
+    canonical_url: service.canonical_url ?? service.seo?.canonical_url ?? '',
+    robots: service.robots ?? service.seo?.robots ?? 'index,follow',
+    supplier_ids: (service.supplier_ids ?? []).join(', '),
     department_id: service.department_id == null ? '' : String(service.department_id),
     task_title_template: service.task_title_template ?? '',
     default_task_priority: service.default_task_priority ?? '',
@@ -136,18 +189,70 @@ export function OwnerServicesPage() {
       .map((line) => line.trim())
       .filter((line) => line !== '')
 
+    const features = form.features
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    const gallery = form.gallery
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    const tags = form.tags
+      .split(',')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    const process_steps = form.process_steps
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [title, ...rest] = line.split('|')
+        return { title: title.trim(), description: rest.join('|').trim() || null }
+      })
+    const faq = form.faq
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [question, ...rest] = line.split('|')
+        return { question: question.trim(), answer: rest.join('|').trim() }
+      })
+      .filter((item) => item.question && item.answer)
+    const supplier_ids = form.supplier_ids
+      .split(',')
+      .map((part) => Number.parseInt(part.trim(), 10))
+      .filter((id) => Number.isInteger(id) && id > 0)
+
     const payload: ServiceInput = {
       name: form.name.trim(),
       slug: form.slug.trim() === '' ? null : form.slug.trim(),
       summary: form.summary.trim() === '' ? null : form.summary.trim(),
+      short_description: form.summary.trim() === '' ? null : form.summary.trim(),
       description: form.description.trim() === '' ? null : form.description.trim(),
       category: form.category,
+      subcategory: form.subcategory.trim() === '' ? null : form.subcategory.trim(),
       base_price: basePrice,
       pricing_mode: form.pricing_mode,
       duration_days: form.duration_days.trim() === '' ? null : Number.parseInt(form.duration_days, 10),
       revision_rounds: form.revision_rounds.trim() === '' ? null : Number.parseInt(form.revision_rounds, 10),
       is_active: form.is_active,
       is_featured: form.is_featured,
+      is_public: form.is_public,
+      sort_order: Number.parseInt(form.sort_order || '0', 10) || 0,
+      hero_image: form.hero_image.trim() === '' ? null : form.hero_image.trim(),
+      gallery,
+      features,
+      process_steps,
+      faq,
+      tags,
+      seo_title: form.seo_title.trim() === '' ? null : form.seo_title.trim(),
+      seo_description: form.seo_description.trim() === '' ? null : form.seo_description.trim(),
+      og_title: form.og_title.trim() === '' ? null : form.og_title.trim(),
+      og_description: form.og_description.trim() === '' ? null : form.og_description.trim(),
+      og_image: form.og_image.trim() === '' ? null : form.og_image.trim(),
+      canonical_url: form.canonical_url.trim() === '' ? null : form.canonical_url.trim(),
+      robots: form.robots.trim() === '' ? null : form.robots.trim(),
+      supplier_ids,
       department_id: form.department_id.trim() === '' ? null : Number.parseInt(form.department_id, 10),
       task_title_template: form.task_title_template.trim() === '' ? null : form.task_title_template.trim(),
       default_task_priority: form.default_task_priority.trim() === '' ? null : form.default_task_priority,
@@ -234,21 +339,24 @@ export function OwnerServicesPage() {
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">{form.id === null ? 'خدمة جديدة' : 'تعديل الخدمة'}</h2>
-            <div className="flex gap-2 text-sm">
-              <button
-                type="button"
-                onClick={() => setTab('commercial')}
-                className={`rounded-full px-3 py-1 ${tab === 'commercial' ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
-              >
-                تجاري
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('operations')}
-                className={`rounded-full px-3 py-1 ${tab === 'operations' ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
-              >
-                تشغيلي
-              </button>
+            <div className="flex flex-wrap gap-2 text-sm">
+              {(
+                [
+                  ['commercial', 'تجاري'],
+                  ['marketing', 'صفحة الخدمة'],
+                  ['seo', 'SEO'],
+                  ['operations', 'تشغيلي'],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={`rounded-full px-3 py-1 ${tab === key ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -288,6 +396,15 @@ export function OwnerServicesPage() {
                       </option>
                     ))}
                   </select>
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>التصنيف الفرعي</span>
+                  <input
+                    value={form.subcategory}
+                    onChange={(event) => patch({ subcategory: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
                 </label>
 
                 <label className="block space-y-1 text-sm">
@@ -342,6 +459,17 @@ export function OwnerServicesPage() {
                 </label>
 
                 <label className="block space-y-1 text-sm">
+                  <span>ترتيب العرض</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.sort_order}
+                    onChange={(event) => patch({ sort_order: event.target.value })}
+                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+
+                <label className="block space-y-1 text-sm">
                   <span>وصف مختصر</span>
                   <input
                     value={form.summary}
@@ -368,7 +496,15 @@ export function OwnerServicesPage() {
                     checked={form.is_active}
                     onChange={(event) => patch({ is_active: event.target.checked })}
                   />
-                  <span>منشورة</span>
+                  <span>نشطة</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.is_public}
+                    onChange={(event) => patch({ is_public: event.target.checked })}
+                  />
+                  <span>ظاهرة للجمهور</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -380,7 +516,88 @@ export function OwnerServicesPage() {
                 </label>
               </div>
             </>
-          ) : (
+          ) : null}
+
+          {tab === 'marketing' ? (
+            <div className="grid gap-4">
+              <label className="block space-y-1 text-sm">
+                <span>صورة الهيرو (مسار/رابط)</span>
+                <input
+                  value={form.hero_image}
+                  onChange={(event) => patch({ hero_image: event.target.value })}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  dir="ltr"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>المعرض (رابط في كل سطر)</span>
+                <textarea rows={3} value={form.gallery} onChange={(event) => patch({ gallery: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>المميزات (سطر لكل بند)</span>
+                <textarea rows={4} value={form.features} onChange={(event) => patch({ features: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>خطوات العمل (عنوان|وصف لكل سطر)</span>
+                <textarea rows={4} value={form.process_steps} onChange={(event) => patch({ process_steps: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" placeholder={'اكتشاف|جلسات فهم\nتنفيذ|تسليم'} />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>الأسئلة الشائعة (سؤال|جواب لكل سطر)</span>
+                <textarea rows={4} value={form.faq} onChange={(event) => patch({ faq: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>الوسوم (مفصولة بفواصل)</span>
+                <input value={form.tags} onChange={(event) => patch({ tags: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>معرّفات الموردين المرتبطين (مفصولة بفواصل)</span>
+                <input value={form.supplier_ids} onChange={(event) => patch({ supplier_ids: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+              </label>
+              {form.id ? (
+                <p className="text-xs text-slate-500">
+                  الصفحة العامة:{' '}
+                  <a className="underline" href={`/services/${form.slug}`} target="_blank" rel="noreferrer">
+                    /services/{form.slug}
+                  </a>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {tab === 'seo' ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>عنوان SEO</span>
+                <input value={form.seo_title} onChange={(event) => patch({ seo_title: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>وصف SEO</span>
+                <textarea rows={3} value={form.seo_description} onChange={(event) => patch({ seo_description: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>OG Title</span>
+                <input value={form.og_title} onChange={(event) => patch({ og_title: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>OG Image</span>
+                <input value={form.og_image} onChange={(event) => patch({ og_image: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+              </label>
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span>OG Description</span>
+                <textarea rows={2} value={form.og_description} onChange={(event) => patch({ og_description: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>Canonical</span>
+                <input value={form.canonical_url} onChange={(event) => patch({ canonical_url: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>Robots</span>
+                <input value={form.robots} onChange={(event) => patch({ robots: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+              </label>
+            </div>
+          ) : null}
+
+          {tab === 'operations' ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-1 text-sm sm:col-span-2">
                 <span>القسم التشغيلي المسؤول</span>
@@ -454,7 +671,7 @@ export function OwnerServicesPage() {
                 />
               </label>
             </div>
-          )}
+          ) : null}
 
           <div className="flex gap-3">
             <button

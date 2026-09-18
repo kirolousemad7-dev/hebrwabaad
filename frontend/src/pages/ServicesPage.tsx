@@ -77,20 +77,25 @@ export function ServicesPage() {
                     <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّزة</span>
                   ) : null}
                 </div>
-                <PublicCta
-                  to={
-                    service.pricing_mode === 'QUOTE' || !service.is_chargeable
-                      ? buildRequestQuotePath({
-                          source_type: 'SERVICE',
-                          source_id: service.id,
-                          title: service.name,
-                        })
-                      : '/consultant'
-                  }
-                  variant="secondary"
-                >
-                  {service.pricing_mode === 'QUOTE' || !service.is_chargeable ? 'طلب تسعير' : 'اطلب توصية مناسبة'}
-                </PublicCta>
+                <div className="flex flex-wrap gap-2">
+                  <PublicCta to={`/services/${service.slug}`} variant="secondary">
+                    تفاصيل الخدمة
+                  </PublicCta>
+                  <PublicCta
+                    to={
+                      service.pricing_mode === 'QUOTE' || !service.is_chargeable
+                        ? buildRequestQuotePath({
+                            source_type: 'SERVICE',
+                            source_id: service.id,
+                            title: service.name,
+                          })
+                        : '/consultant'
+                    }
+                    variant="secondary"
+                  >
+                    {service.pricing_mode === 'QUOTE' || !service.is_chargeable ? 'طلب تسعير' : 'اطلب توصية مناسبة'}
+                  </PublicCta>
+                </div>
               </div>
             </li>
           ))}

@@ -32,6 +32,7 @@ import { PortfolioPage } from '../pages/PortfolioPage'
 import { PortfolioDetailPage } from '../pages/PortfolioDetailPage'
 import { SectorsPage } from '../pages/SectorsPage'
 import { SectorDetailPage } from '../pages/SectorDetailPage'
+import { ServiceDetailPage } from '../pages/ServiceDetailPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '../pages/ResetPasswordPage'
@@ -164,6 +165,7 @@ export function AppRoutes() {
       <Route element={<PublicLayout />}>
         <Route path="/consultant" element={<ConsultantPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/services/:slug" element={<ServiceDetailPage />} />
         <Route path="/packages" element={<PackagesPage />} />
         <Route path="/sectors" element={<SectorsPage />} />
         <Route path="/sectors/:slug" element={<SectorDetailPage />} />

@@ -5,8 +5,18 @@ export type ServiceInput = {
   name: string
   slug?: string | null
   summary?: string | null
+  short_description?: string | null
   description?: string | null
+  scope?: string | null
+  deliverables?: string[] | null
+  features?: string[] | null
+  process_steps?: Array<{ title: string; description?: string | null }> | null
+  faq?: Array<{ question: string; answer: string }> | null
+  tags?: string[] | null
+  gallery?: string[] | null
+  hero_image?: string | null
   category: ServiceCategory
+  subcategory?: string | null
   base_price: number
   currency?: string
   pricing_mode?: PricingMode
@@ -14,12 +24,28 @@ export type ServiceInput = {
   revision_rounds?: number | null
   is_active?: boolean
   is_featured?: boolean
+  is_public?: boolean
+  sort_order?: number
   department_id?: number | null
   task_title_template?: string | null
   default_task_priority?: string | null
   requires_review?: boolean
   requires_customer_approval?: boolean
   checklist_template?: string[] | null
+  seo_title?: string | null
+  seo_description?: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image?: string | null
+  canonical_url?: string | null
+  robots?: string | null
+  addon_ids?: number[]
+  sector_ids?: number[]
+  portfolio_item_ids?: number[]
+  supplier_ids?: number[]
+  product_ids?: number[]
+  project_ids?: number[]
+  quotation_ids?: number[]
 }
 
 export type PackageItemInput = {
@@ -66,6 +92,10 @@ export function getPublicServices(category?: ServiceCategory) {
   const query = category ? `?category=${encodeURIComponent(category)}` : ''
 
   return apiGet<Service[]>(`/api/services${query}`)
+}
+
+export function getPublicService(slugOrId: string | number) {
+  return apiGet<Service>(`/api/services/${slugOrId}`)
 }
 
 export function getPublicPackages(category?: PackageCategory) {

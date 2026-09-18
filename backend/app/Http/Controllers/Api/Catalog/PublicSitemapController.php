@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Catalog;
 
 use App\Http\Controllers\Controller;
 use App\Models\PortfolioItem;
+use App\Models\Service;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use Illuminate\Http\Response;
@@ -30,6 +31,12 @@ class PublicSitemapController extends Controller
             '/about',
             '/contact',
         ];
+
+        foreach (Service::query()->active()->public()->orderBy('id')->get(['slug']) as $service) {
+            if (filled($service->slug)) {
+                $paths[] = '/services/'.$service->slug;
+            }
+        }
 
         foreach (Supplier::query()->publiclyVisible()->orderBy('id')->get(['slug']) as $supplier) {
             $paths[] = '/suppliers/'.$supplier->slug;

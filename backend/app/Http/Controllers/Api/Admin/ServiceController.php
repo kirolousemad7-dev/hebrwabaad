@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -17,6 +18,8 @@ class ServiceController extends Controller
     {
         $services = Service::query()
             ->withCount('packageItems')
+            ->with(['addons', 'sectors', 'portfolioItems', 'suppliers', 'products', 'projects', 'quotations'])
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
@@ -27,9 +30,15 @@ class ServiceController extends Controller
 
     public function store(StoreServiceRequest $request): JsonResponse
     {
-        $service = Service::query()->create(
-            $this->attributes($request->validated())
-        );
+        $service = DB::transaction(function () use ($request) {
+            $service = Service::query()->create(
+                $this->attributes($request->safe()->except($this->associationKeys()))
+            );
+            $this->syncAssociations($service, $request->validated());
+
+            return $service->loadCount('packageItems')
+                ->load(['addons', 'sectors', 'portfolioItems', 'suppliers', 'products', 'projects', 'quotations']);
+        });
 
         return ApiResponse::success(
             ServiceResource::make($service)->resolve($request),
@@ -39,7 +48,8 @@ class ServiceController extends Controller
 
     public function show(Request $request, Service $service): JsonResponse
     {
-        $service->loadCount('packageItems');
+        $service->loadCount('packageItems')
+            ->load(['addons', 'sectors', 'portfolioItems', 'suppliers', 'products', 'projects', 'quotations']);
 
         return ApiResponse::success(
             ServiceResource::make($service)->resolve($request)
@@ -48,21 +58,21 @@ class ServiceController extends Controller
 
     public function update(UpdateServiceRequest $request, Service $service): JsonResponse
     {
-        $service->update(
-            $this->attributes($request->validated(), $service)
-        );
+        $service = DB::transaction(function () use ($request, $service) {
+            $service->update(
+                $this->attributes($request->safe()->except($this->associationKeys()), $service)
+            );
+            $this->syncAssociations($service, $request->validated());
 
-        $service->loadCount('packageItems');
+            return $service->loadCount('packageItems')
+                ->load(['addons', 'sectors', 'portfolioItems', 'suppliers', 'products', 'projects', 'quotations']);
+        });
 
         return ApiResponse::success(
             ServiceResource::make($service)->resolve($request)
         );
     }
 
-    /**
-     * Services are never hard-deleted while they are part of a package, so
-     * package composition can't be destroyed by a catalog cleanup.
-     */
     public function destroy(Service $service): JsonResponse
     {
         if ($service->packageItems()->exists()) {
@@ -78,6 +88,56 @@ class ServiceController extends Controller
     }
 
     /**
+     * @return list<string>
+     */
+    private function associationKeys(): array
+    {
+        return [
+            'addon_ids',
+            'sector_ids',
+            'portfolio_item_ids',
+            'supplier_ids',
+            'product_ids',
+            'project_ids',
+            'quotation_ids',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncAssociations(Service $service, array $validated): void
+    {
+        if (array_key_exists('addon_ids', $validated)) {
+            $service->addons()->sync($validated['addon_ids'] ?? []);
+        }
+
+        if (array_key_exists('sector_ids', $validated)) {
+            $service->sectors()->sync($validated['sector_ids'] ?? []);
+        }
+
+        if (array_key_exists('portfolio_item_ids', $validated)) {
+            $service->portfolioItems()->sync($validated['portfolio_item_ids'] ?? []);
+        }
+
+        if (array_key_exists('supplier_ids', $validated)) {
+            $service->suppliers()->sync($validated['supplier_ids'] ?? []);
+        }
+
+        if (array_key_exists('product_ids', $validated)) {
+            $service->products()->sync($validated['product_ids'] ?? []);
+        }
+
+        if (array_key_exists('project_ids', $validated)) {
+            $service->projects()->sync($validated['project_ids'] ?? []);
+        }
+
+        if (array_key_exists('quotation_ids', $validated)) {
+            $service->quotations()->sync($validated['quotation_ids'] ?? []);
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
@@ -85,6 +145,11 @@ class ServiceController extends Controller
     {
         if (array_key_exists('base_price', $validated) && $validated['base_price'] === null) {
             $validated['base_price'] = 0;
+        }
+
+        if (array_key_exists('short_description', $validated)) {
+            $validated['summary'] = $validated['short_description'];
+            unset($validated['short_description']);
         }
 
         $slugSent = array_key_exists('slug', $validated);

@@ -51,8 +51,18 @@ export type Service = {
   name: string
   slug: string
   summary: string | null
+  short_description?: string | null
   description: string | null
+  scope?: string | null
+  deliverables?: string[]
+  features?: string[]
+  process_steps?: Array<{ title: string; description?: string | null }>
+  faq?: Array<{ question: string; answer: string }>
+  tags?: string[]
+  gallery?: string[]
+  hero_image?: string | null
   category: ServiceCategory
+  subcategory?: string | null
   base_price: string
   currency: string
   pricing_mode: PricingMode
@@ -61,8 +71,59 @@ export type Service = {
   duration_days: number | null
   revision_rounds?: number | null
   is_featured: boolean
+  sort_order?: number
+  seo?: {
+    title: string | null
+    description: string | null
+    og_title: string | null
+    og_description: string | null
+    og_image: string | null
+    canonical_url: string | null
+    robots: string
+  }
+  packages?: Array<{
+    id: number
+    name: string
+    slug: string
+    price: string
+    currency: string
+    pricing_mode: PricingMode | string
+    summary?: string | null
+  }>
+  addons?: Array<{
+    id: number
+    name: string
+    slug: string
+    summary: string | null
+    price: string | null
+    currency: string
+    pricing_mode: PricingMode | string
+  }>
+  portfolio?: Array<{
+    id: number
+    title: string
+    slug: string
+    description?: string | null
+    image_url?: string | null
+  }>
+  suppliers?: Array<{ id: number; name: string; slug: string }>
+  products?: Array<{ id: number; name: string; slug: string; supplier_id: number }>
+  related_services?: Array<{
+    id: number
+    name: string
+    slug: string
+    summary: string | null
+    category: ServiceCategory
+    base_price: string
+    currency: string
+    pricing_mode: PricingMode
+    pricing_label: string
+    is_chargeable: boolean
+    duration_days?: number | null
+  }>
   /** Only present for OWNER / ADMIN_MANAGER responses. */
   is_active?: boolean
+  is_public?: boolean
   packages_count?: number
   department_id?: number | null
   task_title_template?: string | null
@@ -70,6 +131,20 @@ export type Service = {
   requires_review?: boolean
   requires_customer_approval?: boolean
   checklist_template?: string[] | null
+  addon_ids?: number[]
+  sector_ids?: number[]
+  portfolio_item_ids?: number[]
+  supplier_ids?: number[]
+  product_ids?: number[]
+  project_ids?: number[]
+  quotation_ids?: number[]
+  seo_title?: string | null
+  seo_description?: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image?: string | null
+  canonical_url?: string | null
+  robots?: string | null
 }
 
 export type PackageItem = {
