@@ -107,17 +107,17 @@ export const PLATFORM_SETTINGS_DEFAULTS: PlatformSettingsPublic = {
   brand: {
     name_ar: 'حبر وأبعاد',
     name_en: 'Hebr & Ab3ad',
-    tagline: 'برمجة • تسويق • طباعة • تغليف • تنظيم إيفنتات',
+    tagline: 'نمنح أعمالك أبعادًا للنمو',
     logo_url: '/brand/logo.png',
     logo_secondary_url: null,
     mark_url: '/brand/mark.png',
     favicon_url: '/brand/favicon-32.png',
   },
   business: {
-    trade_name: 'حبر وأبعاد',
-    short_description: 'نصنع حضور علامتك من الفكرة حتى التسليم.',
+    trade_name: 'منصة حبر وأبعاد لخدمات الأعمال والنمو',
+    short_description: 'منصة متكاملة تبدأ بتشخيص نشاطك، ثم تخطيط النمو واختيار الخدمات والموردين، وصولًا إلى التنفيذ والقياس والمتابعة.',
     country: 'السعودية',
-    city: null,
+    city: 'المدينة المنورة',
     working_hours: null,
     working_days: null,
   },
@@ -132,7 +132,7 @@ export const PLATFORM_SETTINGS_DEFAULTS: PlatformSettingsPublic = {
   },
   social: [],
   website: {
-    footer_description: 'نصنع حضور علامتك من الفكرة حتى التسليم.',
+    footer_description: 'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف وتنظيم المعارض والافتتاحات في جميع مدن المملكة.',
     copyright_text: `© ${new Date().getFullYear()} حبر وأبعاد. جميع الحقوق محفوظة.`,
     show_contact_in_footer: true,
     show_social_in_footer: true,
@@ -161,9 +161,9 @@ export const PLATFORM_SETTINGS_DEFAULTS: PlatformSettingsPublic = {
     ],
   },
   homepage: {
-    hero_heading: 'نصنع حضور علامتك من الفكرة حتى التسليم',
+    hero_heading: 'نمنح أعمالك أبعادًا للنمو',
     hero_subheading:
-      'وكالة إبداعية تجمع البرمجة، التسويق، الهوية، الطباعة، التغليف وتنظيم الفعاليات في مسار واحد واضح من الفكرة حتى التنفيذ.',
+      'منصة متكاملة تبدأ بتشخيص نشاطك، ثم تخطيط النمو واختيار الخدمات والموردين، وصولًا إلى التنفيذ والقياس والمتابعة.',
     hero_primary_cta_label: 'اكتشف احتياجك',
     hero_primary_cta_path: '/consultant',
     hero_secondary_cta_label: 'تصفح الخدمات',
@@ -201,10 +201,10 @@ export const PLATFORM_SETTINGS_DEFAULTS: PlatformSettingsPublic = {
     show_approvals: true,
   },
   seo: {
-    site_title: 'حبر وأبعاد | Hebr & Ab3ad',
-    default_meta_title: 'حبر وأبعاد | برمجة، تسويق، تصميم، طباعة وتنظيم فعاليات',
+    site_title: 'حبر وأبعاد | خدمات التسويق والطباعة وتطوير الأعمال',
+    default_meta_title: 'حبر وأبعاد | خدمات التسويق والطباعة وتطوير الأعمال',
     default_meta_description:
-      'حبر وأبعاد وكالة متكاملة تقدم خدمات البرمجة وتطوير المواقع، التسويق الرقمي، التصميم والهوية البصرية، الطباعة والتغليف وتنظيم الفعاليات من الفكرة حتى التنفيذ.',
+      'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف وتنظيم المعارض والافتتاحات في جميع مدن المملكة.',
     default_og_image_url: '/brand/logo.png',
     robots_index: true,
   },

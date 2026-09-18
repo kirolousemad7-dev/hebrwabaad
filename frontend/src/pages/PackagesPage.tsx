@@ -4,6 +4,7 @@ import { PublicCta } from '../components/public/PublicCta'
 import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicPackages } from '../services/catalog'
+import { PACKAGE_FAQS } from '../utils/catalogRoutes'
 
 export function PackagesPage() {
   const { state, reload } = useAsyncData(getPublicPackages)
@@ -17,8 +18,8 @@ export function PackagesPage() {
         ]}
       />
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">باقات جاهزة تناسب مرحلة مشروعك</h1>
-        <p className="text-slate-600">باقات جاهزة تجمع أكثر من خدمة بسعر واحد، مع روابط للباقات التسويقية وباقات الفعاليات وتصميم باقتك.</p>
+        <h1 className="text-2xl font-semibold">خدمات مترابطة لنمو نشاطك</h1>
+        <p className="text-slate-600">خدمات مترابطة ضمن نطاق واحد وفريق واحد وجدول زمني موحد، لتقليل التشتت وتسريع الوصول إلى النتيجة.</p>
         <div className="flex flex-wrap gap-3">
           <PublicCta to="/marketing-packages" variant="secondary">
             الباقات التسويقية
@@ -59,6 +60,18 @@ export function PackagesPage() {
           ))}
         </ul>
       ) : null}
+
+      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-lg font-semibold">أسئلة شائعة عن الباقات والخدمات</h2>
+        <ul className="space-y-4">
+          {PACKAGE_FAQS.map((item) => (
+            <li key={item.question} className="space-y-1">
+              <h3 className="font-medium">{item.question}</h3>
+              <p className="text-sm leading-7 text-slate-600">{item.answer}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
     </section>
   )
 }

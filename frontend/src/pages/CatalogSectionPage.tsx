@@ -1,58 +1,55 @@
+import { useEffect } from 'react'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PublicCta } from '../components/public/PublicCta'
 import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicServices } from '../services/catalog'
 import { formatDuration, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../utils/catalog'
+import { CATALOG_SECTIONS, type CatalogSectionId } from '../utils/catalogRoutes'
 import { buildRequestQuotePath } from '../utils/quoteRequests'
 
-export function ServicesPage() {
-  const { state, reload } = useAsyncData(getPublicServices)
+export function CatalogSectionPage({ sectionId }: { sectionId: CatalogSectionId }) {
+  const section = CATALOG_SECTIONS[sectionId]
+  const { state, reload } = useAsyncData(() => getPublicServices(undefined, section.subcategory), [section.subcategory])
+
+  useEffect(() => {
+    document.title = `${section.seoTitle} | حبر وأبعاد`
+    document.querySelector('meta[name="description"]')?.setAttribute('content', section.description)
+  }, [section.description, section.seoTitle])
 
   return (
     <section className="space-y-6">
       <PublicBreadcrumbs
         items={[
           { name: 'الرئيسية', to: '/' },
-          { name: 'الخدمات' },
+          { name: 'الخدمات', to: '/services' },
+          { name: section.title },
         ]}
       />
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">خدمات متكاملة لبناء وتطوير أعمالك</h1>
-        <p className="text-slate-600">
-          منصة متكاملة تبدأ بتشخيص نشاطك، ثم تخطيط النمو واختيار الخدمات والموردين، وصولًا إلى التنفيذ والقياس والمتابعة.
-        </p>
+        <h1 className="text-2xl font-semibold">{section.title}</h1>
+        <p className="max-w-3xl text-slate-600">{section.description}</p>
         <div className="flex flex-wrap gap-3">
+          <PublicCta to="/consultant" variant="secondary">
+            اكتشف احتياجك
+          </PublicCta>
           <PublicCta to="/packages" variant="secondary">
-            تصفح الباقات
+            الباقات
           </PublicCta>
-          <PublicCta to="/marketing-packages" variant="secondary">
-            الباقات التسويقية
-          </PublicCta>
-          <PublicCta to="/printing-packaging" variant="secondary">
-            الطباعة والتغليف
-          </PublicCta>
-          <PublicCta to="/build-package">صمّم باقتك</PublicCta>
         </div>
       </header>
 
       {state.status === 'loading' ? <CatalogSkeleton variant="services" label="جاري تحميل الخدمات..." /> : null}
-
       {state.status === 'error' ? (
         <CatalogErrorState message={`تعذر تحميل الخدمات. ${state.message}`} onRetry={() => void reload()} />
       ) : null}
-
       {state.status === 'ready' && state.data.length === 0 ? (
         <CatalogEmptyState
           title="الخدمات قيد التجهيز"
-          description="لا توجد خدمات منشورة حالياً. يمكنك تصفح الباقات الجاهزة أو العودة للرئيسية."
-          actions={[
-            { to: '/packages', label: 'كل الباقات', variant: 'primary' },
-            { to: '/', label: 'الرئيسية', variant: 'secondary' },
-          ]}
+          description="لا توجد خدمات منشورة في هذا القسم حالياً."
+          actions={[{ to: '/services', label: 'كل الخدمات', variant: 'primary' }]}
         />
       ) : null}
-
       {state.status === 'ready' && state.data.length > 0 ? (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {state.data.map((service) => (
@@ -63,17 +60,12 @@ export function ServicesPage() {
                   {SERVICE_CATEGORY_LABELS[service.category]}
                 </span>
               </div>
-
               {service.summary ? <p className="flex-1 text-sm leading-7 text-slate-600">{service.summary}</p> : null}
-
               <div className="mt-auto space-y-3 border-t border-slate-100 pt-3">
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                   <span className="whitespace-nowrap text-xl font-semibold">{servicePriceLabel(service)}</span>
                   {service.duration_days !== null ? (
                     <span className="text-sm text-slate-500">{formatDuration(service.duration_days)}</span>
-                  ) : null}
-                  {service.is_featured ? (
-                    <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّزة</span>
                   ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">

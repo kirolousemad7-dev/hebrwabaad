@@ -91,7 +91,7 @@ class AiConsultantTest extends TestCase
         $this->assertNotNull($result['diagnosis']);
         $this->assertIsInt($result['readiness']['score']);
         $this->assertSame('digital-marketing-package', $result['recommendations']['best_match']['slug']);
-        $this->assertEquals(15000, $result['recommendations']['best_match']['final_price']);
+        $this->assertEquals(5900, $result['recommendations']['best_match']['final_price']);
         $this->assertSame('SAR', $result['recommendations']['best_match']['currency']);
         $this->assertSame('choose_package', $result['recommendations']['cta']['type']);
         $this->assertStringContainsString('digital-marketing-package', $result['recommendations']['cta']['path']);
@@ -111,7 +111,7 @@ class AiConsultantTest extends TestCase
         ]);
 
         $this->assertSame('ecommerce-launch-package', $result['recommendations']['best_match']['slug']);
-        $this->assertEquals(22000, $result['recommendations']['best_match']['final_price']);
+        $this->assertEquals(12900, $result['recommendations']['best_match']['final_price']);
     }
 
     public function test_event_flow_uses_event_package_and_real_cta(): void
@@ -267,7 +267,7 @@ class AiConsultantTest extends TestCase
 
         $this->assertNull($validated['best_match']);
         $this->assertSame('foundation-package', $validated['alternative']['slug']);
-        $this->assertEquals(9000, $validated['alternative']['final_price']);
+        $this->assertEquals(14900, $validated['alternative']['final_price']);
         $this->assertCount(1, $validated['services']);
         $this->assertSame('graphic-design', $validated['services'][0]['slug']);
         $this->assertNull($validated['printing']['product_slug']);

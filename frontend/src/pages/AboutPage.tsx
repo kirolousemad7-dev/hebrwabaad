@@ -9,9 +9,9 @@ export function AboutPage() {
       <section className="bg-slate-950 px-4 py-16 text-white sm:px-6">
         <div className="mx-auto max-w-3xl space-y-4">
           <BrandLogo size="mark" to="/" className="brightness-110" />
-          <h1 className="text-4xl font-semibold">نحوّل الأفكار إلى تجارب حقيقية</h1>
+          <h1 className="text-4xl font-semibold">نمنح أعمالك أبعادًا للنمو</h1>
           <p className="text-lg leading-8 text-white/75">
-            حبر وأبعاد وكالة إبداعية تجمع البرمجة، التسويق، الهوية، الطباعة، التغليف، وتنظيم الفعاليات في مسار واحد من الفكرة حتى التسليم.
+            حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، تطوير حضورهم الرقمي وتنفيذ مشاريعهم من خلال شبكة من المتخصصين والموردين في التسويق، المحتوى، التصوير، المتاجر الإلكترونية، الطباعة، التغليف، المعارض، الحفلات والافتتاحات.
           </p>
         </div>
       </section>

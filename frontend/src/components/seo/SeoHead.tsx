@@ -10,6 +10,7 @@ import {
   absoluteUrl,
   buildPageSchema,
   isPrivateSeoPath,
+  isIndexedCatalogPath,
   isSupplierPublicPath,
   seoKeyFromPath,
   siteOrigin,
@@ -133,16 +134,22 @@ export function SeoHead() {
       return
     }
 
-    if (supplierPublic) {
+    if (supplierPublic || isIndexedCatalogPath(location.pathname)) {
       applyTags({
-        title: `الموردون | ${APP_NAME}`,
-        description: 'ملف مورد من شركاء حبر وأبعاد.',
+        title: supplierPublic ? `الموردون | ${APP_NAME}` : `${settings.seo.default_meta_title || siteName}`,
+        description:
+          settings.seo.default_meta_description ||
+          'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف.',
         robots: 'index,follow',
         canonical,
-        ogTitle: `الموردون | ${APP_NAME}`,
-        ogDescription: 'ملف مورد من شركاء حبر وأبعاد.',
-        twitterTitle: `الموردون | ${APP_NAME}`,
-        twitterDescription: 'ملف مورد من شركاء حبر وأبعاد.',
+        ogTitle: supplierPublic ? `الموردون | ${APP_NAME}` : settings.seo.default_meta_title || siteName,
+        ogDescription:
+          settings.seo.default_meta_description ||
+          'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف.',
+        twitterTitle: supplierPublic ? `الموردون | ${APP_NAME}` : settings.seo.default_meta_title || siteName,
+        twitterDescription:
+          settings.seo.default_meta_description ||
+          'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف.',
         ogImage: absoluteAssetUrl(defaultOg, origin),
         twitterImage: absoluteAssetUrl(defaultOg, origin),
         schema: null,

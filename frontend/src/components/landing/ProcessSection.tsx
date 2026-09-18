@@ -1,11 +1,12 @@
 import { motion, useReducedMotion } from 'framer-motion'
 
 const STEPS = [
-  { n: '01', title: 'نفهم احتياجك' },
-  { n: '02', title: 'نضع الخطة' },
-  { n: '03', title: 'نبدأ التنفيذ' },
-  { n: '04', title: 'نراجع التفاصيل' },
-  { n: '05', title: 'نسلم المشروع' },
+  { n: '01', title: 'تشخيص النشاط' },
+  { n: '02', title: 'تحديد الأولويات' },
+  { n: '03', title: 'اختيار الخدمة أو الباقة' },
+  { n: '04', title: 'استلام العرض' },
+  { n: '05', title: 'التنفيذ وإدارة المشروع' },
+  { n: '06', title: 'قياس النتائج والمتابعة' },
 ]
 
 export function ProcessSection() {
@@ -16,9 +17,9 @@ export function ProcessSection() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <header className="mb-10 max-w-2xl space-y-3">
           <p className="text-sm font-medium text-brand-primary">مسار العمل</p>
-          <h2 className="text-3xl font-semibold text-brand-ink-900">من الفكرة حتى التسليم</h2>
+          <h2 className="text-3xl font-semibold text-brand-ink-900">رحلة العميل</h2>
         </header>
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {STEPS.map((step, index) => (
             <motion.li
               key={step.n}

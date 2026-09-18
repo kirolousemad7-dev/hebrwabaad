@@ -1,15 +1,31 @@
-import type { ReactNode } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { type ReactNode, useEffect } from 'react'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PublicCta } from '../components/public/PublicCta'
 import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicSector } from '../services/sectors'
 import { formatMoney, packagePriceLabel, servicePriceLabel } from '../utils/catalog'
+import { resolveSectorSlug } from '../utils/catalogRoutes'
 
 export function SectorDetailPage() {
-  const { slug = '' } = useParams()
+  const location = useLocation()
+  const { slug: rawSlug = '' } = useParams()
+  const slug = resolveSectorSlug(rawSlug)
+  const isSolution = location.pathname.startsWith('/solutions')
   const { state, reload } = useAsyncData(() => getPublicSector(slug), [slug])
+  const sector = state.status === 'ready' ? state.data : null
+
+  useEffect(() => {
+    if (!sector) {
+      return
+    }
+
+    document.title = `${sector.name_ar} | حبر وأبعاد`
+    if (sector.description) {
+      document.querySelector('meta[name="description"]')?.setAttribute('content', sector.description)
+    }
+  }, [sector])
 
   if (state.status === 'loading') {
     return <CatalogSkeleton variant="list" label="جاري تحميل القطاع..." />
@@ -18,8 +34,6 @@ export function SectorDetailPage() {
   if (state.status === 'error') {
     return <CatalogErrorState message={`تعذر تحميل القطاع. ${state.message}`} onRetry={() => void reload()} />
   }
-
-  const sector = state.data
 
   if (!sector) {
     return (
@@ -36,7 +50,7 @@ export function SectorDetailPage() {
       <PublicBreadcrumbs
         items={[
           { name: 'الرئيسية', to: '/' },
-          { name: 'القطاعات', to: '/sectors' },
+          { name: isSolution ? 'حلول القطاعات' : 'القطاعات', to: isSolution ? '/solutions' : '/sectors' },
           { name: sector.name_ar },
         ]}
       />

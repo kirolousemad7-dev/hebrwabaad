@@ -17,7 +17,8 @@ function mapApiProduct(row: Record<string, unknown>): PrintingProduct | null {
   const slug = String(row.slug ?? '')
   if (!slug) return null
   const categorySlug = String((row.category as { slug?: string } | null)?.slug ?? 'custom-products')
-  const category = isPrintingCategoryId(categorySlug) ? categorySlug : 'custom-products'
+  const mappedSlug = categorySlug === 'custom' ? 'custom-products' : categorySlug
+  const category = isPrintingCategoryId(mappedSlug) ? mappedSlug : 'custom-products'
   const options = Array.isArray(row.options)
     ? (row.options as Array<{ type?: string; name_ar?: string }>)
     : []
@@ -40,6 +41,7 @@ function mapApiProduct(row: Record<string, unknown>): PrintingProduct | null {
       .filter((item) => item.type === 'material')
       .map((item) => String(item.name_ar ?? '')),
     isActive: true,
+    requiresQuote: pricingMode === 'QUOTE' || starting <= 0,
   }
 }
 
@@ -97,8 +99,8 @@ export function PrintingPackagingPage() {
       <CatalogHero
         tone="printing"
         eyebrow="الطباعة والتغليف"
-        title="حلول طباعة وتغليف لمختلف احتياجات مشروعك"
-        description="من الكروت والبوسترات إلى العلب والأكياس والتغليف المخصص. ننفّذ إنتاجاً تجارياً واضحاً يليق بعلامتك، دون تشتيت بين مطبعة وتصميم وتنفيذ."
+        title="الطباعة والتغليف المخصص للشركات والمتاجر"
+        description="منتجات طباعة وتغليف مخصصة لهوية مشروعك، مع خيارات متعددة للمقاسات والخامات والكميات والتشطيبات والتنفيذ عبر موردين متخصصين."
         primaryCta="استعرض الفئات"
         secondaryCta="صمّم باقتك"
         secondaryTo="/build-package"

@@ -7,7 +7,7 @@ export const BRAND_MARK_SRC = '/brand/mark.png'
 export const BRAND_FAVICON_SRC = '/brand/favicon-32.png'
 export const BRAND_APPLE_TOUCH_SRC = '/brand/apple-touch-icon.png'
 
-export const BRAND_TAGLINE = 'برمجة • تسويق • طباعة • تغليف • تنظيم إيفنتات'
+export const BRAND_TAGLINE = 'نمنح أعمالك أبعادًا للنمو'
 
 /** Exact values from Brand Guidelines PDF (Core Palette + Tints). */
 export const BRAND_COLORS = {

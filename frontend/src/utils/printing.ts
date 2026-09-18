@@ -12,6 +12,9 @@ export const PRINTING_CATEGORY_IDS = [
   'bags',
   'packaging',
   'posters',
+  'menus',
+  'cups',
+  'promo',
   'custom-products',
 ] as const
 
@@ -73,9 +76,27 @@ export const PRINTING_CATEGORIES: PrintingCategory[] = [
   },
   {
     id: 'posters',
-    name: 'بوسترات',
-    description: 'بوسترات ولافتات داخلية وخارجية بأحجام تناسب المساحة.',
+    name: 'رول أب وبنرات',
+    description: 'حلول عرض للمعارض والافتتاحات ونقاط البيع.',
     href: printingCategoryPath('posters'),
+  },
+  {
+    id: 'menus',
+    name: 'منيو',
+    description: 'طباعة منيو واضح بخامات تتحمل الاستخدام المتكرر.',
+    href: printingCategoryPath('menus'),
+  },
+  {
+    id: 'cups',
+    name: 'أكواب',
+    description: 'أكواب ورقية مطبوعة بشعار المقهى أو الفعالية.',
+    href: printingCategoryPath('cups'),
+  },
+  {
+    id: 'promo',
+    name: 'هدايا دعائية',
+    description: 'منتجات دعائية تحمل هوية المنشأة.',
+    href: printingCategoryPath('promo'),
   },
   {
     id: 'custom-products',

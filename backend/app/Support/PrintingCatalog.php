@@ -16,7 +16,7 @@ class PrintingCatalog
         return [
             ['slug' => 'standard-business-cards', 'starting_price' => 85.0, 'requires_quote' => false, 'reference_quantity' => 100],
             ['slug' => 'premium-business-cards', 'starting_price' => 180.0, 'requires_quote' => false, 'reference_quantity' => 100],
-            ['slug' => 'luxury-business-cards', 'starting_price' => 320.0, 'requires_quote' => false, 'reference_quantity' => 100],
+            ['slug' => 'luxury-business-cards', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 100],
             ['slug' => 'a5-flyers', 'starting_price' => 120.0, 'requires_quote' => false, 'reference_quantity' => 100],
             ['slug' => 'a4-flyers', 'starting_price' => 180.0, 'requires_quote' => false, 'reference_quantity' => 100],
             ['slug' => 'premium-flyers', 'starting_price' => 280.0, 'requires_quote' => false, 'reference_quantity' => 50],
@@ -37,6 +37,20 @@ class PrintingCatalog
             ['slug' => 'large-format-posters', 'starting_price' => 280.0, 'requires_quote' => false, 'reference_quantity' => 10],
             ['slug' => 'custom-printed-product', 'starting_price' => 500.0, 'requires_quote' => true, 'reference_quantity' => 1],
             ['slug' => 'custom-promotional-product', 'starting_price' => 450.0, 'requires_quote' => true, 'reference_quantity' => 1],
+            ['slug' => 'company-brochure-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 100],
+            ['slug' => 'corporate-stationery-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 100],
+            ['slug' => 'custom-paper-bags', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 50],
+            ['slug' => 'printed-plastic-bags', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 50],
+            ['slug' => 'ecommerce-shipping-boxes', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 25],
+            ['slug' => 'custom-product-boxes', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 25],
+            ['slug' => 'luxury-gift-boxes', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 25],
+            ['slug' => 'food-packaging-boxes', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 25],
+            ['slug' => 'printed-paper-cups', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 50],
+            ['slug' => 'product-stickers-labels', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 100],
+            ['slug' => 'roll-label-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 100],
+            ['slug' => 'restaurant-menu-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 50],
+            ['slug' => 'rollup-banner-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 1],
+            ['slug' => 'promotional-gifts-printing', 'starting_price' => 0.0, 'requires_quote' => true, 'reference_quantity' => 50],
         ];
     }
 

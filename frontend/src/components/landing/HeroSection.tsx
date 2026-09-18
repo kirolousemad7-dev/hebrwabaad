@@ -11,7 +11,7 @@ function scrollToId(id: string) {
 export function HeroSection() {
   const reduceMotion = useReducedMotion()
   const { settings } = usePlatformSettings()
-  const heading = settings.homepage.hero_heading || 'نصنع حضور علامتك من الفكرة حتى التسليم'
+  const heading = settings.homepage.hero_heading || 'نمنح أعمالك أبعادًا للنمو'
   const [headingMain, headingAccent] = heading.includes('من الفكرة')
     ? [heading.replace(/\s*من الفكرة حتى التسليم\s*$/, ''), 'من الفكرة حتى التسليم']
     : [heading, null]

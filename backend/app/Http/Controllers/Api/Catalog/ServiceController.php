@@ -15,6 +15,7 @@ class ServiceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $category = $request->query('category');
+        $subcategory = $request->query('subcategory');
 
         $services = Service::query()
             ->active()
@@ -22,6 +23,10 @@ class ServiceController extends Controller
             ->when(
                 is_string($category) && in_array($category, ServiceCategory::values(), true),
                 fn ($query) => $query->where('category', $category),
+            )
+            ->when(
+                is_string($subcategory) && trim($subcategory) !== '',
+                fn ($query) => $query->where('subcategory', trim($subcategory)),
             )
             ->orderByDesc('is_featured')
             ->orderBy('sort_order')

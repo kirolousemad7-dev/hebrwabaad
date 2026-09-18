@@ -6,6 +6,7 @@ import {
   absoluteAssetUrl,
   descriptionLengthHint,
   isPrivateSeoPath,
+  isIndexedCatalogPath,
   seoKeyFromPath,
   titleLengthHint,
 } from './seo'
@@ -26,6 +27,14 @@ describe('seo helpers', () => {
     expect(seoKeyFromPath('/contact')).toBe('contact')
     expect(seoKeyFromPath('/suppliers')).toBe('suppliers')
     expect(seoKeyFromPath('/suppliers/demo')).toBeNull()
+    expect(seoKeyFromPath('/business-growth-packages')).toBe('packages')
+    expect(seoKeyFromPath('/business-diagnosis-strategy')).toBeNull()
+    expect(seoKeyFromPath('/solutions/restaurants-cafes')).toBeNull()
+    expect(seoKeyFromPath('/luxury-business-cards')).toBeNull()
+    expect(isIndexedCatalogPath('/business-diagnosis-strategy')).toBe(true)
+    expect(isIndexedCatalogPath('/solutions/restaurants-cafes')).toBe(true)
+    expect(isIndexedCatalogPath('/luxury-business-cards')).toBe(true)
+    expect(isIndexedCatalogPath('/unknown-page')).toBe(false)
   })
 
   it('does not expose private platform routes as public SEO pages', () => {

@@ -92,7 +92,7 @@ class SupplierController extends Controller
     public function products(Request $request, string $supplier): JsonResponse
     {
         $model = $this->publishedSupplier($supplier);
-        $page = $model->publicProducts()->paginate(min(50, max(1, (int) $request->query('per_page', 12))));
+        $page = $model->publicProducts()->paginate(min(50, max(1, (int) $request->query('per_page', 24))));
 
         return ApiResponse::success([
             'items' => PublicSupplierProductResource::collection($page->items())->resolve($request),

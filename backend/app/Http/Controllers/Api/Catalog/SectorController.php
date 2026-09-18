@@ -10,6 +10,16 @@ use Illuminate\Http\Request;
 
 class SectorController extends Controller
 {
+    /**
+     * Public DATA SOURCE aliases that keep the existing 12 sector slugs.
+     *
+     * @var array<string, string>
+     */
+    public const SLUG_ALIASES = [
+        'b2b-industrial' => 'industry-b2b',
+        'health-beauty' => 'health-clinics',
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $sectors = Sector::query()
@@ -25,10 +35,12 @@ class SectorController extends Controller
 
     public function show(Request $request, string $slug): JsonResponse
     {
+        $resolved = self::SLUG_ALIASES[$slug] ?? $slug;
+
         $model = Sector::query()
             ->active()
             ->public()
-            ->where('slug', $slug)
+            ->where('slug', $resolved)
             ->with([
                 'services' => fn ($query) => $query->active()->public()->orderBy('name'),
                 'packages' => fn ($query) => $query->active()->public()->orderBy('sort_order')->orderBy('name'),

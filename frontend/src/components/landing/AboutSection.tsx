@@ -14,10 +14,9 @@ export function AboutSection() {
           className="space-y-4"
         >
           <p className="text-sm font-medium text-brand-primary">من نحن</p>
-          <h2 className="text-3xl font-semibold text-brand-ink-900">نحوّل الأفكار إلى تجارب حقيقية</h2>
+          <h2 className="text-3xl font-semibold text-brand-ink-900">منصة حبر وأبعاد لخدمات الأعمال والنمو</h2>
           <p className="leading-8 text-slate-600">
-            في حبر وأبعاد نؤمن أن نجاح المشروع لا يبدأ من خدمة منفصلة، بل من رؤية متكاملة. لذلك نجمع التقنية، الإبداع
-            والإنتاج في منظومة واحدة تساعد العلامات التجارية على الانتقال من الفكرة إلى التنفيذ بثقة ووضوح.
+            حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، تطوير حضورهم الرقمي وتنفيذ مشاريعهم من خلال شبكة من المتخصصين والموردين في التسويق، المحتوى، التصوير، المتاجر الإلكترونية، الطباعة، التغليف، المعارض، الحفلات والافتتاحات.
           </p>
         </motion.div>
         <motion.div
@@ -30,9 +29,9 @@ export function AboutSection() {
           <div className="relative space-y-6">
             <BrandLogo size="mark" to="/" className="brightness-110" />
             <p className="max-w-sm text-lg font-medium leading-8 text-white/90">
-              برمجة • تسويق • هوية • طباعة • تغليف • فعاليات
+              نمنح أعمالك أبعادًا للنمو
             </p>
-            <p className="text-sm leading-7 text-white/65">من الفكرة حتى التسليم — تحت إدارة واحدة.</p>
+            <p className="text-sm leading-7 text-white/65">تشخيص النشاط ← تحديد الأولويات ← اختيار الخدمة أو الباقة ← استلام العرض ← التنفيذ وإدارة المشروع ← قياس النتائج والمتابعة.</p>
           </div>
         </motion.div>
       </div>

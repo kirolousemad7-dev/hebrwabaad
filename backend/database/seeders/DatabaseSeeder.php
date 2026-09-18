@@ -24,6 +24,9 @@ class DatabaseSeeder extends Seeder
             SeoPageSeeder::class,
             CrmSettingsSeeder::class,
             PlatformCatalogSeeder::class,
+            OfficialCatalogSeeder::class,
+            OfficialPrintingCatalogSeeder::class,
+            SultanPrintSupplierSeeder::class,
         ]);
 
         if (app()->environment('production')) {

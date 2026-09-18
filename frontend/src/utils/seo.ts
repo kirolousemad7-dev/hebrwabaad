@@ -1,3 +1,4 @@
+import { CATALOG_SECTIONS, OFFICIAL_PRINTING_SLUGS } from './catalogRoutes'
 import { APP_NAME } from './constants'
 
 export const SEO_PAGE_KEYS = [
@@ -69,6 +70,20 @@ export const PUBLIC_SITEMAP_PATHS = [
   '/marketing-packages',
   '/event-packages',
   '/printing-packaging',
+  '/business-diagnosis-strategy',
+  '/branding-design',
+  '/photography-video-production',
+  '/ecommerce-digital-experience',
+  '/content-writing',
+  '/events-management',
+  '/business-growth-packages',
+  '/solutions',
+  '/solutions/restaurants-cafes',
+  '/solutions/b2b-industrial',
+  '/solutions/ecommerce',
+  '/solutions/real-estate',
+  '/solutions/education-training',
+  '/solutions/health-beauty',
   '/build-package',
   '/consultant',
   '/suppliers',
@@ -80,10 +95,10 @@ export const PUBLIC_SITEMAP_PATHS = [
 
 export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
   home: {
-    title: 'حبر وأبعاد | برمجة، تسويق، تصميم، طباعة وتنظيم فعاليات',
+    title: 'حبر وأبعاد | خدمات التسويق والطباعة وتطوير الأعمال',
     description:
-      'حبر وأبعاد وكالة متكاملة تقدم خدمات البرمجة وتطوير المواقع، التسويق الرقمي، التصميم والهوية البصرية، الطباعة والتغليف وتنظيم الفعاليات من الفكرة حتى التنفيذ.',
-    keywords: 'حبر وأبعاد, برمجة مواقع, تسويق رقمي, هوية بصرية, طباعة, تغليف, تنظيم فعاليات',
+      'منصة سعودية لخدمات تشخيص الأعمال والتسويق والمحتوى والتصوير والمتاجر والطباعة والتغليف وتنظيم المعارض والافتتاحات في جميع مدن المملكة.',
+    keywords: 'حبر وأبعاد، خدمات الأعمال، نمو الأعمال، تشخيص الأعمال، التسويق الرقمي، الطباعة والتغليف، المدينة المنورة، السعودية',
     breadcrumbs: [{ name: 'الرئيسية', path: '/' }],
     schemaType: 'home',
   },
@@ -99,9 +114,9 @@ export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
     schemaType: 'services',
   },
   packages: {
-    title: 'باقات حبر وأبعاد | حلول جاهزة لمشروعك',
-    description: 'تصفح الباقات الجاهزة من حبر وأبعاد أو صمّم باقتك بنفسك مع تسعير واضح ومسار تنفيذ منظم.',
-    keywords: 'باقات تسويق, باقات تصميم, باقات حبر وأبعاد',
+    title: 'باقات نمو الأعمال | حبر وأبعاد',
+    description: 'خدمات مترابطة ضمن نطاق واحد وفريق واحد وجدول زمني موحد، لتقليل التشتت وتسريع الوصول إلى النتيجة.',
+    keywords: 'باقات تسويق, باقة إطلاق مشروع, باقة السوشيال, باقات حبر وأبعاد',
     breadcrumbs: [
       { name: 'الرئيسية', path: '/' },
       { name: 'الباقات', path: '/packages' },
@@ -130,10 +145,10 @@ export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
     schemaType: 'events',
   },
   'printing-packaging': {
-    title: 'خدمات الطباعة والتغليف | حبر وأبعاد',
+    title: 'الطباعة والتغليف المخصص للشركات والمتاجر',
     description:
-      'حلول متكاملة للطباعة والتغليف تشمل الكروت، الفلاير، الاستيكرات، البوكسات، الأكياس، البوسترات وحلول الطباعة المخصصة.',
-    keywords: 'طباعة, تغليف, كروت شخصية, فلايرز, بوكسات, باكدجنج',
+      'منتجات طباعة وتغليف مخصصة لهوية مشروعك، مع خيارات متعددة للمقاسات والخامات والكميات والتشطيبات والتنفيذ عبر موردين متخصصين.',
+    keywords: 'طباعة, تغليف, كروت أعمال, بروشور, أكياس, علب, استكرات, رول أب, حبر وأبعاد',
     breadcrumbs: [
       { name: 'الرئيسية', path: '/' },
       { name: 'الطباعة والتغليف', path: '/printing-packaging' },
@@ -180,7 +195,7 @@ export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
   about: {
     title: 'من نحن | حبر وأبعاد',
     description:
-      'حبر وأبعاد شريكك في البرمجة والتسويق والطباعة والتغليف وتنظيم الفعاليات، بمسار عمل واضح من الفكرة حتى التسليم.',
+      'حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، تطوير حضورهم الرقمي وتنفيذ مشاريعهم.',
     breadcrumbs: [
       { name: 'الرئيسية', path: '/' },
       { name: 'من نحن', path: '/about' },
@@ -197,8 +212,9 @@ export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
     schemaType: 'generic',
   },
   suppliers: {
-    title: 'شركاؤنا من الموردين | حبر وأبعاد',
-    description: 'استكشف موردين موثوقين للطباعة والتغليف والمواد الدعائية بعد اعتمادهم من حبر وأبعاد.',
+    title: 'انضم إلى شبكة موردي حبر وأبعاد',
+    description:
+      'إذا كنت تقدم خدمات الطباعة أو التغليف أو الدعاية أو التصوير أو تجهيز المعارض أو تنظيم الفعاليات، يمكنك الانضمام إلى شبكة الموردين وعرض منتجاتك واستقبال طلبات وفرص جديدة.',
     breadcrumbs: [
       { name: 'الرئيسية', path: '/' },
       { name: 'الموردون', path: '/suppliers' },
@@ -254,6 +270,10 @@ export function seoKeyFromPath(pathname: string): SeoPageKey | null {
     return 'suppliers'
   }
 
+  if (pathname === '/business-growth-packages') {
+    return 'packages'
+  }
+
   if (pathname.startsWith('/suppliers/')) {
     return null
   }
@@ -279,6 +299,20 @@ export function isPrivateSeoPath(pathname: string): boolean {
 
 export function isSupplierPublicPath(pathname: string): boolean {
   return pathname.startsWith('/suppliers/') && pathname !== '/suppliers'
+}
+
+export function isIndexedCatalogPath(pathname: string): boolean {
+  if (pathname === '/solutions' || pathname.startsWith('/solutions/')) {
+    return true
+  }
+
+  if (Object.values(CATALOG_SECTIONS).some((section) => section.path === pathname)) {
+    return true
+  }
+
+  const printingSlug = pathname.replace(/^\//, '')
+
+  return (OFFICIAL_PRINTING_SLUGS as readonly string[]).includes(printingSlug)
 }
 
 export function titleLengthHint(value: string): { count: number; tone: 'ok' | 'warn' } {

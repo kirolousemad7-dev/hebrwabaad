@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { CustomerLayout } from '../layouts/CustomerLayout'
 import { EmployeeLayout } from '../layouts/EmployeeLayout'
 import { LandingLayout } from '../layouts/LandingLayout'
@@ -117,10 +117,13 @@ import { MarketingPackagesPage } from '../pages/MarketingPackagesPage'
 import { EventPackagesPage } from '../pages/EventPackagesPage'
 import { BuildPackagePage } from '../pages/BuildPackagePage'
 import { PrintingPackagingPage } from '../pages/PrintingPackagingPage'
+import { PrintingProductLandingPage } from '../pages/PrintingProductLandingPage'
 import { PrintingCustomizePage } from '../pages/PrintingCustomizePage'
 import { SuppliersPage } from '../pages/SuppliersPage'
 import { SupplierDetailPage } from '../pages/SupplierDetailPage'
 import { SupplierProductPage } from '../pages/SupplierProductPage'
+import { CatalogSectionPage } from '../pages/CatalogSectionPage'
+import { SolutionsPage } from '../pages/SolutionsPage'
 import { SupplierHomePage } from '../pages/supplier/SupplierHomePage'
 import { SupplierLoginPage } from '../pages/supplier/SupplierLoginPage'
 import { SupplierNotificationsPage } from '../pages/supplier/SupplierNotificationsPage'
@@ -164,6 +167,11 @@ import { EMPLOYEE_WORKSPACE_ROLES } from '../utils/staff'
 import { ProtectedRoute } from './ProtectedRoute'
 import { PublicRoute } from './PublicRoute'
 import { RoleProtectedRoute } from './RoleProtectedRoute'
+import {
+  OFFICIAL_PRINTING_SLUGS,
+  PACKAGE_CANONICAL_ALIASES,
+  SERVICE_CANONICAL_ALIASES,
+} from '../utils/catalogRoutes'
 
 export function AppRoutes() {
   return (
@@ -190,6 +198,24 @@ export function AppRoutes() {
         <Route path="/marketing-packages" element={<MarketingPackagesPage />} />
         <Route path="/event-packages" element={<EventPackagesPage />} />
         <Route path="/printing-packaging" element={<PrintingPackagingPage />} />
+        <Route path="/business-diagnosis-strategy" element={<CatalogSectionPage sectionId="business-diagnosis-strategy" />} />
+        <Route path="/branding-design" element={<CatalogSectionPage sectionId="branding-design" />} />
+        <Route path="/photography-video-production" element={<CatalogSectionPage sectionId="photography-video-production" />} />
+        <Route path="/ecommerce-digital-experience" element={<CatalogSectionPage sectionId="ecommerce-digital-experience" />} />
+        <Route path="/content-writing" element={<CatalogSectionPage sectionId="content-writing" />} />
+        <Route path="/events-management" element={<CatalogSectionPage sectionId="events-management" />} />
+        <Route path="/business-growth-packages" element={<PackagesPage />} />
+        <Route path="/solutions" element={<SolutionsPage />} />
+        <Route path="/solutions/:slug" element={<SectorDetailPage />} />
+        {OFFICIAL_PRINTING_SLUGS.map((slug) => (
+          <Route key={slug} path={`/${slug}`} element={<PrintingProductLandingPage />} />
+        ))}
+        {Object.entries(SERVICE_CANONICAL_ALIASES).map(([path, slug]) => (
+          <Route key={path} path={path} element={<Navigate to={`/services/${slug}`} replace />} />
+        ))}
+        {Object.entries(PACKAGE_CANONICAL_ALIASES).map(([path]) => (
+          <Route key={path} path={path} element={<Navigate to="/packages" replace />} />
+        ))}
         <Route path="/suppliers" element={<SuppliersPage />} />
         <Route path="/suppliers/:slug" element={<SupplierDetailPage />} />
         <Route path="/suppliers/:slug/products/:productSlug" element={<SupplierProductPage />} />

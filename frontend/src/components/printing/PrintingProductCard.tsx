@@ -1,6 +1,6 @@
 import { PublicCta } from '../public/PublicCta'
 import { formatMoney } from '../../utils/catalog'
-import { printingCustomizePath, type PrintingProduct } from '../../utils/printingProducts'
+import type { PrintingProduct } from '../../utils/printingProducts'
 
 type PrintingProductCardProps = {
   product: PrintingProduct
@@ -22,18 +22,24 @@ export function PrintingProductCard({ product }: PrintingProductCardProps) {
           <p className="text-sm text-slate-600">{product.summary}</p>
         </div>
         <p className="text-lg font-semibold">
-          يبدأ من {formatMoney(product.startingPrice, product.currency)}
+          {product.requiresQuote || product.startingPrice <= 0
+            ? 'السعر حسب الطلب بعد اعتماد المواصفات'
+            : `يبدأ من ${formatMoney(product.startingPrice, product.currency)}`}
         </p>
-        <p className="text-sm text-slate-600">
-          <span className="font-medium text-slate-800">الأحجام: </span>
-          {product.sizes.join('، ')}
-        </p>
-        <p className="text-sm text-slate-600">
-          <span className="font-medium text-slate-800">الخامات: </span>
-          {product.materials.join('، ')}
-        </p>
+          {product.sizes.length > 0 ? (
+            <p className="text-sm text-slate-600">
+              <span className="font-medium text-slate-800">الأحجام: </span>
+              {product.sizes.join('، ')}
+            </p>
+          ) : null}
+          {product.materials.length > 0 ? (
+            <p className="text-sm text-slate-600">
+              <span className="font-medium text-slate-800">الخامات: </span>
+              {product.materials.join('، ')}
+            </p>
+          ) : null}
         <div className="mt-auto">
-          <PublicCta to={printingCustomizePath(product.slug)}>تخصيص المنتج</PublicCta>
+          <PublicCta to={`/${product.slug}`}>عرض المنتج</PublicCta>
         </div>
       </div>
     </article>

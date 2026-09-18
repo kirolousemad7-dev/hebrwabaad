@@ -88,8 +88,11 @@ export type PackageInput = {
   tiers?: PackageTierInput[]
 }
 
-export function getPublicServices(category?: ServiceCategory) {
-  const query = category ? `?category=${encodeURIComponent(category)}` : ''
+export function getPublicServices(category?: ServiceCategory, subcategory?: string) {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  if (subcategory) params.set('subcategory', subcategory)
+  const query = params.toString() ? `?${params.toString()}` : ''
 
   return apiGet<Service[]>(`/api/services${query}`)
 }
