@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CatalogPricingMode;
 use App\Enums\ServiceCategory;
+use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -41,7 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use HasFactory, HasSlug;
+    use HasFactory, HasMedia, HasSlug;
 
     /**
      * Mirrors the database defaults so freshly created models report them.

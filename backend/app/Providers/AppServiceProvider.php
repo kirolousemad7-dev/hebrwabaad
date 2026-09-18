@@ -4,12 +4,21 @@ namespace App\Providers;
 
 use App\Contracts\SmsSender;
 use App\Models\CalendarItem;
+use App\Models\CommercialQuotation;
 use App\Models\ContentMedia;
+use App\Models\CrmCompany;
 use App\Models\ManagedFile;
+use App\Models\Meeting;
+use App\Models\Payment;
+use App\Models\PortfolioItem;
+use App\Models\Project;
+use App\Models\Service;
 use App\Models\Supplier;
 use App\Models\SupplierPortfolioItem;
 use App\Models\SupplierProduct;
 use App\Models\SupplierProfileVersion;
+use App\Models\Task;
+use App\Models\User;
 use App\Models\WorkSubmission;
 use App\Services\Customer\CustomerCommunicationService;
 use App\Services\Delivery\DeliveryProviderManager;
@@ -54,6 +63,16 @@ class AppServiceProvider extends ServiceProvider
             'supplier_product' => SupplierProduct::class,
             'supplier_profile_version' => SupplierProfileVersion::class,
             'content_media' => ContentMedia::class,
+            'customer' => User::class,
+            'company' => CrmCompany::class,
+            'product' => SupplierProduct::class,
+            'service' => Service::class,
+            'portfolio' => PortfolioItem::class,
+            'project' => Project::class,
+            'task' => Task::class,
+            'quotation' => CommercialQuotation::class,
+            'invoice' => Payment::class,
+            'meeting' => Meeting::class,
         ]);
 
         Route::bind('file', function (string $value): ManagedFile {

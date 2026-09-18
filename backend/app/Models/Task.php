@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\GoogleCalendarSyncStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Models\Concerns\HasMedia;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -47,7 +48,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory;
+    use HasFactory, HasMedia;
 
     /**
      * @return array<string, string>

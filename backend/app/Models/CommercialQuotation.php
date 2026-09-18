@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CommercialQuotationStatus;
 use App\Enums\PrintingPaymentPolicy;
+use App\Models\Concerns\HasMedia;
 use Database\Factories\CommercialQuotationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -54,7 +55,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CommercialQuotation extends Model
 {
     /** @use HasFactory<CommercialQuotationFactory> */
-    use HasFactory;
+    use HasFactory, HasMedia;
 
     /**
      * @return array<string, string>

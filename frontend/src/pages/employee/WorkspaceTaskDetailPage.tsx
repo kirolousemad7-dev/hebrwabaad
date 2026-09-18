@@ -4,6 +4,7 @@ import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { TaskGoogleCalendarPanel } from '../../components/workspace/TaskGoogleCalendarPanel'
 import { TaskMeetingPanel } from '../../components/workspace/TaskMeetingPanel'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import { TaskStatusSelect } from '../../components/workspace/WorkspaceListControls'
 import { WorkspaceErrorState, WorkspaceSkeleton } from '../../components/workspace/WorkspaceStatus'
 import { useAuth } from '../../context/AuthContext'
@@ -104,6 +105,8 @@ export function WorkspaceTaskDetailPage() {
       <TaskGoogleCalendarPanel taskId={task.id} onChanged={() => void reload()} />
 
       <TaskMeetingPanel taskId={task.id} taskTitle={task.title} projectId={task.project_id ?? task.project?.id} />
+
+      <MediaUploader entityType="task" entityId={task.id} title="ملفات المهمة" />
 
       {isManager ? (
         <ManagerTaskForm

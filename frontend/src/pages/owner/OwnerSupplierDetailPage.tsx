@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { DashboardErrorState, DashboardPanelSkeleton, DashboardSection } from '../../components/owner/DashboardSection'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import { useToast } from '../../context/ToastContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
@@ -317,6 +318,7 @@ export function OwnerSupplierDetailPage() {
 
       {tab === 'المستندات' ? (
         <div className="grid gap-4">
+          <MediaUploader entityType="supplier" entityId={supplierId} title="ملفات المورد" visibility="SUPPLIER" />
           <form onSubmit={(event) => void addDocument(event)} className="grid gap-2 rounded-2xl border bg-white p-4 md:grid-cols-2">
             <input required name="title" placeholder="عنوان المستند" className="rounded-md border px-3 py-2 text-sm" />
             <input name="category" placeholder="الفئة (contracts/tax/...)" className="rounded-md border px-3 py-2 text-sm" />

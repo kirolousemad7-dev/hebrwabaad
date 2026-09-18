@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PortfolioCategory;
 use App\Enums\PortfolioMediaType;
+use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\PortfolioItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -41,7 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PortfolioItem extends Model
 {
     /** @use HasFactory<PortfolioItemFactory> */
-    use HasFactory, HasSlug;
+    use HasFactory, HasMedia, HasSlug;
 
     /**
      * @var array<string, mixed>

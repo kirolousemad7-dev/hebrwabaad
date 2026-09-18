@@ -8,6 +8,7 @@ use App\Enums\SupplierStatus;
 use App\Enums\SupplierVerificationStatus;
 use App\Enums\SupplierVisibility;
 use App\Enums\UserRole;
+use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\SupplierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -87,7 +88,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Supplier extends Model
 {
     /** @use HasFactory<SupplierFactory> */
-    use HasFactory, HasSlug, SoftDeletes;
+    use HasFactory, HasMedia, HasSlug, SoftDeletes;
 
     /**
      * @var array<string, mixed>

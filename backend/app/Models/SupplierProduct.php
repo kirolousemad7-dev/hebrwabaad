@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ContentStatus;
 use App\Enums\SupplierVisibility;
+use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\SupplierProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -54,7 +55,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SupplierProduct extends Model
 {
     /** @use HasFactory<SupplierProductFactory> */
-    use HasFactory, HasSlug, SoftDeletes;
+    use HasFactory, HasMedia, HasSlug, SoftDeletes;
 
     /**
      * @var array<string, mixed>

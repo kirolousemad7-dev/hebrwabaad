@@ -81,6 +81,7 @@ use App\Http\Controllers\Api\GoogleCalendar\GoogleCalendarOAuthController;
 use App\Http\Controllers\Api\GoogleCalendar\TaskGoogleCalendarController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\HrDirectoryController;
+use App\Http\Controllers\Api\Media\MediaController;
 use App\Http\Controllers\Api\Meetings\MeetingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Operations\ApprovalController;
@@ -622,6 +623,17 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/meetings/{meeting}', [MeetingController::class, 'show']);
     Route::patch('/meetings/{meeting}', [MeetingController::class, 'update']);
     Route::delete('/meetings/{meeting}', [MeetingController::class, 'destroy']);
+
+    Route::get('/media/meta', [MediaController::class, 'entityTypes']);
+    Route::get('/media', [MediaController::class, 'index']);
+    Route::post('/media', [MediaController::class, 'store'])->middleware('throttle:hebr-uploads');
+    Route::get('/media/{media}', [MediaController::class, 'show']);
+    Route::post('/media/{media}', [MediaController::class, 'update'])->middleware('throttle:hebr-uploads');
+    Route::patch('/media/{media}', [MediaController::class, 'update']);
+    Route::post('/media/{media}/duplicate', [MediaController::class, 'duplicate']);
+    Route::delete('/media/{media}', [MediaController::class, 'destroy']);
+    Route::get('/media/{media}/download', [MediaController::class, 'download']);
+    Route::get('/media/{media}/preview', [MediaController::class, 'preview']);
 
     Route::get('/google-calendar/status', [GoogleCalendarOAuthController::class, 'status']);
     Route::post('/google-calendar/connect', [GoogleCalendarOAuthController::class, 'connect']);

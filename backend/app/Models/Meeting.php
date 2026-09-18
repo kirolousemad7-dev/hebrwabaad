@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\MeetingProvider;
 use App\Enums\MeetingStatus;
+use App\Models\Concerns\HasMedia;
 use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Meeting extends Model
 {
     /** @use HasFactory<MeetingFactory> */
-    use HasFactory;
+    use HasFactory, HasMedia;
 
     /**
      * @return array<string, string>

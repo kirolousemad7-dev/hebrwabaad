@@ -7,6 +7,7 @@ import {
   DashboardSection,
 } from '../../components/owner/DashboardSection'
 import { QuotationSourcingPanel } from '../../components/quotes/QuotationSourcingPanel'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import {
   downloadCommercialQuotationPdf,
@@ -494,6 +495,9 @@ export function OwnerCommercialQuotationEditorPage() {
       {activeTab === 'sourcing' ? (
         <DashboardSection title="توريد الموردين">
           <QuotationSourcingPanel quotationId={quotation.id} currency={currency} />
+          <div className="mt-4">
+            <MediaUploader entityType="quotation" entityId={quotation.id} title="ملفات العرض" />
+          </div>
         </DashboardSection>
       ) : null}
 
