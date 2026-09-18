@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Catalog;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogCategory;
+use App\Models\BlogPost;
 use App\Models\PortfolioItem;
 use App\Models\Service;
 use App\Models\Supplier;
@@ -28,6 +30,7 @@ class PublicSitemapController extends Controller
             '/consultant',
             '/suppliers',
             '/portfolio',
+            '/blog',
             '/about',
             '/contact',
         ];
@@ -60,6 +63,20 @@ class PublicSitemapController extends Controller
             foreach (PortfolioItem::query()->published()->orderBy('id')->get(['slug']) as $item) {
                 if (filled($item->slug)) {
                     $paths[] = '/portfolio/'.$item->slug;
+                }
+            }
+        }
+
+        if (BlogPost::query()->published()->exists()) {
+            $paths[] = '/blog';
+            foreach (BlogCategory::query()->active()->whereHas('posts', fn ($q) => $q->published())->orderBy('id')->get(['slug']) as $category) {
+                if (filled($category->slug)) {
+                    $paths[] = '/blog/category/'.$category->slug;
+                }
+            }
+            foreach (BlogPost::query()->published()->orderBy('id')->get(['slug']) as $post) {
+                if (filled($post->slug)) {
+                    $paths[] = '/blog/'.$post->slug;
                 }
             }
         }

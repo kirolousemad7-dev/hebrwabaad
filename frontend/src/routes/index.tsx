@@ -25,6 +25,9 @@ import { CustomerProjectDetailPage } from '../pages/customer/CustomerProjectDeta
 import { CustomerProjectsPage } from '../pages/customer/CustomerProjectsPage'
 import { ConsultantPage } from '../pages/ConsultantPage'
 import { AboutPage } from '../pages/AboutPage'
+import { BlogCategoryPage } from '../pages/BlogCategoryPage'
+import { BlogPage } from '../pages/BlogPage'
+import { BlogPostPage } from '../pages/BlogPostPage'
 import { ContactPage } from '../pages/ContactPage'
 import { EventsPage } from '../pages/EventsPage'
 import { HomePage } from '../pages/HomePage'
@@ -65,6 +68,7 @@ import { OwnerProjectsPage } from '../pages/owner/OwnerProjectsPage'
 import { OwnerProjectWorkspacePage } from '../pages/owner/OwnerProjectWorkspacePage'
 import { OwnerAutomationsPage } from '../pages/owner/OwnerAutomationsPage'
 import { OwnerApprovalsPage } from '../pages/owner/OwnerApprovalsPage'
+import { OwnerBlogPage } from '../pages/owner/OwnerBlogPage'
 import { OwnerOperationsInsightsPage } from '../pages/owner/OwnerOperationsInsightsPage'
 import { OwnerNotificationPreferencesPage } from '../pages/owner/OwnerNotificationPreferencesPage'
 import { OwnerWorkPage } from '../pages/owner/OwnerWorkPage'
@@ -173,6 +177,9 @@ export function AppRoutes() {
         <Route path="/events" element={<EventsPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/portfolio/:slug" element={<PortfolioDetailPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/category/:slug" element={<BlogCategoryPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/marketing-packages" element={<MarketingPackagesPage />} />
@@ -322,6 +329,7 @@ export function AppRoutes() {
           <Route path="/owner/catalog-control" element={<OwnerCatalogControlPage />} />
           <Route path="/owner/seo" element={<OwnerSeoPage />} />
           <Route path="/owner/marketing" element={<OwnerMarketingPage />} />
+          <Route path="/owner/blog" element={<OwnerBlogPage />} />
           <Route path="/owner/work-reviews" element={<OwnerWorkReviewsPage />} />
           <Route path="/owner/suppliers" element={<OwnerSuppliersPage />} />
           <Route path="/owner/suppliers/new" element={<OwnerSupplierNewPage />} />

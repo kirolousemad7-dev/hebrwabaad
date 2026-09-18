@@ -5,6 +5,7 @@ export const SEO_PAGE_KEYS = [
   'services',
   'packages',
   'portfolio',
+  'blog',
   'about',
   'contact',
   'suppliers',
@@ -49,6 +50,7 @@ export const SEO_PAGE_PATHS: Record<SeoPageKey, string> = {
   services: '/services',
   packages: '/packages',
   portfolio: '/portfolio',
+  blog: '/blog',
   about: '/about',
   contact: '/contact',
   suppliers: '/suppliers',
@@ -71,6 +73,7 @@ export const PUBLIC_SITEMAP_PATHS = [
   '/consultant',
   '/suppliers',
   '/portfolio',
+  '/blog',
   '/about',
   '/contact',
 ] as const
@@ -164,6 +167,16 @@ export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
     ],
     schemaType: 'generic',
   },
+  blog: {
+    title: 'مدونة حبر وأبعاد | مقالات ونصائح',
+    description: 'مقالات عملية من فريق حبر وأبعاد حول الهوية، التسويق الرقمي، الطباعة، التغليف وتنظيم الفعاليات.',
+    keywords: 'مدونة حبر وأبعاد, تسويق, هوية بصرية, طباعة',
+    breadcrumbs: [
+      { name: 'الرئيسية', path: '/' },
+      { name: 'المدونة', path: '/blog' },
+    ],
+    schemaType: 'generic',
+  },
   about: {
     title: 'من نحن | حبر وأبعاد',
     description:
@@ -246,6 +259,10 @@ export function seoKeyFromPath(pathname: string): SeoPageKey | null {
   }
 
   if (pathname.startsWith('/services/') && pathname !== '/services') {
+    return null
+  }
+
+  if (pathname.startsWith('/blog/') && pathname !== '/blog') {
     return null
   }
 

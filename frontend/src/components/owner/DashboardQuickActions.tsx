@@ -12,6 +12,7 @@ const ACTIONS = [
   { to: '/owner/catalog-control', label: 'مركز الكتالوج' },
   { to: '/owner/seo', label: 'إدارة SEO' },
   { to: '/owner/marketing', label: 'المحتوى التسويقي' },
+  { to: '/owner/blog', label: 'المدونة' },
   { to: '/owner/work-reviews', label: 'مراجعة الأعمال' },
   { to: '/owner/suppliers', label: 'الموردين' },
   { to: '/crm', label: 'المبيعات / CRM' },

@@ -34,6 +34,7 @@ export const PLATFORM_NAV_ITEMS: PublicNavItem[] = [
   { to: '/printing-packaging', label: 'الطباعة والتغليف' },
   { to: '/events', label: 'الفعاليات' },
   { to: '/portfolio', label: 'أعمالنا' },
+  { to: '/blog', label: 'المدونة' },
   { to: '/suppliers', label: 'الموردين' },
   { to: '/dashboard/orders', label: 'طلباتي' },
   { to: '/dashboard/profile', label: 'حسابي' },

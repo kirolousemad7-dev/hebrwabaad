@@ -61,6 +61,7 @@ export const OWNER_DASHBOARD_NAV: DashboardNavItem[] = [
   { to: '/owner/catalog-control', label: 'مركز الكتالوج', icon: 'packages' },
   { to: '/owner/seo', label: 'SEO', icon: 'seo' },
   { to: '/owner/marketing', label: 'المحتوى التسويقي', icon: 'files' },
+  { to: '/owner/blog', label: 'المدونة', icon: 'files' },
   { to: '/owner/work-reviews', label: 'مراجعة الأعمال', icon: 'work' },
   { to: '/owner/suppliers', label: 'الموردين', icon: 'suppliers' },
   { to: '/owner/supplier-categories', label: 'تصنيفات الموردين', icon: 'packages' },
