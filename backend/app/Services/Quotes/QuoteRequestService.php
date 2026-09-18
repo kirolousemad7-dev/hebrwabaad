@@ -10,6 +10,7 @@ use App\Enums\QuoteRequestStatus;
 use App\Enums\UserRole;
 use App\Enums\WorkflowTrigger;
 use App\Models\CommercialQuotation;
+use App\Models\CommercialQuotationItem;
 use App\Models\ManagedFile;
 use App\Models\QuoteRequest;
 use App\Models\QuoteRequestEvent;
@@ -34,14 +35,17 @@ class QuoteRequestService
     public function paginateForCustomer(User $customer, array $filters = []): LengthAwarePaginator
     {
         $query = QuoteRequest::query()
-            ->with(['assignee:id,name,email', 'commercialQuotations' => fn ($q) => $q->orderByDesc('revision')->limit(1)])
+            ->with(['assignee:id,name,email', 'commercialQuotations' => fn ($q) => $q->with('items')->orderByDesc('revision')->limit(1)])
             ->where('customer_id', $customer->id);
 
         if (is_string($filters['status'] ?? null) && in_array($filters['status'], QuoteRequestStatus::values(), true)) {
             $query->where('status', $filters['status']);
         }
 
-        return $query->latest('id')->paginate(max(1, min((int) ($filters['per_page'] ?? 15), 50)));
+        $page = $query->latest('id')->paginate(max(1, min((int) ($filters['per_page'] ?? 15), 50)));
+        $page->getCollection()->transform(fn (QuoteRequest $request): QuoteRequest => $this->scrubForCustomer($request));
+
+        return $page;
     }
 
     /**
@@ -475,7 +479,39 @@ class QuoteRequestService
         ]);
 
         if (! $includeInternal) {
-            $request->makeHidden(['internal_notes']);
+            return $this->scrubForCustomer($request);
+        }
+
+        return $request;
+    }
+
+    /**
+     * Strip staff-only quotation fields before serializing for customers.
+     */
+    private function scrubForCustomer(QuoteRequest $request): QuoteRequest
+    {
+        $request->makeHidden(['internal_notes']);
+
+        if ($request->relationLoaded('commercialQuotations')) {
+            $request->commercialQuotations->each(function (CommercialQuotation $quotation): void {
+                $quotation->makeHidden([
+                    'internal_notes',
+                    'public_token_hash',
+                    'tracking_token_hash',
+                    'public_token_hint',
+                    'tracking_token_hint',
+                    'token_revoked_at',
+                    'snapshot',
+                    'execution_project_id',
+                    'created_by',
+                ]);
+
+                if ($quotation->relationLoaded('items')) {
+                    $quotation->items->each(function (CommercialQuotationItem $item): void {
+                        $item->makeHidden(['selected_supplier_quote_id', 'meta']);
+                    });
+                }
+            });
         }
 
         return $request;

@@ -16,4 +16,8 @@ Schedule::command('operations:process-escalations')->hourly()->withoutOverlappin
 Schedule::command('operations:deliver-delayed-notifications')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('webhooks:process-deliveries')->everyMinute()->withoutOverlapping();
 Schedule::command('printing:expire-quotations')->hourly()->withoutOverlapping();
+Schedule::command('quotations:expire-commercial')->hourly()->withoutOverlapping();
+Schedule::command('quotations:expire-supplier-quotes')->hourly()->withoutOverlapping();
 Schedule::command('payments:reconcile-pending')->hourly()->withoutOverlapping();
+Schedule::command('blog:publish-scheduled')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('otp:prune-expired')->daily()->withoutOverlapping();

@@ -391,6 +391,8 @@ class SupplierManagementService
     {
         $payload['uploaded_by'] = $actor->id;
         $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Internal->value;
+        // Metadata-only create path must never land on the public disk.
+        $payload['disk'] = 'local';
 
         return $supplier->documents()->create($payload);
     }

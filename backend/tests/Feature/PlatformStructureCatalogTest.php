@@ -215,7 +215,7 @@ class PlatformStructureCatalogTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->getJson('/api/portfolio')
+        $this->getJson('/api/portfolio/'.$item->slug)
             ->assertOk()
             ->assertJsonFragment([
                 'id' => $item->id,

@@ -23,8 +23,8 @@ class StoreSupplierDocumentRequest extends ApiFormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:80'],
-            'disk' => ['nullable', 'string', 'max:40'],
-            'path' => ['required', 'string', 'max:2048'],
+            'disk' => ['prohibited'],
+            'path' => ['required', 'string', 'max:2048', 'not_regex:/^\.\.|\\\\|\.\.\//'],
             'original_name' => ['nullable', 'string', 'max:255'],
             'mime_type' => ['nullable', 'string', 'max:120'],
             'size_bytes' => ['nullable', 'integer', 'min:0'],

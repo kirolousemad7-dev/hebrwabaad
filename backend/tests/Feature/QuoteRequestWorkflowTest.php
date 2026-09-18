@@ -386,6 +386,50 @@ class QuoteRequestWorkflowTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_customer_quote_api_hides_internal_quotation_and_supplier_fields(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $customer = User::factory()->create(['role' => UserRole::Customer->value]);
+        $request = QuoteRequest::factory()->create([
+            'customer_id' => $customer->id,
+            'internal_notes' => 'هامش داخلي للمورد 3000',
+        ]);
+
+        $created = $this->asUser($owner)
+            ->postJson('/api/operations/quote-requests/'.$request->id.'/quotations')
+            ->assertCreated();
+        $qid = (int) $created->json('data.id');
+
+        CommercialQuotation::query()->whereKey($qid)->update([
+            'internal_notes' => 'تكلفة مورد سرية',
+            'public_token_hash' => hash('sha256', 'secret-public-token'),
+            'tracking_token_hash' => hash('sha256', 'secret-track-token'),
+        ]);
+        CommercialQuotationItem::query()
+            ->where('commercial_quotation_id', $qid)
+            ->update([
+                'selected_supplier_quote_id' => null,
+                'meta' => ['supplier_cost' => 3000, 'margin' => 40],
+            ]);
+
+        $response = $this->asUser($customer)
+            ->getJson('/api/customer/quote-requests/'.$request->id)
+            ->assertOk();
+
+        $payload = $response->json('data');
+        $this->assertArrayNotHasKey('internal_notes', $payload);
+        $quotation = $payload['commercial_quotations'][0] ?? null;
+        $this->assertIsArray($quotation);
+        $this->assertArrayNotHasKey('internal_notes', $quotation);
+        $this->assertArrayNotHasKey('public_token_hash', $quotation);
+        $this->assertArrayNotHasKey('tracking_token_hash', $quotation);
+        $item = $quotation['items'][0] ?? null;
+        $this->assertIsArray($item);
+        $this->assertArrayNotHasKey('selected_supplier_quote_id', $item);
+        $this->assertArrayNotHasKey('meta', $item);
+        $this->assertStringNotContainsString('3000', json_encode($payload, JSON_UNESCAPED_UNICODE) ?: '');
+    }
+
     public function test_none_deposit_and_full_payment_policies_are_stored_on_accept_snapshot(): void
     {
         foreach ([PrintingPaymentPolicy::None, PrintingPaymentPolicy::Deposit, PrintingPaymentPolicy::Full] as $policy) {

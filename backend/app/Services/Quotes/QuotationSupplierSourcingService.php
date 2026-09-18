@@ -196,6 +196,29 @@ class QuotationSupplierSourcingService
         return $quote->fresh(['item', 'quotation']) ?? $quote;
     }
 
+    public function expireDue(): int
+    {
+        $count = 0;
+
+        QuotationSupplierQuote::query()
+            ->whereIn('status', [
+                SupplierQuoteStatus::Requested->value,
+                SupplierQuoteStatus::Received->value,
+                SupplierQuoteStatus::UnderReview->value,
+            ])
+            ->whereNotNull('valid_until')
+            ->whereDate('valid_until', '<', now()->toDateString())
+            ->orderBy('id')
+            ->chunkById(100, function ($quotes) use (&$count): void {
+                foreach ($quotes as $quote) {
+                    $quote->update(['status' => SupplierQuoteStatus::Expired]);
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+
     public function markUnderReview(User $actor, QuotationSupplierQuote $quote): QuotationSupplierQuote
     {
         $this->assertOwnerCanManage($actor);

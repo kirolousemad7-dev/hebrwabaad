@@ -1449,6 +1449,28 @@ class CommercialQuotationService
         }
     }
 
+    public function expireDue(): int
+    {
+        $count = 0;
+
+        CommercialQuotation::query()
+            ->whereIn('status', [
+                CommercialQuotationStatus::Sent->value,
+                CommercialQuotationStatus::Viewed->value,
+            ])
+            ->whereNotNull('valid_until')
+            ->whereDate('valid_until', '<', now()->toDateString())
+            ->orderBy('id')
+            ->chunkById(100, function ($quotations) use (&$count): void {
+                foreach ($quotations as $quotation) {
+                    $this->markExpired($quotation);
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+
     private function markExpired(CommercialQuotation $quotation): void
     {
         if ($this->statusOf($quotation) === CommercialQuotationStatus::Expired) {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContentStatus;
+use App\Enums\SupplierVisibility;
 use Database\Factories\ContentMediaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -94,11 +95,16 @@ class ContentMedia extends Model
         }
 
         if ($parent instanceof SupplierPortfolioItem) {
-            return $parent->status === ContentStatus::Published && $parent->supplier?->isPubliclyVisible() === true;
+            return $parent->status === ContentStatus::Published
+                && $parent->visibility === SupplierVisibility::Public
+                && $parent->is_active
+                && $parent->supplier?->isPubliclyVisible() === true;
         }
 
         if ($parent instanceof SupplierProduct) {
-            return $parent->status === ContentStatus::Published && $parent->supplier?->isPubliclyVisible() === true;
+            return $parent->status === ContentStatus::Published
+                && $parent->visibility === SupplierVisibility::Public
+                && $parent->supplier?->isPubliclyVisible() === true;
         }
 
         if ($parent instanceof Supplier) {

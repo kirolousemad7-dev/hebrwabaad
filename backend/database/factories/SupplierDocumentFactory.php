@@ -23,7 +23,7 @@ class SupplierDocumentFactory extends Factory
             'supplier_id' => Supplier::factory(),
             'title' => fake()->sentence(3),
             'category' => fake()->optional()->randomElement(['license', 'contract', 'catalog', 'other']),
-            'disk' => 'public',
+            'disk' => 'local',
             'path' => 'suppliers/documents/'.fake()->uuid().'.pdf',
             'original_name' => $name,
             'mime_type' => 'application/pdf',

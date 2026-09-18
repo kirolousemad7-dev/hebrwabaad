@@ -33,7 +33,7 @@ class SupplierDocument extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'disk' => 'public',
+        'disk' => 'local',
         'visibility' => SupplierVisibility::Internal->value,
     ];
 
