@@ -113,6 +113,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
     label: 'التقارير',
     items: [
       { to: '/owner/operations-insights', label: 'التشغيل', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
+      { to: '/owner/invoices', label: 'الفواتير', icon: 'payments', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/payments', label: 'المالي', icon: 'payments', roles: ['OWNER'] },
       { to: '/owner/payments/reconciliation', label: 'مطابقة المدفوعات', icon: 'payments', roles: ['OWNER'] },
       { to: '/crm/reports', label: 'الأداء / CRM', icon: 'crm', roles: ['OWNER', 'ADMIN_MANAGER'] },
@@ -188,6 +189,7 @@ export const CUSTOMER_DASHBOARD_NAV: DashboardNavItem[] = [
   { to: '/dashboard', label: 'لوحة التحكم', match: ['/dashboard', '/customer'], icon: 'home' },
   { to: '/dashboard/projects', label: 'مشاريعي', icon: 'projects' },
   { to: '/dashboard/orders', label: 'طلباتي', icon: 'orders' },
+  { to: '/dashboard/invoices', label: 'فواتيري', icon: 'payments' },
   { to: '/dashboard/quote-requests', label: 'طلبات التسعير', icon: 'orders' },
   { to: '/dashboard/messages', label: 'الرسائل', icon: 'messages' },
   { to: '/dashboard/files', label: 'الملفات', icon: 'files' },

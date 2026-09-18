@@ -7,6 +7,8 @@ import { PrintingOperationsLayout } from '../layouts/PrintingOperationsLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { SupplierLayout } from '../layouts/SupplierLayout'
 import { CustomerHomePage } from '../pages/customer/CustomerHomePage'
+import { CustomerInvoiceDetailPage } from '../pages/customer/CustomerInvoiceDetailPage'
+import { CustomerInvoicesPage } from '../pages/customer/CustomerInvoicesPage'
 import { CustomerFilesPage } from '../pages/customer/CustomerFilesPage'
 import { CustomerMessagesPage } from '../pages/customer/CustomerMessagesPage'
 import { CustomerNewConversationPage } from '../pages/customer/CustomerNewConversationPage'
@@ -78,6 +80,9 @@ import { OwnerQuoteRequestDetailPage } from '../pages/owner/OwnerQuoteRequestDet
 import { OwnerQuoteRequestsPage } from '../pages/owner/OwnerQuoteRequestsPage'
 import { OwnerRequirementsPage } from '../pages/owner/OwnerRequirementsPage'
 import { OwnerCommercialQuotationEditorPage } from '../pages/owner/OwnerCommercialQuotationEditorPage'
+import { OwnerInvoiceDetailPage } from '../pages/owner/OwnerInvoiceDetailPage'
+import { OwnerInvoiceEditorPage } from '../pages/owner/OwnerInvoiceEditorPage'
+import { OwnerInvoicesPage } from '../pages/owner/OwnerInvoicesPage'
 import { OwnerPaymentsReconciliationPage } from '../pages/owner/OwnerPaymentsReconciliationPage'
 import { OwnerIntegrationsWebhooksPage } from '../pages/owner/OwnerIntegrationsWebhooksPage'
 import { OwnerInboundWebhooksPage } from '../pages/owner/OwnerInboundWebhooksPage'
@@ -230,6 +235,8 @@ export function AppRoutes() {
           <Route path="/dashboard/files" element={<CustomerFilesPage />} />
           <Route path="/dashboard/notifications" element={<CustomerNotificationsPage />} />
           <Route path="/dashboard/profile" element={<CustomerProfilePage />} />
+          <Route path="/dashboard/invoices" element={<CustomerInvoicesPage />} />
+          <Route path="/dashboard/invoices/:invoiceId" element={<CustomerInvoiceDetailPage />} />
           <Route path="/customer/printing-requests" element={<CustomerPrintingRequestsPage />} />
           <Route path="/customer/printing-requests/:id" element={<CustomerPrintingRequestDetailPage />} />
         </Route>
@@ -310,6 +317,10 @@ export function AppRoutes() {
           <Route path="/owner/departments" element={<OwnerDepartmentsPage />} />
           <Route path="/owner/work" element={<OwnerWorkPage basePath="/owner" />} />
           <Route path="/owner/printing-ops" element={<OwnerPrintingOpsPage />} />
+          <Route path="/owner/invoices" element={<OwnerInvoicesPage />} />
+          <Route path="/owner/invoices/new" element={<OwnerInvoiceEditorPage />} />
+          <Route path="/owner/invoices/:invoiceId/edit" element={<OwnerInvoiceEditorPage />} />
+          <Route path="/owner/invoices/:invoiceId" element={<OwnerInvoiceDetailPage />} />
           <Route path="/owner/quote-requests" element={<OwnerQuoteRequestsPage />} />
           <Route path="/owner/quote-requests/:id" element={<OwnerQuoteRequestDetailPage />} />
           <Route path="/owner/commercial-quotations/:id" element={<OwnerCommercialQuotationEditorPage />} />

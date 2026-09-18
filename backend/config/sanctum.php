@@ -12,7 +12,9 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => null,
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION_MINUTES') !== null && env('SANCTUM_TOKEN_EXPIRATION_MINUTES') !== ''
+        ? (int) env('SANCTUM_TOKEN_EXPIRATION_MINUTES')
+        : null,
 
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 

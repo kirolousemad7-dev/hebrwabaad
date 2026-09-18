@@ -8,6 +8,7 @@ use App\Enums\SupplierOnboardingStatus;
 use App\Enums\SupplierStatus;
 use App\Enums\SupplierVerificationStatus;
 use App\Enums\SupplierVisibility;
+use App\Enums\UserRole;
 use App\Models\Supplier;
 use App\Models\SupplierCategory;
 use App\Models\SupplierContact;
@@ -18,7 +19,11 @@ use App\Models\SupplierService;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupplierManagementService
 {
@@ -385,16 +390,106 @@ class SupplierManagementService
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * Store an uploaded supplier document on the private/default disk (never public).
+     *
+     * @param  array{title: string, category?: string|null, visibility?: string|null, notes?: string|null}  $payload
      */
-    public function storeDocument(User $actor, Supplier $supplier, array $payload): SupplierDocument
+    public function storeDocument(User $actor, Supplier $supplier, array $payload, UploadedFile $file): SupplierDocument
     {
-        $payload['uploaded_by'] = $actor->id;
-        $payload['visibility'] = $payload['visibility'] ?? SupplierVisibility::Internal->value;
-        // Metadata-only create path must never land on the public disk.
-        $payload['disk'] = 'local';
+        $disk = $this->privateDisk();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'bin');
+        $safeName = Str::uuid()->toString().'.'.$extension;
+        $path = $file->storeAs(
+            'suppliers/'.$supplier->id.'/documents',
+            $safeName,
+            ['disk' => $disk],
+        );
 
-        return $supplier->documents()->create($payload);
+        if ($path === false) {
+            throw new \RuntimeException('Failed to store supplier document.');
+        }
+
+        $visibility = $payload['visibility'] ?? SupplierVisibility::Internal->value;
+        if ($visibility === SupplierVisibility::Public->value && ! $actor->canReviewContent()) {
+            $visibility = SupplierVisibility::Vendor->value;
+        }
+
+        return $supplier->documents()->create([
+            'uploaded_by' => $actor->id,
+            'title' => $payload['title'],
+            'category' => $payload['category'] ?? null,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType() ?: $file->getMimeType(),
+            'size_bytes' => $file->getSize() ?: 0,
+            'visibility' => $visibility,
+            'notes' => $payload['notes'] ?? null,
+            'metadata' => [
+                'uploaded_via' => 'api',
+            ],
+        ]);
+    }
+
+    public function canAccessDocument(User $actor, SupplierDocument $document): bool
+    {
+        if (! $actor->is_active) {
+            return false;
+        }
+
+        $visibility = $document->visibility ?? SupplierVisibility::Internal;
+
+        if ($actor->canReviewContent() || $actor->isOwner()) {
+            return true;
+        }
+
+        $ownsSupplier = $actor->role === UserRole::Supplier
+            && $document->supplier?->belongsToUser($actor) === true;
+
+        return match ($visibility) {
+            SupplierVisibility::Internal, SupplierVisibility::Private, SupplierVisibility::Customer => false,
+            SupplierVisibility::Vendor => $ownsSupplier,
+            // Public documents still require an authenticated session through this gated endpoint.
+            SupplierVisibility::Public => true,
+        };
+    }
+
+    public function downloadDocument(User $actor, SupplierDocument $document): StreamedResponse
+    {
+        if (! $this->canAccessDocument($actor, $document)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk($document->disk ?: $this->privateDisk());
+
+        if (! $disk->exists($document->path)) {
+            abort(404);
+        }
+
+        return $disk->response($document->path, $document->original_name ?: 'document', [
+            'Content-Type' => $document->mime_type ?: 'application/octet-stream',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function deleteDocument(SupplierDocument $document): void
+    {
+        $disk = Storage::disk($document->disk ?: $this->privateDisk());
+        if ($document->path && $disk->exists($document->path)) {
+            $disk->delete($document->path);
+        }
+
+        $document->delete();
+    }
+
+    /**
+     * Prefer configured default disk when it is not world-readable public storage.
+     */
+    public function privateDisk(): string
+    {
+        $disk = (string) config('filesystems.default', 'local');
+
+        return $disk === 'public' ? 'local' : $disk;
     }
 
     /**

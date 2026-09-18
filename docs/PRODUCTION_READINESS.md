@@ -1,10 +1,11 @@
 # HEBR & ABAAD — Production Readiness Report
 
-**Audit date:** 2026-09-18  
-**Scope:** Full integration audit (no new product features).  
-**Verification:** `php artisan test` — **710 passed**; frontend `tsc -b` + `vite build` — **passed**.
+**Updated:** 2026-09-18 (production hardening + invoices)  
+**Verification:** `php artisan test` — **722 passed**; frontend `tsc -b` + `vite build` — **passed**.
 
-**Overall verdict:** Not fully production-ready. Core marketplace isolation and most modules are solid, but **Invoices** are absent as a first-class domain, and several ops/security items remain **YELLOW/RED** below. Do not treat a green module list as a go-live sign-off while any **RED** item is open.
+**Overall verdict:** Core RED invoice blocker is cleared. The platform is **conditionally production-ready** when operators configure real mail, S3-compatible storage, and set secrets in the host (Render/dashboard). Remaining items below are **YELLOW operational requirements**, not missing product modules.
+
+Do not claim “unconditionally production ready” until mail + durable storage credentials are live in the target environment.
 
 ---
 
@@ -12,216 +13,181 @@
 
 | Status | Meaning |
 |--------|---------|
-| **GREEN** | Implemented, wired, and adequate for production with current tests/evidence |
-| **YELLOW** | Works but has gaps, demo-grade ops config, or defense-in-depth debt |
-| **RED** | Broken, missing, or unsafe for production until fixed |
+| **GREEN** | Implemented and verified |
+| **YELLOW** | Acceptable with documented operational requirement |
+| **RED** | Blocking production |
 
 ---
 
 ## Modules
 
-| Module | Status | Notes |
-|--------|--------|-------|
-| Authentication | **GREEN** | Sanctum PAT login/register/forgot-reset; role + active account middleware |
-| Authorization | **GREEN** | Server-side `role:` middleware, policies, service asserts |
-| Owner | **GREEN** | Admin/owner APIs + `/owner/*` UI |
-| Employees | **GREEN** | Admin employees + workspace directory |
-| Suppliers | **GREEN** | Admin + public catalog; visibility scopes |
-| Supplier portal | **GREEN** | `/api/supplier/*` + `/supplier/*`; ownership 404s |
-| Supplier registration | **GREEN** | Public register + onboarding verification |
-| Email verification | **YELLOW** | Supplier-only today |
-| Phone verification | **YELLOW** | Supplier-only OTP |
-| OTP login | **YELLOW** | Supplier OTP login; `/login/code` is supplier-scoped |
-| CRM | **GREEN** | Companies, customers, settings, quotations |
-| Customers | **GREEN** | Customer dashboard + CRM 360 |
-| Companies | **GREEN** | CRM companies API + UI |
-| Services | **GREEN** | Public + owner catalog |
-| Products | **GREEN** | Supplier products + printing catalog |
-| Categories | **GREEN** | Supplier / blog / printing categories |
-| Tags | **GREEN** | Admin + blog + CRM tags |
-| Portfolio | **GREEN** | Public slug detail + admin/supplier management |
-| Projects | **GREEN** | Workspace + operations + customer views |
-| Tasks | **GREEN** | Workspace tasks + reminders scheduled |
-| Calendar | **GREEN** | Internal calendar + digests/reminders |
-| Google Calendar | **GREEN** | OAuth; graceful when unconfigured |
-| Google Meet | **GREEN** | Provider gated on Google OAuth config |
-| Zoom | **GREEN** | S2S provider; graceful when unconfigured |
-| Quotations | **GREEN** | Commercial + printing + public tokens; customer scrub |
-| Supplier sourcing | **GREEN** | Owner sourcing + supplier portal; isolation tested |
-| Invoices | **RED** | No invoice domain (see below) |
-| Files | **GREEN** | Managed files + media policies; private disk default |
-| Notifications | **GREEN** | In-app + delayed delivery scheduled |
-| Blog | **GREEN** | CMS + public; scheduled publish now scheduled |
-| Sidebar | **GREEN** | Role-aware `dashboardNav` |
-| SEO | **GREEN** | Page SEO + sitemap APIs |
-| Public pages | **GREEN** | Marketing + catalog + public quote/portal |
+| Module | Status |
+|--------|--------|
+| Authentication | **GREEN** (Sanctum PAT + configurable TTL) |
+| Authorization | **GREEN** |
+| Owner / Employees / CRM | **GREEN** |
+| Suppliers / portal / registration | **GREEN** |
+| Email / phone / OTP (supplier) | **YELLOW** (supplier-scoped by design) |
+| Quotations / sourcing | **GREEN** |
+| **Invoices** | **GREEN** (first-class module) |
+| Payments | **GREEN** |
+| Files / supplier documents | **GREEN** (private upload + gated download) |
+| Calendar / Meet / Zoom | **GREEN** (graceful without credentials) |
+| Blog / SEO / public pages / sidebar | **GREEN** |
+| Notifications | **GREEN** |
 
-### RED / YELLOW module detail
-
-#### Invoices — **RED**
-- **Problem:** No invoice models/controllers/routes/pages. Payments/receipts and media owner-type `invoice` are not an invoicing module.
-- **Impact:** Cannot issue, number, or manage customer invoices as a product capability.
-- **Exact fix:** Either implement an Invoice domain (model, lifecycle, PDF, customer/owner APIs, UI) **or** remove “Invoices” from product language and document Payments/Receipts as the commercial document surface.
-
-#### Email / phone / OTP — **YELLOW**
-- **Problem:** Verification and OTP login cover suppliers only; customers/staff use password auth without email verify.
-- **Impact:** Unverified customer emails; OTP UX looks global but is supplier-only.
-- **Exact fix:** Document as supplier-only in UX copy, **or** add customer/staff email verification and/or OTP if product requires it.
+### Invoices — **GREEN**
+- Models: `Invoice`, `InvoiceItem`, `InvoiceEvent`; payments link via `invoice_id`
+- Lifecycle: DRAFT → ISSUED → SENT → PARTIALLY_PAID / PAID / OVERDUE / CANCELLED / VOID
+- Staff APIs under `/api/operations/invoices/*`; customer `/api/customer/invoices/*`
+- Server-generated numbers (`INV-YYYY-####`); server-side totals; customer payload strips `internal_notes` / events
+- Gates: `invoices.view|create|update|issue|send|cancel|record_payment|view_internal`
+- Owner UI: `/owner/invoices`; customer: `/dashboard/invoices`
+- Scheduler: `invoices:mark-overdue`
 
 ---
 
 ## Critical business rules
 
-| # | Rule | Status |
-|---|------|--------|
-| 1 | Customer never sees supplier identity unless public | **GREEN** |
-| 2 | Customer never sees supplier cost | **GREEN** |
-| 3 | Supplier never sees another supplier | **GREEN** |
-| 4 | Supplier never sees unrelated customers | **GREEN** (minor YELLOW below) |
-| 5 | Supplier never accesses Owner routes | **GREEN** |
-| 6 | Supplier documents respect visibility | **YELLOW** (hardened this audit; residual below) |
-| 7 | Internal quotation data never leaks via customer APIs | **GREEN** (scrub + tests) |
-| 8 | Customer invoices must not expose supplier info | **GREEN** for payments/orders (no invoice module) |
-| 9 | Authorization is server-side | **GREEN** |
-| 10 | Frontend hiding is not security | **YELLOW** (UI gates exist; server enforces quotes/sourcing) |
-
-### Rule 4 — shared auth surfaces — **YELLOW**
-- **Problem:** Some `/api/workspace/*`, `/api/media`, `/api/meetings` routes use `auth:sanctum` without an explicit `role:` deny for `SUPPLIER`. Policies/scopes usually empty/403, but route-layer denial is inconsistent.
-- **Impact:** Defense-in-depth gap if a policy regresses.
-- **Exact fix:** Add explicit role middleware (or controller abort) denying `SUPPLIER` on staff-only controllers.
-
-### Rule 6 — supplier documents — **YELLOW** (was RED)
-- **Problem (fixed in audit):** Default disk was `public`; clients could send `disk`. Now forced to `local`; `disk` input prohibited.
-- **Residual:** API still accepts a client-supplied `path` (metadata-only create); no gated download endpoint that streams by visibility.
-- **Impact:** Misconfigured deploys that place files under a public path could still expose content if operators copy paths into public storage.
-- **Exact fix:** Replace metadata create with authenticated upload to private disk + authorized download that checks `visibility` and actor; never return raw public URLs for `INTERNAL` docs.
-
-### Rule 7 — scrub pattern — **YELLOW** debt
-- **Problem:** Customer scrub uses Eloquent `makeHidden` rather than a dedicated customer resource/DTO.
-- **Impact:** Future raw serialization could reintroduce leaks.
-- **Exact fix:** Introduce explicit customer quotation resources (mirror `CustomerOrderResource`) and stop returning Eloquent models to customers.
+| Rule | Status |
+|------|--------|
+| Customer never sees supplier identity/cost | **GREEN** |
+| Supplier isolation | **GREEN** |
+| Invoice customer scrub (no internal notes/supplier) | **GREEN** |
+| Server-side authorization | **GREEN** |
+| Supplier documents private by default + gated download | **GREEN** |
 
 ---
 
-## API quality
+## Hardening phases
 
-| Concern | Status | Notes |
-|---------|--------|-------|
-| N+1 | **YELLOW** | Most list endpoints eager-load; keep auditing new relations |
-| Pagination | **GREEN** | Staff/customer list endpoints paginate |
-| Validation | **GREEN** | Form requests on mutating endpoints |
-| Authorization | **GREEN** | Middleware + policies + service asserts |
-| Rate limits | **GREEN** | Auth, OTP, uploads, public portal, payments |
-| Error handling | **GREEN** | `ApiResponse` + validation exceptions |
-| API Resources / shape | **YELLOW** | Mix of Resources and controller `serialize()` arrays |
-
----
-
-## Security
-
-| Item | Status | Problem / impact / fix (if not GREEN) |
-|------|--------|----------------------------------------|
-| CORS | **GREEN** | Allowlist via `CORS_ALLOWED_ORIGINS`; set exact frontend origin in prod |
-| Sanctum | **YELLOW** | Bearer tokens in `localStorage`, `expiration => null`. **Impact:** XSS = full API access. **Fix:** short TTL/rotation; prefer HttpOnly cookie SPA auth |
-| CSRF | **GREEN** | Bearer API model (not cookie SPA) |
-| File uploads | **YELLOW** | Media/managed files OK; supplier docs still metadata-path (see Rule 6) |
-| OTP security | **GREEN** | Hashed codes, TTL, attempts, cooldown, throttles |
-| OAuth token storage | **GREEN** | Google tokens encrypted at rest |
-| Rate limiting | **GREEN** | Named limiters applied |
-| Mass assignment | **YELLOW** | `User` fillable includes `role`/`is_active`. Register hardcodes Customer today. **Fix:** remove privileged attrs from fillable; `forceFill` only in admin services |
-| IDOR | **GREEN** | Ownership checks return 404 on quotes/sourcing/files |
-| Sensitive fields | **GREEN** | Customer scrub; payment secret redaction in logs |
-| Content media visibility | **GREEN** | Fixed: public serve requires parent `visibility === PUBLIC` (+ published/active/supplier public) |
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 1 Invoices | **GREEN** | See above |
+| 2 Mail | **YELLOW** | Code + Mailables ready (`ShouldQueue`); set `MAIL_MAILER=smtp` + secrets in prod |
+| 3 Queue | **GREEN** | `QUEUE_CONNECTION=database` default for prod blueprint; `queue:work` in `render-start.sh`; tests still use `sync` |
+| 4 Persistent storage | **YELLOW** | S3 disk configured; set `FILESYSTEM_DISK=s3` + `AWS_*`; supplier docs upload to private disk |
+| 5 Sanctum | **GREEN** | `SANCTUM_TOKEN_EXPIRATION_MINUTES` (default 10080 in example); frontend clears token on 401. Bearer+localStorage retained (cookie SPA not adopted — CORS/multi-role complexity) |
+| 6 Production env | **YELLOW** | Blueprint updated; operators must fill sync:false secrets |
+| 7 Tests | **GREEN** | 722 passed |
+| 8 Security | **GREEN** / residual **YELLOW** below |
 
 ---
 
-## Scheduler
+## Security notes (post-hardening)
 
-| Job | Status |
-|-----|--------|
-| Calendar / task reminders | **GREEN** |
-| Daily digest | **GREEN** |
-| Delayed notifications | **GREEN** |
-| Escalations / webhooks / workflows | **GREEN** |
-| Printing quotation expiry | **GREEN** |
-| Commercial quotation expiry | **GREEN** (added `quotations:expire-commercial`) |
-| Supplier quote expiry | **GREEN** (added `quotations:expire-supplier-quotes`) |
-| Scheduled blog publish | **GREEN** (wired `blog:publish-scheduled`) |
-| OTP prune | **GREEN** (wired `otp:prune-expired`) |
-| Payments reconcile | **GREEN** |
-| Scheduler runner on deploy | **GREEN** (`schedule:work` backgrounded in `backend/scripts/render-start.sh`) |
-| Google Calendar sync cron | **YELLOW** | On-demand only; optional reconcile if needed |
-| Duplicate artisan commands | **YELLOW** | Two `catalog:pdf-import-report` classes (not scheduled) — delete one |
+| Item | Status | Detail |
+|------|--------|--------|
+| CORS | **GREEN** | Env allowlist |
+| Sanctum TTL | **GREEN** | Configurable expiration |
+| Token storage | **YELLOW** | Still `localStorage` Bearer — XSS risk; mitigated by TTL + logout clear |
+| Supplier docs | **GREEN** | Real upload; path/disk not returned; gated download |
+| OTP | **GREEN** | Unchanged hardened controls |
+| Mass assignment `User.role` | **YELLOW** | Still fillable; register hardcodes Customer |
+| APP_DEBUG | **GREEN** | Render blueprint `false` |
 
 ---
 
-## Google / Zoom
+## Required environment variables
 
-| Integration | Status |
-|-------------|--------|
-| Google Calendar missing credentials | **GREEN** — `configured: false` / 422, app usable |
-| Google Meet missing credentials | **GREEN** — provider availability flags |
-| Zoom missing credentials | **GREEN** — same pattern |
-| Zoom redirect URI in `.env.example` | **YELLOW** — unused (S2S); remove or document |
+### Application
+- `APP_NAME`, `APP_ENV=production`, `APP_KEY`, `APP_DEBUG=false`, `APP_URL`, `FRONTEND_URL`
+- `LOG_LEVEL=error`
 
----
+### Database
+- `DB_CONNECTION=mysql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
 
-## Files & storage
+### Auth / CORS
+- `SANCTUM_TOKEN_EXPIRATION_MINUTES` (e.g. `10080`)
+- `SANCTUM_STATEFUL_DOMAINS=` (empty for Bearer SPA)
+- `CORS_ALLOWED_ORIGINS` (exact frontend origin(s))
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Upload/download auth | **GREEN** | Policies on workspace/customer/media |
-| Private disk default | **GREEN** | `FILESYSTEM_DISK=local` |
-| Render ephemeral disk | **YELLOW** | Uploads lost on sleep/redeploy without S3. **Fix:** configure `AWS_*` / S3 for real production |
+### Mail (production)
+- `MAIL_MAILER=smtp` (or `ses` / `postmark` / `resend`)
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`
+- `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
 
----
+### Queue
+- `QUEUE_CONNECTION=database` (or `redis` if Redis is provisioned)
+- Worker: `php artisan queue:work database --tries=3` (started by `scripts/render-start.sh`)
 
-## Database / migrations
+### Storage
+- Local/dev: `FILESYSTEM_DISK=local`
+- Production: `FILESYSTEM_DISK=s3` plus:
+  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`
+  - Optional R2/compatible: `AWS_ENDPOINT`, `AWS_URL`, `AWS_USE_PATH_STYLE_ENDPOINT`
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Additive migrations | **GREEN** | No destructive `up()` wipes |
-| Column `change()` | **YELLOW** | Verify on target MySQL before go-live |
-| Forbidden ops | **GREEN** | Do not run `migrate:fresh` / `db:wipe` in production |
+### Optional integrations
+- `GOOGLE_*`, `ZOOM_*`, `PAYTABS_*`, `SMS_*`
 
----
-
-## Production environment
-
-| Item | Status | Problem / impact / fix (if not GREEN) |
-|------|--------|----------------------------------------|
-| Frontend production build | **GREEN** | `vite build` succeeds |
-| SPA fallback | **GREEN** | Render rewrite + `_redirects` |
-| API health | **GREEN** | `GET /api/health` |
-| CORS | **GREEN** | Env allowlist (configure prod origin) |
-| HTTPS | **YELLOW** | Depends on host TLS termination — confirm on Render/custom domain |
-| Storage | **YELLOW** | Use durable object storage for prod |
-| Cron / scheduler | **GREEN** | `schedule:work` in start script |
-| Queue | **YELLOW** | `QUEUE_CONNECTION=sync` in blueprint. **Impact:** blocks requests under load. **Fix:** `database`/`redis` + worker |
-| Cache | **YELLOW** | Confirm `CACHE_STORE` / Redis for multi-instance locks |
-| Mail | **YELLOW** | `MAIL_MAILER=log` in blueprint. **Impact:** resets/verify/quote emails never leave the host. **Fix:** real SMTP/SES + `MAIL_FROM_*` |
-| OAuth env | **GREEN** | Optional `GOOGLE_*` / `ZOOM_*`; empty = disabled |
-| Demo seed | **YELLOW** | `RUN_DB_SEED=true` in Render blueprint — disable after first boot |
+### Deploy flags
+- `RUN_DB_SEED=false` after first boot
 
 ---
 
-## Fixes applied during this audit
+## Mail setup
+1. Choose SMTP or Laravel-supported API mailer.
+2. Set env vars (never commit secrets).
+3. Verify with `php artisan tinker` / feature tests using `Mail::fake()` locally (`MAIL_MAILER=array` in phpunit).
+4. Existing queued mail: supplier OTP/verify, printing quotation, payment confirmed, portal magic link, approvals, delivery, **invoice issued**.
 
-1. Customer quote-request scrub for internal commercial fields (prior session) + isolation test.
-2. Portfolio catalog test uses public slug detail endpoint.
-3. `ContentMedia::isPublishedParent()` requires parent `SupplierVisibility::Public`.
-4. Supplier documents default/force `local` disk; client `disk` prohibited.
-5. Commands + schedule: `quotations:expire-commercial`, `quotations:expire-supplier-quotes`, `blog:publish-scheduled`, `otp:prune-expired`.
-6. `render-start.sh` starts `php artisan schedule:work` alongside the HTTP server.
-7. Feature coverage in `tests/Feature/ProductionIntegrationAuditTest.php`.
+## Queue setup
+1. Ensure `jobs` / `failed_jobs` migrations applied.
+2. `QUEUE_CONNECTION=database` (or redis).
+3. Run worker: `php artisan queue:work --tries=3` (or rely on `render-start.sh`).
+4. Monitor `failed_jobs`.
+
+## Persistent storage setup
+1. Create S3/R2 bucket (private ACL).
+2. Set `FILESYSTEM_DISK=s3` and AWS credentials.
+3. Do not use public disk for supplier/customer private files.
+4. Downloads remain application-gated.
+
+## Scheduler setup
+`php artisan schedule:work` (or cron `* * * * * php artisan schedule:run`).
+
+Includes: reminders, digests, webhooks, printing/commercial/supplier quote expiry, blog publish, OTP prune, payments reconcile, **invoices:mark-overdue**.
+
+## Authentication architecture
+- Sanctum personal access tokens (`Authorization: Bearer`).
+- Token TTL via `SANCTUM_TOKEN_EXPIRATION_MINUTES`.
+- Frontend stores token in `localStorage`; clears on logout and HTTP 401.
+- Cookie SPA auth not enabled (`SANCTUM_STATEFUL_DOMAINS` empty).
+
+## Deployment steps
+1. Set all production env vars (mail, queue, storage, CORS, APP_DEBUG=false).
+2. Build frontend: `npm run build`; deploy static with SPA fallback.
+3. Deploy API Docker image (`backend/Dockerfile` → `scripts/render-start.sh`).
+4. Start script runs: migrate, caches, `schedule:work`, `queue:work`, `artisan serve`.
+5. Confirm `GET /api/health`, `php artisan schedule:list`, send a test invoice email.
+6. Disable `RUN_DB_SEED`.
+
+## Rollback considerations
+- Invoice migrations are additive (`invoices`, `invoice_items`, `invoice_events`, `payments.invoice_id`).
+- Rollback: `migrate:rollback` only on environments where invoice data can be discarded; never `migrate:fresh` / `db:wipe` in production.
+- Morph map: `invoice` → `Invoice` (was mistakenly aliased to `Payment`); `payment` → `Payment`. Re-check any media rows stored with old alias if present.
 
 ---
 
-## Go-live blockers (must clear before claiming production-ready)
+## Remaining RED
+**None** in product modules after this hardening pass.
 
-1. **RED — Invoices** domain missing or product language corrected.
-2. **YELLOW→ops — Mail + queue + durable storage** still demo-grade in deploy blueprint.
-3. **YELLOW — Supplier document upload/download** should become real private-disk upload + gated download before treating supplier docs as production-safe.
-4. **YELLOW — Sanctum token TTL / storage** hardening recommended before high-trust production traffic.
+## Remaining YELLOW (operational)
+1. Production SMTP/API mail credentials must be configured before go-live email flows work.
+2. S3/R2 credentials must be configured or uploads remain on ephemeral disk.
+3. Bearer token in `localStorage` (XSS surface) — consider HttpOnly cookie auth in a future hardening pass.
+4. `User.role` / `is_active` remain fillable (defense-in-depth).
+5. Supplier email/phone/OTP remain supplier-only by product scope.
+6. HTTPS termination depends on host (Render terminates TLS).
 
-Until (1) is resolved and (2)–(3) are accepted or fixed, **do not claim the platform is production-ready**.
+---
+
+## Go-live checklist
+- [ ] `APP_DEBUG=false`
+- [ ] Real `MAIL_*`
+- [ ] `QUEUE_CONNECTION=database` + worker running
+- [ ] `FILESYSTEM_DISK=s3` + AWS/R2 secrets
+- [ ] `CORS_ALLOWED_ORIGINS` exact
+- [ ] `SANCTUM_TOKEN_EXPIRATION_MINUTES` set
+- [ ] `RUN_DB_SEED=false`
+- [ ] Smoke: login, create/issue/send invoice, customer view, supplier doc upload/download

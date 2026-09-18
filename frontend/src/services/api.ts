@@ -72,6 +72,10 @@ async function parseResponse<T>(response: Response): Promise<ApiSuccess<T>> {
   }
 
   if (!response.ok || !payload.success) {
+    if (response.status === 401) {
+      clearStoredToken()
+    }
+
     const message = 'success' in payload && payload.success === false
       ? payload.message
       : 'Request failed.'

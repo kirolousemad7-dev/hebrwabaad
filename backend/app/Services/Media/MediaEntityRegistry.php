@@ -5,6 +5,7 @@ namespace App\Services\Media;
 use App\Enums\UserRole;
 use App\Models\CommercialQuotation;
 use App\Models\CrmCompany;
+use App\Models\Invoice;
 use App\Models\Meeting;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
@@ -32,7 +33,8 @@ class MediaEntityRegistry
         'project' => Project::class,
         'task' => Task::class,
         'quotation' => CommercialQuotation::class,
-        'invoice' => Payment::class,
+        'invoice' => Invoice::class,
+        'payment' => Payment::class,
         'meeting' => Meeting::class,
     ];
 

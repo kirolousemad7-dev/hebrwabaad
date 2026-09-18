@@ -26,7 +26,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Keep scheduled jobs running alongside the HTTP server (Render single dyno).
+# Keep scheduled jobs and the queue worker running alongside the HTTP server (Render single dyno).
 php artisan schedule:work --verbose --no-interaction >/proc/1/fd/1 2>/proc/1/fd/2 &
+php artisan queue:work database --sleep=1 --tries=3 --max-time=3600 --no-interaction >/proc/1/fd/1 2>/proc/1/fd/2 &
 
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"

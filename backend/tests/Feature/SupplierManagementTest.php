@@ -10,6 +10,7 @@ use App\Models\SupplierContact;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class SupplierManagementTest extends TestCase
@@ -192,13 +193,14 @@ class SupplierManagementTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('data.title', 'أعمال محدّثة');
 
-        $this->asUser($owner)->postJson('/api/admin/suppliers/'.$supplier->id.'/documents', [
+        $this->asUser($owner)->post('/api/admin/suppliers/'.$supplier->id.'/documents', [
             'title' => 'عقد توريد',
             'category' => 'contracts',
-            'path' => '/supplier-docs/contract.pdf',
-            'original_name' => 'contract.pdf',
+            'file' => UploadedFile::fake()->create('contract.pdf', 120, 'application/pdf'),
         ])->assertCreated()
-            ->assertJsonPath('data.visibility', 'INTERNAL');
+            ->assertJsonPath('data.visibility', 'INTERNAL')
+            ->assertJsonMissingPath('data.path')
+            ->assertJsonMissingPath('data.disk');
 
         $this->getJson('/api/suppliers/'.$supplier->slug)
             ->assertOk()

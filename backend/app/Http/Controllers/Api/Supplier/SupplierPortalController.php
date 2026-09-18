@@ -18,6 +18,7 @@ use App\Services\SupplierProfileCompletionService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupplierPortalController extends Controller
 {
@@ -146,23 +147,38 @@ class SupplierPortalController extends Controller
         $supplier = $this->content->supplierFor($request->user());
 
         return ApiResponse::success([
-            'items' => $supplier->documents()->orderByDesc('id')->get(),
+            'items' => $supplier->documents()->orderByDesc('id')->get()->map(
+                fn (SupplierDocument $document) => $this->serializeDocument($document)
+            )->all(),
         ]);
     }
 
     public function storeDocument(StoreSupplierDocumentRequest $request): JsonResponse
     {
         $supplier = $this->content->supplierFor($request->user());
-        $document = $this->management->storeDocument($request->user(), $supplier, $request->validated());
+        $document = $this->management->storeDocument(
+            $request->user(),
+            $supplier,
+            $request->safe()->except('file'),
+            $request->file('file'),
+        );
 
-        return ApiResponse::success($document, 201);
+        return ApiResponse::success($this->serializeDocument($document), 201);
+    }
+
+    public function downloadDocument(Request $request, SupplierDocument $document): StreamedResponse
+    {
+        $supplier = $this->content->supplierFor($request->user());
+        $this->assertOwn($supplier->id, (int) $document->supplier_id);
+
+        return $this->management->downloadDocument($request->user(), $document);
     }
 
     public function destroyDocument(Request $request, SupplierDocument $document): JsonResponse
     {
         $supplier = $this->content->supplierFor($request->user());
         $this->assertOwn($supplier->id, (int) $document->supplier_id);
-        $document->delete();
+        $this->management->deleteDocument($document);
 
         return ApiResponse::success(null);
     }
@@ -189,5 +205,25 @@ class SupplierPortalController extends Controller
         if ($supplierId !== $resourceSupplierId) {
             abort(404);
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeDocument(SupplierDocument $document): array
+    {
+        return [
+            'id' => $document->id,
+            'supplier_id' => $document->supplier_id,
+            'title' => $document->title,
+            'category' => $document->category,
+            'original_name' => $document->original_name,
+            'mime_type' => $document->mime_type,
+            'size_bytes' => $document->size_bytes,
+            'visibility' => $document->visibility?->value,
+            'notes' => $document->notes,
+            'created_at' => $document->created_at?->toIso8601String(),
+            'updated_at' => $document->updated_at?->toIso8601String(),
+        ];
     }
 }

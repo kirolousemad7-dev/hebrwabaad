@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'order_id',
     'printing_quotation_id',
     'commercial_quotation_id',
+    'invoice_id',
     'amount',
     'currency',
     'payment_method',
@@ -95,6 +96,14 @@ class Payment extends Model
     public function commercialQuotation(): BelongsTo
     {
         return $this->belongsTo(CommercialQuotation::class);
+    }
+
+    /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     /**

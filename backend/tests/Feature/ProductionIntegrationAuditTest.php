@@ -15,7 +15,9 @@ use App\Models\SupplierDocument;
 use App\Models\SupplierPortfolioItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProductionIntegrationAuditTest extends TestCase
@@ -90,30 +92,33 @@ class ProductionIntegrationAuditTest extends TestCase
         );
     }
 
-    public function test_supplier_documents_force_local_disk_and_reject_client_disk(): void
+    public function test_supplier_documents_force_private_upload_and_reject_client_path(): void
     {
+        Storage::fake('local');
+        config(['filesystems.default' => 'local']);
+
         $owner = User::factory()->owner()->create();
         $supplier = Supplier::factory()->create();
 
-        $created = $this->asUser($owner)->postJson('/api/admin/suppliers/'.$supplier->id.'/documents', [
+        $this->asUser($owner)->postJson('/api/admin/suppliers/'.$supplier->id.'/documents', [
             'title' => 'عقد توريد',
             'category' => 'contracts',
             'path' => 'suppliers/documents/contract.pdf',
             'original_name' => 'contract.pdf',
             'disk' => 'public',
-        ]);
+        ])->assertUnprocessable();
 
-        $created->assertUnprocessable();
-
-        $ok = $this->asUser($owner)->postJson('/api/admin/suppliers/'.$supplier->id.'/documents', [
+        $ok = $this->asUser($owner)->post('/api/admin/suppliers/'.$supplier->id.'/documents', [
             'title' => 'عقد توريد',
             'category' => 'contracts',
-            'path' => 'suppliers/documents/contract.pdf',
-            'original_name' => 'contract.pdf',
-        ])->assertCreated();
+            'file' => UploadedFile::fake()->create('contract.pdf', 80, 'application/pdf'),
+        ])->assertCreated()
+            ->assertJsonMissingPath('data.path')
+            ->assertJsonMissingPath('data.disk');
 
-        $this->assertSame('local', $ok->json('data.disk'));
-        $this->assertSame('local', SupplierDocument::query()->findOrFail($ok->json('data.id'))->disk);
+        $doc = SupplierDocument::query()->findOrFail($ok->json('data.id'));
+        $this->assertSame('local', $doc->disk);
+        $this->assertTrue(Storage::disk('local')->exists($doc->path));
         $this->assertSame(UserRole::Owner, $owner->role);
     }
 }

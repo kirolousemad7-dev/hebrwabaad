@@ -1008,3 +1008,83 @@ export type OwnerPaymentSettings = {
   bank_instructions: string | null
   bank_notes: string | null
 }
+
+export const INVOICE_STATUSES = [
+  'DRAFT',
+  'ISSUED',
+  'SENT',
+  'PARTIALLY_PAID',
+  'PAID',
+  'OVERDUE',
+  'CANCELLED',
+  'VOID',
+] as const
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]
+
+export type InvoiceItem = {
+  id?: number
+  service_id?: number | null
+  description: string
+  quantity: string
+  unit_price: string
+  discount_amount?: string
+  tax_amount?: string
+  line_total?: string
+  sort_order?: number
+}
+
+export type InvoicePaymentRow = {
+  id: number
+  amount: string
+  currency: string
+  payment_method?: string | null
+  status?: string | null
+  reference_number?: string | null
+  paid_at?: string | null
+}
+
+export type InvoiceEventRow = {
+  id: number
+  event: string
+  meta?: Record<string, unknown> | null
+  actor_id?: number | null
+  created_at?: string | null
+}
+
+export type Invoice = {
+  id: number
+  number: string
+  status: InvoiceStatus | string
+  status_label: string
+  currency: string
+  customer?: { id: number; name: string; email?: string } | null
+  company?: { id: number; name: string } | null
+  commercial_quotation_id?: number | null
+  order_id?: number | null
+  project_id?: number | null
+  issue_date?: string | null
+  due_date?: string | null
+  subtotal: string
+  discount_amount: string
+  tax_amount: string
+  total: string
+  amount_paid: string
+  amount_due: string
+  notes?: string | null
+  terms?: string | null
+  internal_notes?: string | null
+  issued_at?: string | null
+  sent_at?: string | null
+  cancelled_at?: string | null
+  voided_at?: string | null
+  items: InvoiceItem[]
+  payments?: InvoicePaymentRow[]
+  events?: InvoiceEventRow[]
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export type InvoiceListData = {
+  items: Invoice[]
+  meta: PaymentListMeta
+}

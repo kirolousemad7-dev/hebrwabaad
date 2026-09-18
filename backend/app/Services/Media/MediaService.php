@@ -6,6 +6,7 @@ use App\Enums\MediaVisibility;
 use App\Enums\UserRole;
 use App\Models\CommercialQuotation;
 use App\Models\CrmCompany;
+use App\Models\Invoice;
 use App\Models\Media;
 use App\Models\Meeting;
 use App\Models\Payment;
@@ -440,6 +441,9 @@ class MediaService
                                     ->whereIn('owner_id', CommercialQuotation::query()->where('customer_id', $user->id)->select('id'));
                             })->orWhere(function (Builder $q) use ($user): void {
                                 $q->where('owner_type', 'invoice')
+                                    ->whereIn('owner_id', Invoice::query()->where('customer_id', $user->id)->select('id'));
+                            })->orWhere(function (Builder $q) use ($user): void {
+                                $q->where('owner_type', 'payment')
                                     ->whereIn('owner_id', Payment::query()->where('customer_id', $user->id)->select('id'));
                             });
                         });

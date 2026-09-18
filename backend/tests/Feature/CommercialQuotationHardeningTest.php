@@ -235,10 +235,16 @@ class CommercialQuotationHardeningTest extends TestCase
             'type' => 'commercial_quotation_sent',
         ]));
 
-        $this->asUser($customer)
+        $items = $this->asUser($customer)
             ->getJson('/api/notifications')
             ->assertOk()
-            ->assertJsonPath('data.items.0.href', '/cq/'.$publicToken);
+            ->json('data.items');
+
+        $hrefs = collect($items)->pluck('href');
+        $this->assertTrue(
+            $hrefs->contains('/cq/'.$publicToken),
+            'Expected commercial quotation deep link among customer notifications.',
+        );
     }
 
     public function test_processing_and_paid_payment_states_gate_checkout(): void

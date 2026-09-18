@@ -21,3 +21,4 @@ Schedule::command('quotations:expire-supplier-quotes')->hourly()->withoutOverlap
 Schedule::command('payments:reconcile-pending')->hourly()->withoutOverlapping();
 Schedule::command('blog:publish-scheduled')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('otp:prune-expired')->daily()->withoutOverlapping();
+Schedule::command('invoices:mark-overdue')->daily()->withoutOverlapping();

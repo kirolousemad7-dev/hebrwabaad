@@ -48,17 +48,47 @@ services:
       - key: CACHE_STORE
         value: file
       - key: QUEUE_CONNECTION
-        value: sync
+        value: database
       - key: FILESYSTEM_DISK
-        value: local
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_URL
+        sync: false
+      - key: AWS_ENDPOINT
+        sync: false
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "false"
       - key: SANCTUM_STATEFUL_DOMAINS
         value: ""
+      - key: SANCTUM_TOKEN_EXPIRATION_MINUTES
+        value: "10080"
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: MAIL_MAILER
-        value: log
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: Hebr & Ab3ad
       - key: RUN_DB_SEED
-        value: "true"
+        value: "false"
       - key: DEMO_PASSWORD
         sync: false
       - key: CONSULTANT_ENABLED

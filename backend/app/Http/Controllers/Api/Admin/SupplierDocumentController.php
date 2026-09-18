@@ -10,6 +10,7 @@ use App\Services\SupplierManagementService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupplierDocumentController extends Controller
 {
@@ -30,9 +31,22 @@ class SupplierDocumentController extends Controller
     {
         $this->authorize('update', $supplier);
 
-        $document = $this->management->storeDocument($request->user(), $supplier, $request->validated());
+        $document = $this->management->storeDocument(
+            $request->user(),
+            $supplier,
+            $request->safe()->except('file'),
+            $request->file('file'),
+        );
 
         return ApiResponse::success($this->serialize($document), 201);
+    }
+
+    public function download(Request $request, Supplier $supplier, SupplierDocument $document): StreamedResponse
+    {
+        $this->authorize('view', $supplier);
+        $this->assertBelongsToSupplier($supplier, $document);
+
+        return $this->management->downloadDocument($request->user(), $document);
     }
 
     public function destroy(Supplier $supplier, SupplierDocument $document): JsonResponse
@@ -40,7 +54,7 @@ class SupplierDocumentController extends Controller
         $this->authorize('update', $supplier);
         $this->assertBelongsToSupplier($supplier, $document);
 
-        $document->delete();
+        $this->management->deleteDocument($document);
 
         return ApiResponse::success(null);
     }
@@ -63,13 +77,10 @@ class SupplierDocumentController extends Controller
             'uploaded_by' => $document->uploaded_by,
             'title' => $document->title,
             'category' => $document->category,
-            'disk' => $document->disk,
-            'path' => $document->path,
             'original_name' => $document->original_name,
             'mime_type' => $document->mime_type,
             'size_bytes' => $document->size_bytes,
             'visibility' => $document->visibility?->value,
-            'metadata' => $document->metadata,
             'notes' => $document->notes,
             'created_at' => $document->created_at?->toIso8601String(),
             'updated_at' => $document->updated_at?->toIso8601String(),

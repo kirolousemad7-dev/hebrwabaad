@@ -278,6 +278,57 @@ enum UserRole: string
         ], true);
     }
 
+    public function canViewInvoices(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+            self::SalesManager,
+        ], true);
+    }
+
+    /**
+     * Drafting invoices and editing their lines, totals, and terms.
+     */
+    public function canManageInvoices(): bool
+    {
+        return in_array($this, [
+            self::Owner,
+            self::AdminManager,
+            self::AccountManager,
+        ], true);
+    }
+
+    /**
+     * Moving an invoice out of draft and delivering it to the customer.
+     */
+    public function canIssueInvoices(): bool
+    {
+        return $this->canManageInvoices();
+    }
+
+    public function canCancelInvoices(): bool
+    {
+        return in_array($this, [self::Owner, self::AdminManager], true);
+    }
+
+    /**
+     * Settling money against an invoice follows the finance boundary, not the drafting one.
+     */
+    public function canRecordInvoicePayment(): bool
+    {
+        return in_array($this, [self::Owner, self::AdminManager], true);
+    }
+
+    /**
+     * Internal notes, cost context, and audit metadata on an invoice.
+     */
+    public function canViewInvoiceInternal(): bool
+    {
+        return $this->canManageInvoices();
+    }
+
     /**
      * Staff roles the Owner may assign. Owner and Customer are excluded
      * so employee management cannot grant Owner access or convert staff

@@ -7,6 +7,7 @@ use App\Models\CalendarItem;
 use App\Models\CommercialQuotation;
 use App\Models\ContentMedia;
 use App\Models\CrmCompany;
+use App\Models\Invoice;
 use App\Models\ManagedFile;
 use App\Models\Meeting;
 use App\Models\Payment;
@@ -30,6 +31,7 @@ use App\Support\Calendar\CalendarOccurrenceReference;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -71,7 +73,8 @@ class AppServiceProvider extends ServiceProvider
             'project' => Project::class,
             'task' => Task::class,
             'quotation' => CommercialQuotation::class,
-            'invoice' => Payment::class,
+            'invoice' => Invoice::class,
+            'payment' => Payment::class,
             'meeting' => Meeting::class,
         ]);
 
@@ -98,6 +101,15 @@ class AppServiceProvider extends ServiceProvider
         if (str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
+
+        Gate::define('invoices.view', fn (User $user) => $user->role?->canViewInvoices() === true);
+        Gate::define('invoices.create', fn (User $user) => $user->role?->canManageInvoices() === true);
+        Gate::define('invoices.update', fn (User $user) => $user->role?->canManageInvoices() === true);
+        Gate::define('invoices.issue', fn (User $user) => $user->role?->canIssueInvoices() === true);
+        Gate::define('invoices.send', fn (User $user) => $user->role?->canIssueInvoices() === true);
+        Gate::define('invoices.cancel', fn (User $user) => $user->role?->canCancelInvoices() === true);
+        Gate::define('invoices.record_payment', fn (User $user) => $user->role?->canRecordInvoicePayment() === true);
+        Gate::define('invoices.view_internal', fn (User $user) => $user->role?->canViewInvoiceInternal() === true);
 
         $this->configureRateLimiting();
         $this->registerCapabilityAwareNotificationChannels();

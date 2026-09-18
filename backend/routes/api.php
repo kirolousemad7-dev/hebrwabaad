@@ -79,6 +79,7 @@ use App\Http\Controllers\Api\Crm\CrmTeamController;
 use App\Http\Controllers\Api\Customer\CustomerConversationController;
 use App\Http\Controllers\Api\Customer\CustomerDashboardController;
 use App\Http\Controllers\Api\Customer\CustomerFileController;
+use App\Http\Controllers\Api\Customer\CustomerInvoiceController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerPaymentController;
 use App\Http\Controllers\Api\Employee\EmployeeWorkController;
@@ -86,6 +87,7 @@ use App\Http\Controllers\Api\GoogleCalendar\GoogleCalendarOAuthController;
 use App\Http\Controllers\Api\GoogleCalendar\TaskGoogleCalendarController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\HrDirectoryController;
+use App\Http\Controllers\Api\Invoices\InvoiceController;
 use App\Http\Controllers\Api\Media\MediaController;
 use App\Http\Controllers\Api\Meetings\MeetingController;
 use App\Http\Controllers\Api\NeedsDiscovery\NeedsDiscoveryController;
@@ -430,6 +432,17 @@ Route::prefix('operations')->middleware([
     Route::get('/commercial-quotations/{commercial_quotation}/preview', [CommercialQuotationController::class, 'preview']);
     Route::get('/commercial-quotations/{commercial_quotation}/pdf', [CommercialQuotationController::class, 'pdf']);
 
+    Route::get('/invoices', [InvoiceController::class, 'index']);
+    Route::post('/invoices', [InvoiceController::class, 'store']);
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
+    Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update']);
+    Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue']);
+    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send']);
+    Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
+    Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void']);
+    Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+
     Route::get('/sourcing/suppliers', [QuotationSupplierSourcingController::class, 'suppliers']);
     Route::get('/commercial-quotations/{commercial_quotation}/sourcing', [QuotationSupplierSourcingController::class, 'index']);
     Route::post('/commercial-quotations/{commercial_quotation}/items/{item}/supplier-quotes', [QuotationSupplierSourcingController::class, 'requestQuote']);
@@ -718,6 +731,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:SUPPLIER'])->group(fu
 
     Route::get('/supplier/documents', [SupplierPortalController::class, 'documents']);
     Route::post('/supplier/documents', [SupplierPortalController::class, 'storeDocument']);
+    Route::get('/supplier/documents/{document}/download', [SupplierPortalController::class, 'downloadDocument']);
     Route::delete('/supplier/documents/{document}', [SupplierPortalController::class, 'destroyDocument']);
 
     Route::get('/supplier/profile', [SupplierWorkspaceController::class, 'profile']);
@@ -757,6 +771,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CUSTOMER'])->group(fu
     Route::get('/customer/quote-requests/{quote_request}', [CustomerQuoteRequestController::class, 'show']);
     Route::post('/customer/quote-requests/{quote_request}/respond', [CustomerQuoteRequestController::class, 'respond']);
     Route::get('/customer/commercial-quotations/{commercial_quotation}/pdf', [CustomerQuoteRequestController::class, 'quotationPdf']);
+
+    Route::get('/customer/invoices', [CustomerInvoiceController::class, 'index']);
+    Route::get('/customer/invoices/{invoice}', [CustomerInvoiceController::class, 'show']);
+    Route::get('/customer/invoices/{invoice}/pdf', [CustomerInvoiceController::class, 'pdf']);
 
     Route::get('/customer/dashboard', [CustomerDashboardController::class, 'show']);
     Route::get('/customer/projects', [CustomerDashboardController::class, 'projects']);
@@ -919,6 +937,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
 
         Route::get('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
         Route::post('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
+        Route::get('/suppliers/{supplier}/documents/{document}/download', [SupplierDocumentController::class, 'download']);
         Route::delete('/suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
 
         Route::get('/supplier-categories', [SupplierCategoryController::class, 'index']);
