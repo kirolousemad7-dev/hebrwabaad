@@ -41,4 +41,11 @@ return [
         'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'zoom' => [
+        'client_id' => env('ZOOM_CLIENT_ID'),
+        'client_secret' => env('ZOOM_CLIENT_SECRET'),
+        'account_id' => env('ZOOM_ACCOUNT_ID'),
+        'redirect_uri' => env('ZOOM_REDIRECT_URI'),
+    ],
+
 ];

@@ -81,6 +81,7 @@ use App\Http\Controllers\Api\GoogleCalendar\GoogleCalendarOAuthController;
 use App\Http\Controllers\Api\GoogleCalendar\TaskGoogleCalendarController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\HrDirectoryController;
+use App\Http\Controllers\Api\Meetings\MeetingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Operations\ApprovalController;
 use App\Http\Controllers\Api\Operations\BusinessCalendarController;
@@ -614,6 +615,13 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/workspace/tasks', [WorkspaceTaskController::class, 'index']);
     Route::get('/workspace/tasks/{task}', [WorkspaceTaskController::class, 'show']);
     Route::patch('/workspace/tasks/{task}/status', [WorkspaceTaskController::class, 'updateStatus']);
+
+    Route::get('/meetings/providers', [MeetingController::class, 'providers']);
+    Route::get('/meetings', [MeetingController::class, 'index']);
+    Route::post('/meetings', [MeetingController::class, 'store']);
+    Route::get('/meetings/{meeting}', [MeetingController::class, 'show']);
+    Route::patch('/meetings/{meeting}', [MeetingController::class, 'update']);
+    Route::delete('/meetings/{meeting}', [MeetingController::class, 'destroy']);
 
     Route::get('/google-calendar/status', [GoogleCalendarOAuthController::class, 'status']);
     Route::post('/google-calendar/connect', [GoogleCalendarOAuthController::class, 'connect']);
