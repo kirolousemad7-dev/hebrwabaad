@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   DashboardEmptyState,
   DashboardErrorState,
@@ -66,7 +66,10 @@ const FEATURE_LABELS: Record<string, string> = {
 
 export function OwnerPlatformSettingsPage() {
   const { refresh: refreshPublic } = usePlatformSettings()
-  const [tab, setTab] = useState<TabId>('brand')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const initialTab = TABS.some((item) => item.id === tabFromUrl) ? (tabFromUrl as TabId) : 'brand'
+  const [tab, setTab] = useState<TabId>(initialTab)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -75,6 +78,19 @@ export function OwnerPlatformSettingsPage() {
   const [form, setForm] = useState<PlatformSettingsManage | null>(null)
   const [eventTypes, setEventTypes] = useState<Array<Record<string, unknown>>>([])
   const [eventDraft, setEventDraft] = useState({ name_ar: '', description: '' })
+
+  useEffect(() => {
+    if (TABS.some((item) => item.id === tabFromUrl)) {
+      setTab(tabFromUrl as TabId)
+    }
+  }, [tabFromUrl])
+
+  function selectTab(next: TabId) {
+    setTab(next)
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', next)
+    setSearchParams(params, { replace: true })
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -248,7 +264,7 @@ export function OwnerPlatformSettingsPage() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => selectTab(item.id)}
               className={`rounded-full px-3 py-1.5 text-sm ${
                 tab === item.id
                   ? 'bg-brand-ink-900 text-white'

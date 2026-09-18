@@ -5,7 +5,7 @@ import { DashboardContent } from '../components/dashboard/DashboardContent'
 import { DashboardHeader } from '../components/dashboard/DashboardHeader'
 import { DashboardSidebar } from '../components/dashboard/DashboardSidebar'
 import { useAuth } from '../context/AuthContext'
-import type { DashboardNavItem } from '../utils/dashboardNav'
+import type { DashboardNavItem, DashboardNavSection } from '../utils/dashboardNav'
 
 const SIDEBAR_COLLAPSED_KEY = 'hebr-dashboard-sidebar-collapsed'
 
@@ -20,14 +20,16 @@ function readCollapsedPreference(): boolean {
 type DashboardLayoutProps = {
   title: string
   subtitle?: string | null
-  items: DashboardNavItem[]
+  items?: DashboardNavItem[]
+  sections?: DashboardNavSection[]
   profileTo?: string
 }
 
 export function DashboardLayout({
   title,
   subtitle,
-  items,
+  items = [],
+  sections,
   profileTo,
 }: DashboardLayoutProps) {
   const { user } = useAuth()
@@ -37,7 +39,7 @@ export function DashboardLayout({
 
   useEffect(() => {
     setMenuOpen(false)
-  }, [location.pathname])
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -72,6 +74,7 @@ export function DashboardLayout({
         <DashboardSidebar
           title={title}
           items={items}
+          sections={sections}
           pathname={location.pathname}
           open={menuOpen}
           collapsed={sidebarCollapsed}

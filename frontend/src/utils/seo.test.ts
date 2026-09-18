@@ -93,6 +93,7 @@ describe('public navigation', () => {
       '/printing-packaging',
       '/events',
       '/portfolio',
+      '/blog',
       '/suppliers',
       '/dashboard/orders',
       '/dashboard/profile',

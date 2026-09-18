@@ -1,12 +1,20 @@
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { BrandLogo } from '../brand/BrandLogo'
 import { useAuth } from '../../context/AuthContext'
-import { isDashboardNavActive, type DashboardNavItem } from '../../utils/dashboardNav'
+import {
+  isDashboardNavActive,
+  navItemHref,
+  sectionHasActiveItem,
+  type DashboardNavItem,
+  type DashboardNavSection,
+} from '../../utils/dashboardNav'
 import { DashboardIcon } from './DashboardIcon'
 
 type DashboardSidebarProps = {
   title: string
-  items: DashboardNavItem[]
+  items?: DashboardNavItem[]
+  sections?: DashboardNavSection[]
   pathname: string
   open: boolean
   collapsed: boolean
@@ -15,8 +23,6 @@ type DashboardSidebarProps = {
 }
 
 function SidebarCollapseIcon({ collapsed }: { collapsed: boolean }) {
-  // Physical chevron points left; flip when expanded so it points toward the
-  // outer (end) edge of the RTL right-hand sidebar.
   return (
     <svg
       viewBox="0 0 24 24"
@@ -35,9 +41,29 @@ function SidebarCollapseIcon({ collapsed }: { collapsed: boolean }) {
   )
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      aria-hidden="true"
+    >
+      <path
+        d="M6 9l6 6 6-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function DashboardSidebar({
   title,
-  items,
+  items = [],
+  sections,
   pathname,
   open,
   collapsed,
@@ -45,6 +71,63 @@ export function DashboardSidebar({
   onToggleCollapsed,
 }: DashboardSidebarProps) {
   const { logout } = useAuth()
+  const location = useLocation()
+  const search = location.search
+
+  const resolvedSections = useMemo<DashboardNavSection[]>(() => {
+    if (sections && sections.length > 0) {
+      return sections
+    }
+    if (items.length === 0) {
+      return []
+    }
+    return [{ id: 'main', label: '', items }]
+  }, [items, sections])
+
+  const [expandedIds, setExpandedIds] = useState<string[]>(() =>
+    resolvedSections.filter((section) => sectionHasActiveItem(section, pathname, search)).map((section) => section.id),
+  )
+
+  useEffect(() => {
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      resolvedSections.forEach((section) => {
+        if (sectionHasActiveItem(section, pathname, search)) {
+          next.add(section.id)
+        }
+      })
+      return Array.from(next)
+    })
+  }, [pathname, search, resolvedSections])
+
+  function toggleSection(id: string) {
+    setExpandedIds((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]))
+  }
+
+  function renderItem(item: DashboardNavItem, compact: boolean, closeOnNavigate: boolean) {
+    const active = isDashboardNavActive(item, pathname, search)
+    const href = navItemHref(item)
+
+    return (
+      <NavLink
+        key={`${item.to}${item.search ?? ''}${item.label}`}
+        to={href}
+        end={item.end}
+        title={compact ? item.label : undefined}
+        aria-label={compact ? item.label : undefined}
+        aria-current={active ? 'page' : undefined}
+        onClick={closeOnNavigate ? onClose : undefined}
+        className={[
+          'flex items-center rounded-lg text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary',
+          compact ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2',
+          active ? 'bg-brand-primary font-medium text-white' : 'text-white/85 hover:bg-white/10',
+        ].join(' ')}
+      >
+        <DashboardIcon name={item.icon} />
+        {!compact ? <span className="truncate">{item.label}</span> : null}
+      </NavLink>
+    )
+  }
 
   function NavBody({ compact, closeOnNavigate }: { compact: boolean; closeOnNavigate: boolean }) {
     return (
@@ -78,31 +161,33 @@ export function DashboardSidebar({
 
         <nav
           aria-label="تنقل لوحة التحكم"
-          className={`flex flex-1 flex-col gap-1 pb-2 ${compact ? 'px-2' : 'px-3'}`}
+          className={`flex flex-1 flex-col gap-1 overflow-y-auto pb-2 ${compact ? 'px-2' : 'px-3'}`}
         >
-          {items.map((item) => {
-            const active = isDashboardNavActive(item, pathname)
+          {resolvedSections.map((section) => {
+            const expanded = compact || !section.label || expandedIds.includes(section.id)
+            const sectionActive = sectionHasActiveItem(section, pathname, search)
 
             return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                title={compact ? item.label : undefined}
-                aria-label={compact ? item.label : undefined}
-                aria-current={active ? 'page' : undefined}
-                onClick={closeOnNavigate ? onClose : undefined}
-                className={[
-                  'flex items-center rounded-lg text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary',
-                  compact ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
-                  active
-                    ? 'bg-brand-primary font-medium text-white'
-                    : 'text-white/85 hover:bg-white/10',
-                ].join(' ')}
-              >
-                <DashboardIcon name={item.icon} />
-                {!compact ? <span className="truncate">{item.label}</span> : null}
-              </NavLink>
+              <div key={section.id} className={compact ? 'space-y-1' : 'mb-1 space-y-1'}>
+                {!compact && section.label ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    aria-expanded={expanded}
+                    className={[
+                      'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold tracking-wide uppercase transition',
+                      sectionActive ? 'text-white' : 'text-white/55 hover:bg-white/5 hover:text-white/80',
+                    ].join(' ')}
+                  >
+                    <span>{section.label}</span>
+                    <ChevronIcon open={expanded} />
+                  </button>
+                ) : null}
+
+                {expanded
+                  ? section.items.map((item) => renderItem(item, compact, closeOnNavigate))
+                  : null}
+              </div>
             )
           })}
         </nav>
@@ -167,9 +252,7 @@ export function DashboardSidebar({
       <aside
         id="dashboard-sidebar-desktop"
         className={[
-          // Stretch with the dashboard document height (no sticky/h-screen nested scroll).
           'hidden min-h-screen shrink-0 flex-col self-stretch border-e border-brand-ink-700 bg-brand-ink-900 transition-[width] duration-300 ease-out lg:flex',
-          // Explicit min-width prevents flex min-content sizing from blocking collapse.
           collapsed ? 'w-[4.5rem] min-w-[4.5rem]' : 'w-64 min-w-64',
         ].join(' ')}
       >
