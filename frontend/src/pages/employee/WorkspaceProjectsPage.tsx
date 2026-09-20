@@ -5,7 +5,7 @@ import { WorkspacePagination } from '../../components/workspace/WorkspaceListCon
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { ApiRequestError } from '../../services/api'
-import { createWorkspaceProject, getProjectCustomers, getWorkspaceProjects } from '../../services/workspaceProjects'
+import { createWorkspaceProject, buildCreateWorkspaceProjectPayload, getProjectCustomers, getWorkspaceProjects } from '../../services/workspaceProjects'
 import type { Employee } from '../../types/api'
 import { formatProjectDate, formatProjectProgress, PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
 
@@ -103,13 +103,15 @@ function AccountManagerProjectsPage() {
     setSaving(true)
 
     try {
-      await createWorkspaceProject({
-        title,
-        description: description || undefined,
-        customer_id: Number(customerId),
-        started_at: startedAt || undefined,
-        deadline: deadline || undefined,
-      })
+      await createWorkspaceProject(
+        buildCreateWorkspaceProjectPayload({
+          title,
+          description,
+          customerId,
+          startedAt,
+          deadline,
+        }),
+      )
       setTitle('')
       setDescription('')
       setCustomerId('')

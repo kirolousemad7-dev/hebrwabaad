@@ -51,13 +51,14 @@ class ProjectService
     public function create(User $manager, array $attributes): Project
     {
         $customer = $this->assertAssignableCustomer((int) $attributes['customer_id']);
+        $accountManager = $this->resolveAccountManagerForCreate($manager, $attributes);
 
-        $project = DB::transaction(function () use ($manager, $attributes, $customer): Project {
+        $project = DB::transaction(function () use ($manager, $attributes, $customer, $accountManager): Project {
             $project = Project::query()->create([
                 'title' => $attributes['title'],
                 'description' => $attributes['description'] ?? null,
                 'customer_id' => $customer->id,
-                'account_manager_id' => $manager->id,
+                'account_manager_id' => $accountManager->id,
                 'status' => $attributes['status'] ?? ProjectStatus::Planning->value,
                 'started_at' => $attributes['started_at'] ?? null,
                 'deadline' => $attributes['deadline'] ?? null,
@@ -88,8 +89,8 @@ class ProjectService
                 entityId: (int) $project->id,
                 description: 'Account manager assigned',
                 metadata: [
-                    'account_manager_id' => $manager->id,
-                    'account_manager_name' => $manager->name,
+                    'account_manager_id' => $accountManager->id,
+                    'account_manager_name' => $accountManager->name,
                 ],
             );
 
@@ -433,5 +434,42 @@ class ProjectService
         }
 
         return $customer;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function resolveAccountManagerForCreate(User $actor, array $attributes): User
+    {
+        if ($actor->role === UserRole::AccountManager) {
+            return $actor;
+        }
+
+        if ($actor->role === UserRole::Owner) {
+            return $this->assertAssignableAccountManager((int) ($attributes['account_manager_id'] ?? 0));
+        }
+
+        throw ValidationException::withMessages([
+            'account_manager_id' => ['Only owners and account managers can create projects.'],
+        ]);
+    }
+
+    private function assertAssignableAccountManager(int $userId): User
+    {
+        $manager = User::query()->find($userId);
+
+        if ($manager === null || $manager->role !== UserRole::AccountManager) {
+            throw ValidationException::withMessages([
+                'account_manager_id' => ['Selected account manager is not valid.'],
+            ]);
+        }
+
+        if (! $manager->is_active) {
+            throw ValidationException::withMessages([
+                'account_manager_id' => ['Cannot assign a deactivated account manager.'],
+            ]);
+        }
+
+        return $manager;
     }
 }

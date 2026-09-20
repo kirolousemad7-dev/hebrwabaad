@@ -285,7 +285,7 @@ class ProjectManagementTest extends TestCase
             ->assertJsonPath('message', 'Account deactivated.');
     }
 
-    public function test_owner_can_view_projects_but_cannot_create_them(): void
+    public function test_owner_can_view_projects_and_create_with_account_manager(): void
     {
         $manager = User::factory()->accountManager()->create();
         $project = Project::factory()->create([
@@ -302,10 +302,21 @@ class ProjectManagementTest extends TestCase
             ->assertJsonPath('data.items.0.id', $project->id);
 
         $this->withToken($token)->getJson('/api/workspace/projects/'.$project->id)->assertOk();
+
         $this->withToken($token)->postJson('/api/workspace/projects', [
-            'title' => 'Owner project',
+            'title' => 'Owner project without AM',
             'customer_id' => User::factory()->create()->id,
-        ])->assertForbidden();
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['account_manager_id']);
+
+        $this->withToken($token)
+            ->postJson('/api/workspace/projects', [
+                'title' => 'Owner project',
+                'customer_id' => User::factory()->create()->id,
+                'account_manager_id' => $manager->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.account_manager_id', $manager->id);
     }
 
     public function test_guest_cannot_access_project_apis(): void

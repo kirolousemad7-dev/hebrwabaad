@@ -680,6 +680,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER,ACCOUNT_MANAGER
     Route::post('/support/conversations/{conversation}/messages', [SupportConversationController::class, 'storeMessage'])
         ->middleware('throttle:hebr-messages');
     Route::patch('/support/conversations/{conversation}/status', [SupportConversationController::class, 'updateStatus']);
+
+    Route::post('/workspace/projects', [WorkspaceProjectController::class, 'store']);
+    Route::put('/workspace/projects/{project}', [WorkspaceProjectController::class, 'update']);
+    Route::get('/workspace/account-manager/customers', [WorkspaceProjectController::class, 'customers']);
 });
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
@@ -747,9 +751,6 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
 });
 
 Route::middleware(['auth:sanctum', 'account.active', 'role:ACCOUNT_MANAGER'])->group(function (): void {
-    Route::post('/workspace/projects', [WorkspaceProjectController::class, 'store']);
-    Route::put('/workspace/projects/{project}', [WorkspaceProjectController::class, 'update']);
-    Route::get('/workspace/account-manager/customers', [WorkspaceProjectController::class, 'customers']);
     Route::get('/workspace/account-manager/tasks', [AccountManagerTaskController::class, 'index']);
     Route::post('/workspace/account-manager/tasks', [AccountManagerTaskController::class, 'store']);
     Route::put('/workspace/account-manager/tasks/{task}', [AccountManagerTaskController::class, 'update']);
