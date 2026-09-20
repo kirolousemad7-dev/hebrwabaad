@@ -17,6 +17,7 @@ use App\Models\PrintingRequest;
 use App\Models\User;
 use App\Services\Customer\CustomerCommunicationService;
 use App\Services\Payments\PaymentProviderManager;
+use App\Services\Pdf\PdfFactory;
 use App\Services\Workflow\WorkflowAutomationEngine;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -461,7 +462,7 @@ class PrintingQuotationService
 
             if ($format === 'pdf' && class_exists(Pdf::class)) {
                 try {
-                    $pdf = Pdf::loadHTML($html);
+                    $pdf = app(PdfFactory::class)->loadHtml($html);
 
                     return $pdf->download('receipt-'.$quotation->reference.'-'.$payment->id.'.pdf');
                 } catch (\Throwable) {
@@ -686,7 +687,7 @@ class PrintingQuotationService
 
         if ($format !== 'html' && class_exists(Pdf::class)) {
             try {
-                $pdf = Pdf::loadHTML($html);
+                $pdf = app(PdfFactory::class)->loadHtml($html);
 
                 return $pdf->download($quotation->reference.'-r'.$quotation->revision.'.pdf');
             } catch (\Throwable) {

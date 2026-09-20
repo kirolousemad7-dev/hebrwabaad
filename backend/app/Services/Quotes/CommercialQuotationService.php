@@ -21,6 +21,7 @@ use App\Models\QuoteRequest;
 use App\Models\User;
 use App\Notifications\QuoteNotification;
 use App\Services\Payments\CardPaymentGateway;
+use App\Services\Pdf\PdfFactory;
 use App\Services\Workflow\WorkflowAutomationEngine;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -672,7 +673,7 @@ class CommercialQuotationService
 
         if ($format !== 'html' && class_exists(Pdf::class)) {
             try {
-                $pdf = Pdf::loadHTML($html);
+                $pdf = app(PdfFactory::class)->loadHtml($html);
 
                 return $pdf->download($filename);
             } catch (\Throwable) {
@@ -684,6 +685,14 @@ class CommercialQuotationService
             'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$quotation->reference.'.html"',
         ]);
+    }
+
+    /**
+     * Render PDF binary for local QA / tooling without going through HTTP download headers.
+     */
+    public function pdfBinary(CommercialQuotation $quotation): string
+    {
+        return app(PdfFactory::class)->loadHtml($this->renderHtml($quotation))->output();
     }
 
     public function recordView(CommercialQuotation $quotation): CommercialQuotation
@@ -1688,7 +1697,7 @@ class CommercialQuotationService
         $rows = collect($items)->map(function (array $item): string {
             return '<tr>'
                 .'<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">'.e((string) ($item['description'] ?? '')).'</td>'
-                .'<td style="padding:8px;border-bottom:1px solid #ddd;text-align:center">'.e((string) ($item['quantity'] ?? '')).'</td>'
+                .'<td style="padding:8px;border-bottom:1px solid #ddd;text-align:center" dir="ltr">'.e((string) ($item['quantity'] ?? '')).'</td>'
                 .'<td style="padding:8px;border-bottom:1px solid #ddd;text-align:left" dir="ltr">'.e((string) ($item['unit_price'] ?? '')).'</td>'
                 .'<td style="padding:8px;border-bottom:1px solid #ddd;text-align:left" dir="ltr">'.e((string) ($item['subtotal'] ?? '')).'</td>'
                 .'</tr>';
@@ -1702,7 +1711,7 @@ class CommercialQuotationService
 
         return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'.e($reference).'</title>
 <style>
-body{font-family:DejaVu Sans,sans-serif;font-size:12px;color:#111318;background:#F7F5EF;margin:0;padding:24px}
+body{font-family:DejaVu Sans,sans-serif;font-size:12px;color:#111318;background:#F7F5EF;margin:0;padding:24px;direction:rtl;text-align:right}
 .card{background:#fff;border:1px solid #e5e7eb;padding:24px}
 .brand{color:#315CFF;font-size:20px;font-weight:bold;margin:0 0 4px}
 h1{margin:0 0 16px;font-size:18px;color:#111318}
@@ -1712,26 +1721,27 @@ th{background:#F7F5EF;padding:8px;border-bottom:2px solid #315CFF;text-align:rig
 .totals td{padding:6px 8px}
 .total{font-size:14px;font-weight:bold;color:#315CFF}
 .section{margin-top:18px}
+.ltr{direction:ltr;unicode-bidi:embed;text-align:left;display:inline-block}
 </style></head><body><div class="card">
 <p class="brand">حبر وأبعاد</p>
 <h1>عرض سعر</h1>
-<p class="meta">رقم العرض: <strong dir="ltr">'.e($reference).'</strong> (الإصدار '.$revision.')</p>
-<p class="meta">رقم طلب التسعير: <strong dir="ltr">'.$rfq.'</strong></p>
-<p class="meta">العميل: <strong>'.$customerName.'</strong>'.($customerEmail !== '' ? ' — '.$customerEmail : '').'</p>
-<p class="meta">تاريخ الإصدار: '.$issued.' | صالح حتى: '.$validUntil.'</p>
+<p class="meta">رقم العرض: <strong class="ltr" dir="ltr">'.e($reference).'</strong> (الإصدار <span class="ltr" dir="ltr">'.$revision.'</span>)</p>
+<p class="meta">رقم طلب التسعير: <strong class="ltr" dir="ltr">'.$rfq.'</strong></p>
+<p class="meta">العميل: <strong>'.$customerName.'</strong>'.($customerEmail !== '' ? ' — <span class="ltr" dir="ltr">'.$customerEmail.'</span>' : '').'</p>
+<p class="meta">تاريخ الإصدار: <span class="ltr" dir="ltr">'.$issued.'</span> | صالح حتى: <span class="ltr" dir="ltr">'.$validUntil.'</span></p>
 <table><thead><tr><th>الوصف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>'.$rows.'</tbody></table>
 <table class="totals" style="width:50%;margin-right:auto">
-<tr><td>الإجمالي الفرعي</td><td dir="ltr">'.e($subtotal).' '.e($currency).'</td></tr>
-<tr><td>الخصم</td><td dir="ltr">'.e($discount).' '.e($currency).'</td></tr>
-<tr><td>الضريبة</td><td dir="ltr">'.e($tax).' '.e($currency).'</td></tr>
-<tr><td>الشحن</td><td dir="ltr">'.e($shipping).' '.e($currency).'</td></tr>
-<tr><td>التأجير</td><td dir="ltr">'.e($rental).' '.e($currency).'</td></tr>
-<tr><td class="total">الإجمالي النهائي</td><td class="total" dir="ltr">'.e($total).' '.e($currency).'</td></tr>
+<tr><td>الإجمالي الفرعي</td><td class="ltr" dir="ltr">'.e($subtotal).' '.e($currency).'</td></tr>
+<tr><td>الخصم</td><td class="ltr" dir="ltr">'.e($discount).' '.e($currency).'</td></tr>
+<tr><td>الضريبة</td><td class="ltr" dir="ltr">'.e($tax).' '.e($currency).'</td></tr>
+<tr><td>الشحن</td><td class="ltr" dir="ltr">'.e($shipping).' '.e($currency).'</td></tr>
+<tr><td>التأجير</td><td class="ltr" dir="ltr">'.e($rental).' '.e($currency).'</td></tr>
+<tr><td class="total">الإجمالي النهائي</td><td class="total ltr" dir="ltr">'.e($total).' '.e($currency).'</td></tr>
 </table>
 <div class="section">
 <p class="meta">مدة التنفيذ: '.e($duration !== '' ? $duration : '—').'</p>
-<p class="meta">عدد التعديلات: '.e($revisionCount !== null ? (string) $revisionCount : '—').'</p>
-<p class="meta">سياسة الدفع: '.e($policy).($policy === 'DEPOSIT' ? ' (مقدم '.e($deposit).')' : '').'</p>
+<p class="meta">عدد التعديلات: <span class="ltr" dir="ltr">'.e($revisionCount !== null ? (string) $revisionCount : '—').'</span></p>
+<p class="meta">سياسة الدفع: '.e($policy).($policy === 'DEPOSIT' ? ' (مقدم <span class="ltr" dir="ltr">'.e($deposit).'</span>)' : '').'</p>
 </div>
 '.($notes !== '' ? '<div class="section"><strong>ملاحظات</strong><p>'.nl2br(e($notes)).'</p></div>' : '').'
 '.($terms !== '' ? '<div class="section"><strong>الشروط</strong><p>'.nl2br(e($terms)).'</p></div>' : '').'

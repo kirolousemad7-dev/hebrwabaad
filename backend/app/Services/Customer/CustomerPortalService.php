@@ -14,6 +14,7 @@ use App\Models\PrintingQuotation;
 use App\Models\PrintingQuotationEvent;
 use App\Models\PrintingRequest;
 use App\Models\User;
+use App\Services\Pdf\PdfFactory;
 use App\Services\Printing\PrintingCustomerStatusMapper;
 use App\Services\Printing\PrintingDeliveryService;
 use App\Services\Printing\PrintingQuotationService;
@@ -332,7 +333,7 @@ class CustomerPortalService
 
         if (class_exists(Pdf::class)) {
             try {
-                $pdf = Pdf::loadHTML($html);
+                $pdf = app(PdfFactory::class)->loadHtml($html);
 
                 return $pdf->download($quotation->reference.'-r'.$quotation->revision.'.pdf');
             } catch (\Throwable) {

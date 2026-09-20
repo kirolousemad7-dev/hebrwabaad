@@ -18,6 +18,7 @@ backend/storage/framework/cache/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/storage/backups/
+backend/storage/app/private/pdf-qa/
 backend/bootstrap/cache/*.php
 backend/public/hot
 backend/public/storage

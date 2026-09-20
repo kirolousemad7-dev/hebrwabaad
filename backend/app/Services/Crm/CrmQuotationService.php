@@ -8,6 +8,7 @@ use App\Models\CrmLead;
 use App\Models\CrmQuotation;
 use App\Models\CrmQuotationItem;
 use App\Models\User;
+use App\Services\Pdf\PdfFactory;
 use App\Services\PlatformNotifier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -320,7 +321,7 @@ class CrmQuotationService
 
         if (class_exists(Pdf::class)) {
             try {
-                $pdf = Pdf::loadHTML($html);
+                $pdf = app(PdfFactory::class)->loadHtml($html);
 
                 return $pdf->download($quotation->number.'.pdf');
             } catch (\Throwable) {

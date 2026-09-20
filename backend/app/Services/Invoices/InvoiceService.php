@@ -11,6 +11,7 @@ use App\Models\InvoiceEvent;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Pdf\PdfFactory;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Response;
@@ -478,7 +479,7 @@ class InvoiceService
 
         if ($format !== 'html' && class_exists(Pdf::class)) {
             try {
-                return Pdf::loadHTML($html)->download($invoice->number.'.pdf');
+                return app(PdfFactory::class)->loadHtml($html)->download($invoice->number.'.pdf');
             } catch (\Throwable) {
                 // fall through to HTML
             }
@@ -588,26 +589,36 @@ class InvoiceService
         foreach ($payload['items'] as $item) {
             $rows .= '<tr>'
                 .'<td>'.e((string) $item['description']).'</td>'
-                .'<td>'.e((string) $item['quantity']).'</td>'
-                .'<td>'.e((string) $item['unit_price']).'</td>'
-                .'<td>'.e((string) $item['line_total']).'</td>'
+                .'<td dir="ltr">'.e((string) $item['quantity']).'</td>'
+                .'<td dir="ltr">'.e((string) $item['unit_price']).'</td>'
+                .'<td dir="ltr">'.e((string) $item['line_total']).'</td>'
                 .'</tr>';
         }
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8"><title>فاتورة {$number}</title></head>
-<body style="font-family:Tahoma,Arial,sans-serif;color:#222">
+<head>
+<meta charset="utf-8">
+<title>فاتورة {$number}</title>
+<style>
+body{font-family:DejaVu Sans,sans-serif;font-size:12px;color:#222;direction:rtl;text-align:right}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{border:1px solid #ccc;padding:6px;text-align:right}
+.total{font-weight:bold}
+.ltr{direction:ltr;unicode-bidi:embed;text-align:left}
+</style>
+</head>
+<body>
   <h1>{$app}</h1>
   <h2>فاتورة {$number}</h2>
   <p>العميل: {$customer}</p>
-  <p>تاريخ الاستحقاق: {$due}</p>
-  <table border="1" cellpadding="6" cellspacing="0" width="100%">
+  <p>تاريخ الاستحقاق: <span class="ltr">{$due}</span></p>
+  <table>
     <thead><tr><th>الوصف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
     <tbody>{$rows}</tbody>
   </table>
-  <p><strong>الإجمالي: {$total} {$currency}</strong></p>
+  <p class="total">الإجمالي: <span class="ltr">{$total} {$currency}</span></p>
 </body>
 </html>
 HTML;
