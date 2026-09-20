@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\PortfolioCategory;
 use App\Enums\PortfolioMediaType;
-use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\PortfolioItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 #[Fillable([
     'title',
@@ -42,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PortfolioItem extends Model
 {
     /** @use HasFactory<PortfolioItemFactory> */
-    use HasFactory, HasMedia, HasSlug;
+    use HasFactory, HasSlug;
 
     /**
      * @var array<string, mixed>
@@ -110,11 +111,34 @@ class PortfolioItem extends Model
     }
 
     /**
+     * Case-study showcase slides (legacy PortfolioMedia table — not polymorphic Media).
+     *
      * @return HasMany<PortfolioMedia, $this>
      */
     public function media(): HasMany
     {
         return $this->hasMany(PortfolioMedia::class)->orderBy('display_order')->orderBy('id');
+    }
+
+    /**
+     * Reusable polymorphic Media attachments (gallery / uploads).
+     *
+     * @return MorphMany<Media, $this>
+     */
+    public function attachedMedia(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'owner')
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    /**
+     * @return MorphOne<Media, $this>
+     */
+    public function primaryMedia(): MorphOne
+    {
+        return $this->morphOne(Media::class, 'owner')->where('is_primary', true);
     }
 
     /**

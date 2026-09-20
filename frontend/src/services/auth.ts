@@ -31,6 +31,14 @@ export function resetPassword(payload: {
   return apiPost<{ status: string }>('/api/auth/reset-password', payload)
 }
 
+export function requestCustomerOtp(email: string) {
+  return apiPost<{ status: string }>('/api/auth/otp/request', { email })
+}
+
+export function verifyCustomerOtp(payload: { email: string; code: string }) {
+  return apiPost<AuthPayload>('/api/auth/otp/verify', payload)
+}
+
 export function me() {
   return apiGet<AuthUser>('/api/auth/me')
 }

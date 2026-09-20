@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { canAccessDashboardPath } from '../utils/dashboardAccess'
 import { homePathForRole } from '../utils/roles'
 
 type RoleProtectedRouteProps = {
@@ -26,6 +27,12 @@ export function RoleProtectedRoute({ roles }: RoleProtectedRouteProps) {
 
   if (!user || !roles.includes(user.role)) {
     const fallback = homePathForRole(user?.role)
+
+    return <Navigate to={fallback === location.pathname ? '/' : fallback} replace />
+  }
+
+  if (!canAccessDashboardPath(user.role, user.dashboard_access, location.pathname)) {
+    const fallback = homePathForRole(user.role)
 
     return <Navigate to={fallback === location.pathname ? '/' : fallback} replace />
   }

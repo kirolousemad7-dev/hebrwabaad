@@ -7,5 +7,10 @@ export function OwnerLayout() {
   const { user } = useAuth()
   const title = user?.role === 'ADMIN_MANAGER' ? ROLE_WORKSPACE.ADMIN_MANAGER.label : ROLE_WORKSPACE.OWNER.label
 
-  return <DashboardLayout title={title} sections={ownerNavSectionsForRole(user?.role)} />
+  return (
+    <DashboardLayout
+      title={title}
+      sections={ownerNavSectionsForRole(user?.role, user?.dashboard_access)}
+    />
+  )
 }

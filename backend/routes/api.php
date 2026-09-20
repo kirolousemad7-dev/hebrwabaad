@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Admin\PortfolioItemController as AdminPortfolioItem
 use App\Http\Controllers\Api\Admin\PrintingCatalogAdminController;
 use App\Http\Controllers\Api\Admin\PrintingRequestController as AdminPrintingRequestController;
 use App\Http\Controllers\Api\Admin\RecommendationGoalAdminController;
+use App\Http\Controllers\Api\Admin\RoleDashboardAccessController;
 use App\Http\Controllers\Api\Admin\SectorAdminController;
 use App\Http\Controllers\Api\Admin\SeoPageController as AdminSeoPageController;
 use App\Http\Controllers\Api\Admin\ServiceController as AdminServiceController;
@@ -37,6 +38,8 @@ use App\Http\Controllers\Api\Admin\SupplierTagController;
 use App\Http\Controllers\Api\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Api\Admin\WorkReviewController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\CustomerOtpController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Calendar\CalendarController;
 use App\Http\Controllers\Api\Catalog\CatalogAddonController;
 use App\Http\Controllers\Api\Catalog\EventRequestController;
@@ -111,7 +114,9 @@ use App\Http\Controllers\Api\Operations\PrintingDeliveryController;
 use App\Http\Controllers\Api\Operations\PrintingOperationsController;
 use App\Http\Controllers\Api\Operations\PrintingQuotationController;
 use App\Http\Controllers\Api\Operations\PrintingQuotationEmailController;
+use App\Http\Controllers\Api\Operations\ProjectBriefController;
 use App\Http\Controllers\Api\Operations\ProjectMilestoneController;
+use App\Http\Controllers\Api\Operations\ProjectPhaseController;
 use App\Http\Controllers\Api\Operations\ProjectWorkspaceController;
 use App\Http\Controllers\Api\Operations\TaskCalendarLinkController;
 use App\Http\Controllers\Api\Operations\UnifiedWorkController;
@@ -161,6 +166,14 @@ Route::prefix('auth')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:hebr-login');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:hebr-password');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:hebr-password');
+
+    Route::post('/otp/request', [CustomerOtpController::class, 'request'])->middleware('throttle:hebr-customer-otp');
+    Route::post('/otp/verify', [CustomerOtpController::class, 'verify'])->middleware('throttle:hebr-login');
+
+    Route::get('/google/status', [GoogleAuthController::class, 'status'])->middleware('throttle:hebr-login');
+    Route::get('/google/redirect', [GoogleAuthController::class, 'redirect'])->middleware('throttle:hebr-login');
+    Route::get('/google/callback', [GoogleAuthController::class, 'callback'])->middleware('throttle:hebr-login');
+    Route::post('/google/exchange', [GoogleAuthController::class, 'exchange'])->middleware('throttle:hebr-login');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -274,6 +287,7 @@ Route::prefix('calendar')->middleware([
     'auth:sanctum',
     'account.active',
     'role:OWNER,ADMIN_MANAGER,ACCOUNT_MANAGER,HR,SALES_MANAGER,SALES_REPRESENTATIVE,WEB_DEVELOPER,GRAPHIC_DESIGNER,VIDEO_EDITOR,MARKETING_SPECIALIST,EVENT_SPECIALIST,PRINTING_SPECIALIST,MEDIA_BUYER',
+    'dashboard.module:calendar,workspace.calendar',
 ])->group(function (): void {
     Route::get('/', [CalendarController::class, 'index']);
     Route::get('/summary', [CalendarController::class, 'summary']);
@@ -314,23 +328,42 @@ Route::prefix('operations')->middleware([
     'account.active',
     'role:OWNER,ADMIN_MANAGER,ACCOUNT_MANAGER,HR,SALES_MANAGER,SALES_REPRESENTATIVE,WEB_DEVELOPER,GRAPHIC_DESIGNER,VIDEO_EDITOR,MARKETING_SPECIALIST,EVENT_SPECIALIST,PRINTING_SPECIALIST,MEDIA_BUYER',
 ])->group(function (): void {
-    Route::get('/departments/options', [DepartmentController::class, 'options']);
-    Route::post('/departments/assign-employee', [DepartmentController::class, 'assignEmployee']);
-    Route::get('/departments', [DepartmentController::class, 'index']);
-    Route::post('/departments', [DepartmentController::class, 'store']);
-    Route::get('/departments/{department}', [DepartmentController::class, 'show']);
-    Route::put('/departments/{department}', [DepartmentController::class, 'update']);
-    Route::delete('/departments/{department}', [DepartmentController::class, 'destroy']);
+    Route::middleware('dashboard.module:departments')->group(function (): void {
+        Route::get('/departments/options', [DepartmentController::class, 'options']);
+        Route::post('/departments/assign-employee', [DepartmentController::class, 'assignEmployee']);
+        Route::get('/departments', [DepartmentController::class, 'index']);
+        Route::post('/departments', [DepartmentController::class, 'store']);
+        Route::get('/departments/{department}', [DepartmentController::class, 'show']);
+        Route::put('/departments/{department}', [DepartmentController::class, 'update']);
+        Route::delete('/departments/{department}', [DepartmentController::class, 'destroy']);
+    });
 
-    Route::get('/projects', [ProjectWorkspaceController::class, 'index']);
-    Route::get('/projects/{project}/workspace', [ProjectWorkspaceController::class, 'workspace']);
-    Route::put('/projects/{project}/members', [ProjectWorkspaceController::class, 'syncMembers']);
-    Route::get('/projects/{project}/calendar-items', [ProjectWorkspaceController::class, 'calendarItems']);
-    Route::get('/projects/{project}/timeline', [ProjectWorkspaceController::class, 'timeline']);
-    Route::get('/projects/{project}/milestones', [ProjectMilestoneController::class, 'index']);
-    Route::post('/projects/{project}/milestones', [ProjectMilestoneController::class, 'store']);
-    Route::put('/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'update']);
-    Route::delete('/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'destroy']);
+    Route::middleware('dashboard.module:projects,workspace.projects')->group(function (): void {
+        Route::get('/projects', [ProjectWorkspaceController::class, 'index']);
+        Route::get('/projects/{project}/workspace', [ProjectWorkspaceController::class, 'workspace']);
+        Route::put('/projects/{project}/members', [ProjectWorkspaceController::class, 'syncMembers']);
+        Route::get('/projects/{project}/calendar-items', [ProjectWorkspaceController::class, 'calendarItems']);
+        Route::get('/projects/{project}/timeline', [ProjectWorkspaceController::class, 'timeline']);
+        Route::get('/projects/{project}/structure', [ProjectWorkspaceController::class, 'structure']);
+        Route::get('/projects/{project}/tasks', [ProjectWorkspaceController::class, 'tasks']);
+        Route::post('/projects/{project}/tasks', [ProjectWorkspaceController::class, 'storeTask']);
+        Route::put('/projects/{project}/tasks/{task}', [ProjectWorkspaceController::class, 'updateTask']);
+        Route::post('/projects/{project}/tasks/{task}/link-calendar', [ProjectWorkspaceController::class, 'linkTaskCalendar']);
+        Route::get('/projects/{project}/brief', [ProjectBriefController::class, 'show']);
+        Route::put('/projects/{project}/brief', [ProjectBriefController::class, 'update']);
+        Route::get('/projects/{project}/references', [ProjectBriefController::class, 'references']);
+        Route::post('/projects/{project}/references', [ProjectBriefController::class, 'storeReference']);
+        Route::put('/projects/{project}/references/{reference}', [ProjectBriefController::class, 'updateReference']);
+        Route::delete('/projects/{project}/references/{reference}', [ProjectBriefController::class, 'destroyReference']);
+        Route::get('/projects/{project}/phases', [ProjectPhaseController::class, 'index']);
+        Route::post('/projects/{project}/phases', [ProjectPhaseController::class, 'store']);
+        Route::put('/projects/{project}/phases/{phase}', [ProjectPhaseController::class, 'update']);
+        Route::delete('/projects/{project}/phases/{phase}', [ProjectPhaseController::class, 'destroy']);
+        Route::get('/projects/{project}/milestones', [ProjectMilestoneController::class, 'index']);
+        Route::post('/projects/{project}/milestones', [ProjectMilestoneController::class, 'store']);
+        Route::put('/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'update']);
+        Route::delete('/projects/{project}/milestones/{milestone}', [ProjectMilestoneController::class, 'destroy']);
+    });
 
     Route::get('/saved-views', [OperationalSavedViewController::class, 'index']);
     Route::post('/saved-views', [OperationalSavedViewController::class, 'store']);
@@ -355,145 +388,167 @@ Route::prefix('operations')->middleware([
     Route::post('/business-calendars/{businessCalendar}/holidays/copy-year', [BusinessCalendarController::class, 'copyYear']);
     Route::delete('/business-calendars/{businessCalendar}/holidays/{holiday}', [BusinessCalendarController::class, 'destroyHoliday']);
 
-    Route::get('/webhooks', [OutboundWebhookController::class, 'index']);
-    Route::post('/webhooks', [OutboundWebhookController::class, 'store']);
-    Route::get('/webhooks/{webhook}', [OutboundWebhookController::class, 'show']);
-    Route::put('/webhooks/{webhook}', [OutboundWebhookController::class, 'update']);
-    Route::delete('/webhooks/{webhook}', [OutboundWebhookController::class, 'destroy']);
-    Route::post('/webhooks/{webhook}/test', [OutboundWebhookController::class, 'test']);
-    Route::get('/webhooks/{webhook}/deliveries', [OutboundWebhookController::class, 'deliveries']);
+    Route::middleware('dashboard.module:integrations,automations')->group(function (): void {
+        Route::get('/webhooks', [OutboundWebhookController::class, 'index']);
+        Route::post('/webhooks', [OutboundWebhookController::class, 'store']);
+        Route::get('/webhooks/{webhook}', [OutboundWebhookController::class, 'show']);
+        Route::put('/webhooks/{webhook}', [OutboundWebhookController::class, 'update']);
+        Route::delete('/webhooks/{webhook}', [OutboundWebhookController::class, 'destroy']);
+        Route::post('/webhooks/{webhook}/test', [OutboundWebhookController::class, 'test']);
+        Route::get('/webhooks/{webhook}/deliveries', [OutboundWebhookController::class, 'deliveries']);
 
-    Route::get('/inbound-webhooks', [InboundWebhookIntegrationController::class, 'index']);
-    Route::post('/inbound-webhooks', [InboundWebhookIntegrationController::class, 'store']);
-    Route::get('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'show']);
-    Route::put('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'update']);
-    Route::delete('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'destroy']);
-    Route::get('/inbound-webhooks/{inboundWebhook}/receipts', [InboundWebhookIntegrationController::class, 'receipts']);
+        Route::get('/inbound-webhooks', [InboundWebhookIntegrationController::class, 'index']);
+        Route::post('/inbound-webhooks', [InboundWebhookIntegrationController::class, 'store']);
+        Route::get('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'show']);
+        Route::put('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'update']);
+        Route::delete('/inbound-webhooks/{inboundWebhook}', [InboundWebhookIntegrationController::class, 'destroy']);
+        Route::get('/inbound-webhooks/{inboundWebhook}/receipts', [InboundWebhookIntegrationController::class, 'receipts']);
 
-    Route::get('/automations', [WorkflowAutomationController::class, 'index']);
-    Route::post('/automations', [WorkflowAutomationController::class, 'store']);
-    Route::post('/automations/templates/seed', [WorkflowAutomationController::class, 'seedTemplates']);
-    Route::get('/automations/{automation}', [WorkflowAutomationController::class, 'show']);
-    Route::put('/automations/{automation}', [WorkflowAutomationController::class, 'update']);
-    Route::delete('/automations/{automation}', [WorkflowAutomationController::class, 'destroy']);
-    Route::post('/automations/{automation}/activate', [WorkflowAutomationController::class, 'activate']);
-    Route::post('/automations/{automation}/deactivate', [WorkflowAutomationController::class, 'deactivate']);
-    Route::post('/automations/{automation}/dry-run', [WorkflowAutomationController::class, 'dryRun']);
-    Route::get('/automations/{automation}/runs', [WorkflowAutomationController::class, 'runs']);
+        Route::get('/automations', [WorkflowAutomationController::class, 'index']);
+        Route::post('/automations', [WorkflowAutomationController::class, 'store']);
+        Route::post('/automations/templates/seed', [WorkflowAutomationController::class, 'seedTemplates']);
+        Route::get('/automations/{automation}', [WorkflowAutomationController::class, 'show']);
+        Route::put('/automations/{automation}', [WorkflowAutomationController::class, 'update']);
+        Route::delete('/automations/{automation}', [WorkflowAutomationController::class, 'destroy']);
+        Route::post('/automations/{automation}/activate', [WorkflowAutomationController::class, 'activate']);
+        Route::post('/automations/{automation}/deactivate', [WorkflowAutomationController::class, 'deactivate']);
+        Route::post('/automations/{automation}/dry-run', [WorkflowAutomationController::class, 'dryRun']);
+        Route::get('/automations/{automation}/runs', [WorkflowAutomationController::class, 'runs']);
+    });
 
-    Route::get('/printing', [PrintingOperationsController::class, 'index']);
-    Route::get('/printing/summary', [PrintingOperationsController::class, 'summary']);
-    Route::get('/printing/board', [PrintingOperationsController::class, 'board']);
-    Route::post('/printing/{printing_request}/status', [PrintingOperationsController::class, 'updateStatus']);
-    Route::patch('/printing/{printing_request}/status', [PrintingOperationsController::class, 'updateStatus']);
-    Route::post('/printing/{printing_request}/assign', [PrintingOperationsController::class, 'assign']);
-    Route::patch('/printing/{printing_request}/assign', [PrintingOperationsController::class, 'assign']);
-    Route::get('/printing/{printing_request}/history', [PrintingOperationsController::class, 'history']);
-    Route::patch('/printing/{printing_request}/delivery', [PrintingOperationsController::class, 'updateDelivery']);
-    Route::post('/printing/{printing_request}/deliveries', [PrintingDeliveryController::class, 'store']);
-    Route::post('/printing-deliveries/{printing_delivery}/mark-delivered', [PrintingDeliveryController::class, 'markDelivered']);
-    Route::get('/printing-requests/{printing_request}/communications', [PrintingCommunicationController::class, 'index']);
-    Route::post('/customers/{user}/portal-access', [CustomerPortalAccessController::class, 'store']);
-    Route::post('/customers/{user}/portal-access/resend-email', [CustomerPortalAccessController::class, 'resendEmail'])
-        ->middleware('throttle:hebr-portal-resend');
-    Route::delete('/customers/{user}/portal-access', [CustomerPortalAccessController::class, 'destroy']);
+    Route::middleware('dashboard.module:printing')->group(function (): void {
+        Route::get('/printing', [PrintingOperationsController::class, 'index']);
+        Route::get('/printing/summary', [PrintingOperationsController::class, 'summary']);
+        Route::get('/printing/board', [PrintingOperationsController::class, 'board']);
+        Route::post('/printing/{printing_request}/status', [PrintingOperationsController::class, 'updateStatus']);
+        Route::patch('/printing/{printing_request}/status', [PrintingOperationsController::class, 'updateStatus']);
+        Route::post('/printing/{printing_request}/assign', [PrintingOperationsController::class, 'assign']);
+        Route::patch('/printing/{printing_request}/assign', [PrintingOperationsController::class, 'assign']);
+        Route::get('/printing/{printing_request}/history', [PrintingOperationsController::class, 'history']);
+        Route::patch('/printing/{printing_request}/delivery', [PrintingOperationsController::class, 'updateDelivery']);
+        Route::post('/printing/{printing_request}/deliveries', [PrintingDeliveryController::class, 'store']);
+        Route::post('/printing-deliveries/{printing_delivery}/mark-delivered', [PrintingDeliveryController::class, 'markDelivered']);
+        Route::get('/printing-requests/{printing_request}/communications', [PrintingCommunicationController::class, 'index']);
+        Route::get('/printing-quotations', [PrintingQuotationController::class, 'index']);
+        Route::post('/printing-quotations', [PrintingQuotationController::class, 'store']);
+        Route::get('/printing-quotations/request/{printing_request}/eligibility', [PrintingQuotationController::class, 'eligibility']);
+        Route::get('/printing-quotations/request/{printing_request}/approvals', [PrintingQuotationController::class, 'listApprovals']);
+        Route::post('/printing-quotations/request/{printing_request}/approvals', [PrintingQuotationController::class, 'storeApproval']);
+        Route::get('/printing-quotations/{printing_quotation}', [PrintingQuotationController::class, 'show']);
+        Route::patch('/printing-quotations/{printing_quotation}', [PrintingQuotationController::class, 'update']);
+        Route::post('/printing-quotations/{printing_quotation}/send', [PrintingQuotationController::class, 'send']);
+        Route::post('/printing-quotations/{printing_quotation}/email', [PrintingQuotationEmailController::class, 'store'])
+            ->middleware('throttle:hebr-quote-email');
+        Route::post('/printing-quotations/{printing_quotation}/revise', [PrintingQuotationController::class, 'revise']);
+        Route::get('/printing-quotations/{printing_quotation}/pdf', [PrintingQuotationController::class, 'pdf']);
+        Route::get('/printing-quotations/{printing_quotation}/timeline', [PrintingQuotationController::class, 'timeline']);
+        Route::post('/printing-quotations/{printing_quotation}/payments', [PrintingQuotationController::class, 'storePayment']);
+        Route::get('/printing-quotations/{printing_quotation}/payments/{payment}/receipt', [PrintingQuotationController::class, 'paymentReceipt']);
+    });
 
-    Route::get('/printing-quotations', [PrintingQuotationController::class, 'index']);
-    Route::post('/printing-quotations', [PrintingQuotationController::class, 'store']);
-    Route::get('/printing-quotations/request/{printing_request}/eligibility', [PrintingQuotationController::class, 'eligibility']);
-    Route::get('/printing-quotations/request/{printing_request}/approvals', [PrintingQuotationController::class, 'listApprovals']);
-    Route::post('/printing-quotations/request/{printing_request}/approvals', [PrintingQuotationController::class, 'storeApproval']);
-    Route::get('/printing-quotations/{printing_quotation}', [PrintingQuotationController::class, 'show']);
-    Route::patch('/printing-quotations/{printing_quotation}', [PrintingQuotationController::class, 'update']);
-    Route::post('/printing-quotations/{printing_quotation}/send', [PrintingQuotationController::class, 'send']);
-    Route::post('/printing-quotations/{printing_quotation}/email', [PrintingQuotationEmailController::class, 'store'])
-        ->middleware('throttle:hebr-quote-email');
-    Route::post('/printing-quotations/{printing_quotation}/revise', [PrintingQuotationController::class, 'revise']);
-    Route::get('/printing-quotations/{printing_quotation}/pdf', [PrintingQuotationController::class, 'pdf']);
-    Route::get('/printing-quotations/{printing_quotation}/timeline', [PrintingQuotationController::class, 'timeline']);
-    Route::post('/printing-quotations/{printing_quotation}/payments', [PrintingQuotationController::class, 'storePayment']);
-    Route::get('/printing-quotations/{printing_quotation}/payments/{payment}/receipt', [PrintingQuotationController::class, 'paymentReceipt']);
+    Route::middleware('dashboard.module:crm,projects,workspace.projects')->group(function (): void {
+        Route::post('/customers/{user}/portal-access', [CustomerPortalAccessController::class, 'store']);
+        Route::post('/customers/{user}/portal-access/resend-email', [CustomerPortalAccessController::class, 'resendEmail'])
+            ->middleware('throttle:hebr-portal-resend');
+        Route::delete('/customers/{user}/portal-access', [CustomerPortalAccessController::class, 'destroy']);
+    });
 
-    Route::get('/quote-requests', [OwnerQuoteRequestController::class, 'index']);
-    Route::get('/quote-requests/summary', [OwnerQuoteRequestController::class, 'summary']);
-    Route::get('/quote-requests/{quote_request}', [OwnerQuoteRequestController::class, 'show']);
-    Route::patch('/quote-requests/{quote_request}', [OwnerQuoteRequestController::class, 'update']);
-    Route::post('/quote-requests/{quote_request}/start-review', [OwnerQuoteRequestController::class, 'startReview']);
-    Route::post('/quote-requests/{quote_request}/assign', [OwnerQuoteRequestController::class, 'assign']);
-    Route::post('/quote-requests/{quote_request}/request-information', [OwnerQuoteRequestController::class, 'requestInformation']);
-    Route::post('/quote-requests/{quote_request}/cancel', [OwnerQuoteRequestController::class, 'cancel']);
-    Route::post('/quote-requests/{quote_request}/quotations', [OwnerQuoteRequestController::class, 'createQuotation']);
+    Route::middleware('dashboard.module:crm')->group(function (): void {
+        Route::get('/quote-requests', [OwnerQuoteRequestController::class, 'index']);
+        Route::get('/quote-requests/summary', [OwnerQuoteRequestController::class, 'summary']);
+        Route::get('/quote-requests/{quote_request}', [OwnerQuoteRequestController::class, 'show']);
+        Route::patch('/quote-requests/{quote_request}', [OwnerQuoteRequestController::class, 'update']);
+        Route::post('/quote-requests/{quote_request}/start-review', [OwnerQuoteRequestController::class, 'startReview']);
+        Route::post('/quote-requests/{quote_request}/assign', [OwnerQuoteRequestController::class, 'assign']);
+        Route::post('/quote-requests/{quote_request}/request-information', [OwnerQuoteRequestController::class, 'requestInformation']);
+        Route::post('/quote-requests/{quote_request}/cancel', [OwnerQuoteRequestController::class, 'cancel']);
+        Route::post('/quote-requests/{quote_request}/quotations', [OwnerQuoteRequestController::class, 'createQuotation']);
 
-    Route::get('/commercial-quotations', [CommercialQuotationController::class, 'index']);
-    Route::get('/commercial-quotations/{commercial_quotation}', [CommercialQuotationController::class, 'show']);
-    Route::patch('/commercial-quotations/{commercial_quotation}', [CommercialQuotationController::class, 'update']);
-    Route::post('/commercial-quotations/{commercial_quotation}/send', [CommercialQuotationController::class, 'send']);
-    Route::post('/commercial-quotations/{commercial_quotation}/revise', [CommercialQuotationController::class, 'revise']);
-    Route::get('/commercial-quotations/{commercial_quotation}/preview', [CommercialQuotationController::class, 'preview']);
-    Route::get('/commercial-quotations/{commercial_quotation}/pdf', [CommercialQuotationController::class, 'pdf']);
+        Route::get('/commercial-quotations', [CommercialQuotationController::class, 'index']);
+        Route::get('/commercial-quotations/{commercial_quotation}', [CommercialQuotationController::class, 'show']);
+        Route::patch('/commercial-quotations/{commercial_quotation}', [CommercialQuotationController::class, 'update']);
+        Route::post('/commercial-quotations/{commercial_quotation}/send', [CommercialQuotationController::class, 'send']);
+        Route::post('/commercial-quotations/{commercial_quotation}/revise', [CommercialQuotationController::class, 'revise']);
+        Route::get('/commercial-quotations/{commercial_quotation}/preview', [CommercialQuotationController::class, 'preview']);
+        Route::get('/commercial-quotations/{commercial_quotation}/pdf', [CommercialQuotationController::class, 'pdf']);
 
-    Route::get('/invoices', [InvoiceController::class, 'index']);
-    Route::post('/invoices', [InvoiceController::class, 'store']);
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
-    Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update']);
-    Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue']);
-    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send']);
-    Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
-    Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void']);
-    Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+        Route::get('/sourcing/suppliers', [QuotationSupplierSourcingController::class, 'suppliers']);
+        Route::get('/commercial-quotations/{commercial_quotation}/sourcing', [QuotationSupplierSourcingController::class, 'index']);
+        Route::post('/commercial-quotations/{commercial_quotation}/items/{item}/supplier-quotes', [QuotationSupplierSourcingController::class, 'requestQuote']);
+        Route::get('/commercial-quotation-items/{item}/supplier-quotes/compare', [QuotationSupplierSourcingController::class, 'compare']);
+        Route::post('/supplier-quotes/{quote}/under-review', [QuotationSupplierSourcingController::class, 'markUnderReview']);
+        Route::post('/supplier-quotes/{quote}/select', [QuotationSupplierSourcingController::class, 'select']);
+        Route::post('/supplier-quotes/{quote}/reject', [QuotationSupplierSourcingController::class, 'reject']);
+        Route::post('/supplier-quotes/{quote}/replace', [QuotationSupplierSourcingController::class, 'replace']);
+    });
 
-    Route::get('/sourcing/suppliers', [QuotationSupplierSourcingController::class, 'suppliers']);
-    Route::get('/commercial-quotations/{commercial_quotation}/sourcing', [QuotationSupplierSourcingController::class, 'index']);
-    Route::post('/commercial-quotations/{commercial_quotation}/items/{item}/supplier-quotes', [QuotationSupplierSourcingController::class, 'requestQuote']);
-    Route::get('/commercial-quotation-items/{item}/supplier-quotes/compare', [QuotationSupplierSourcingController::class, 'compare']);
-    Route::post('/supplier-quotes/{quote}/under-review', [QuotationSupplierSourcingController::class, 'markUnderReview']);
-    Route::post('/supplier-quotes/{quote}/select', [QuotationSupplierSourcingController::class, 'select']);
-    Route::post('/supplier-quotes/{quote}/reject', [QuotationSupplierSourcingController::class, 'reject']);
-    Route::post('/supplier-quotes/{quote}/replace', [QuotationSupplierSourcingController::class, 'replace']);
+    Route::middleware('dashboard.module:invoices')->group(function (): void {
+        Route::get('/invoices', [InvoiceController::class, 'index']);
+        Route::post('/invoices', [InvoiceController::class, 'store']);
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show']);
+        Route::patch('/invoices/{invoice}', [InvoiceController::class, 'update']);
+        Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue']);
+        Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send']);
+        Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
+        Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void']);
+        Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+    });
 
     Route::get('/command-center', [OperationsCommandCenterController::class, 'show']);
     Route::get('/my-day', [MyDayController::class, 'show']);
 
-    Route::get('/settings', [OperationsSettingsController::class, 'show']);
-    Route::put('/settings', [OperationsSettingsController::class, 'update']);
+    Route::middleware('dashboard.module:settings')->group(function (): void {
+        Route::get('/settings', [OperationsSettingsController::class, 'show']);
+        Route::put('/settings', [OperationsSettingsController::class, 'update']);
+    });
 
     Route::get('/export/work.csv', [OperationsExportController::class, 'work']);
     Route::get('/export/printing.csv', [OperationsExportController::class, 'printing']);
     Route::get('/export/printing-quotations.csv', [OperationsExportController::class, 'printingQuotations']);
     Route::get('/export/sla.csv', [OperationsExportController::class, 'sla']);
 
-    Route::get('/work/focus', [UnifiedWorkController::class, 'focus']);
-    Route::get('/work/kanban', [UnifiedWorkController::class, 'kanban']);
-    Route::get('/work', [UnifiedWorkController::class, 'index']);
-    Route::post('/work/task/{task}/link-calendar', [TaskCalendarLinkController::class, 'linkFromTask']);
-    Route::post('/work/calendar/{calendarItem}/link-task', [TaskCalendarLinkController::class, 'linkFromCalendar']);
-    Route::delete('/work/links/{task}', [TaskCalendarLinkController::class, 'unlink']);
-    Route::get('/work/{work}', [UnifiedWorkController::class, 'show'])->where('work', '.*');
-    Route::post('/work/{work}/complete', [UnifiedWorkController::class, 'complete'])->where('work', '.*');
-    Route::post('/work/{work}/assign', [UnifiedWorkController::class, 'assign'])->where('work', '.*');
-    Route::post('/work/{work}/priority', [UnifiedWorkController::class, 'priority'])->where('work', '.*');
-    Route::post('/work/{work}/status', [UnifiedWorkController::class, 'status'])->where('work', '.*');
-    Route::post('/work/{work}/reschedule', [UnifiedWorkController::class, 'reschedule'])->where('work', '.*');
-    Route::post('/work/{work}/start', [UnifiedWorkController::class, 'start'])->where('work', '.*');
+    Route::middleware('dashboard.module:work,workspace.work,workspace.tasks')->group(function (): void {
+        Route::get('/work/focus', [UnifiedWorkController::class, 'focus']);
+        Route::get('/work/kanban', [UnifiedWorkController::class, 'kanban']);
+        Route::get('/work', [UnifiedWorkController::class, 'index']);
+        Route::post('/work/task/{task}/link-calendar', [TaskCalendarLinkController::class, 'linkFromTask']);
+        Route::post('/work/calendar/{calendarItem}/link-task', [TaskCalendarLinkController::class, 'linkFromCalendar']);
+        Route::delete('/work/links/{task}', [TaskCalendarLinkController::class, 'unlink']);
+        Route::get('/work/{work}', [UnifiedWorkController::class, 'show'])->where('work', '.*');
+        Route::post('/work/{work}/complete', [UnifiedWorkController::class, 'complete'])->where('work', '.*');
+        Route::post('/work/{work}/assign', [UnifiedWorkController::class, 'assign'])->where('work', '.*');
+        Route::post('/work/{work}/priority', [UnifiedWorkController::class, 'priority'])->where('work', '.*');
+        Route::post('/work/{work}/status', [UnifiedWorkController::class, 'status'])->where('work', '.*');
+        Route::post('/work/{work}/reschedule', [UnifiedWorkController::class, 'reschedule'])->where('work', '.*');
+        Route::post('/work/{work}/start', [UnifiedWorkController::class, 'start'])->where('work', '.*');
+    });
 
-    Route::get('/approvals/inbox', [ApprovalController::class, 'inbox']);
-    Route::get('/approvals/mine', [ApprovalController::class, 'mine']);
-    Route::post('/approvals', [ApprovalController::class, 'store']);
-    Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve']);
-    Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject']);
+    Route::middleware('dashboard.module:approvals')->group(function (): void {
+        Route::get('/approvals/inbox', [ApprovalController::class, 'inbox']);
+        Route::get('/approvals/mine', [ApprovalController::class, 'mine']);
+        Route::post('/approvals', [ApprovalController::class, 'store']);
+        Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve']);
+        Route::post('/approvals/{approval}/reject', [ApprovalController::class, 'reject']);
+    });
 
-    Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show']);
-    Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update']);
+    Route::middleware('dashboard.module:notifications')->group(function (): void {
+        Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show']);
+        Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update']);
+    });
 
     Route::get('/search', [OperationsUtilityController::class, 'search']);
     Route::get('/payment-capabilities', [OperationsUtilityController::class, 'paymentCapabilities']);
-    Route::get('/payments/reconciliation', [OperationsUtilityController::class, 'paymentsReconciliation']);
-    Route::get('/insights/printing-funnel', [OperationsUtilityController::class, 'printingFunnel']);
-    Route::get('/insights/printing', [OperationsUtilityController::class, 'printingInsights']);
-    Route::get('/insights/payments', [OperationsUtilityController::class, 'paymentInsights']);
-    Route::get('/insights/payment-funnel', [OperationsUtilityController::class, 'paymentFunnel']);
-    Route::get('/insights', [OperationsUtilityController::class, 'insights']);
+    Route::middleware('dashboard.module:finance')->group(function (): void {
+        Route::get('/payments/reconciliation', [OperationsUtilityController::class, 'paymentsReconciliation']);
+        Route::get('/insights/payments', [OperationsUtilityController::class, 'paymentInsights']);
+        Route::get('/insights/payment-funnel', [OperationsUtilityController::class, 'paymentFunnel']);
+    });
+    Route::middleware('dashboard.module:reports,printing')->group(function (): void {
+        Route::get('/insights/printing-funnel', [OperationsUtilityController::class, 'printingFunnel']);
+        Route::get('/insights/printing', [OperationsUtilityController::class, 'printingInsights']);
+        Route::get('/insights', [OperationsUtilityController::class, 'insights']);
+    });
     Route::get('/customers/{user}/printing-history', [OperationsUtilityController::class, 'customerPrintingHistory']);
     Route::get('/team-dashboard', [OperationsUtilityController::class, 'teamDashboard']);
     Route::post('/attention/snooze', [OperationsUtilityController::class, 'snoozeAttention']);
@@ -503,6 +558,7 @@ Route::prefix('crm')->middleware([
     'auth:sanctum',
     'account.active',
     'role:OWNER,ADMIN_MANAGER,SALES_MANAGER,SALES_REPRESENTATIVE',
+    'dashboard.module:crm',
 ])->group(function (): void {
     Route::get('/dashboard', [CrmDashboardController::class, 'show']);
     Route::get('/team', [CrmTeamController::class, 'index']);
@@ -666,9 +722,11 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/media/meta', [MediaController::class, 'entityTypes']);
     Route::get('/media', [MediaController::class, 'index']);
     Route::post('/media', [MediaController::class, 'store'])->middleware('throttle:hebr-uploads');
+    Route::post('/media/reorder', [MediaController::class, 'reorder']);
     Route::get('/media/{media}', [MediaController::class, 'show']);
     Route::post('/media/{media}', [MediaController::class, 'update'])->middleware('throttle:hebr-uploads');
     Route::patch('/media/{media}', [MediaController::class, 'update']);
+    Route::post('/media/{media}/primary', [MediaController::class, 'setPrimary']);
     Route::post('/media/{media}/duplicate', [MediaController::class, 'duplicate']);
     Route::delete('/media/{media}', [MediaController::class, 'destroy']);
     Route::get('/media/{media}/download', [MediaController::class, 'download']);
@@ -814,6 +872,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
         Route::get('/employees/{user}', [EmployeeController::class, 'show']);
         Route::put('/employees/{user}', [EmployeeController::class, 'update']);
         Route::patch('/employees/{user}/status', [EmployeeController::class, 'setStatus']);
+        Route::get('/role-dashboard-access', [RoleDashboardAccessController::class, 'index']);
+        Route::get('/role-dashboard-access/{role}', [RoleDashboardAccessController::class, 'show']);
+        Route::put('/role-dashboard-access/{role}', [RoleDashboardAccessController::class, 'update']);
         Route::get('/consultant', [ConsultantSettingsController::class, 'show']);
         Route::patch('/consultant', [ConsultantSettingsController::class, 'update']);
         Route::get('/payments', [AdminPaymentController::class, 'index']);
@@ -837,126 +898,134 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
     });
 
     Route::middleware('role:OWNER,ADMIN_MANAGER')->group(function (): void {
-        Route::get('/platform-settings', [PlatformSettingController::class, 'show']);
-        Route::put('/platform-settings', [PlatformSettingController::class, 'update']);
-        Route::post('/platform-settings/brand-assets', [PlatformSettingController::class, 'uploadBrandAsset']);
-        Route::get('/printing-catalog', [PrintingCatalogAdminController::class, 'index']);
-        Route::post('/printing-catalog/products', [PrintingCatalogAdminController::class, 'storeProduct']);
-        Route::put('/printing-catalog/products/{printingProduct}', [PrintingCatalogAdminController::class, 'updateProduct']);
-        Route::post('/printing-catalog/categories', [PrintingCatalogAdminController::class, 'storeCategory']);
-        Route::put('/printing-catalog/categories/{printingProductCategory}', [PrintingCatalogAdminController::class, 'updateCategory']);
-        Route::post('/printing-catalog/options', [PrintingCatalogAdminController::class, 'storeOption']);
-        Route::put('/printing-catalog/options/{printingProductOption}', [PrintingCatalogAdminController::class, 'updateOption']);
-        Route::get('/event-types', [EventTypeAdminController::class, 'index']);
-        Route::post('/event-types', [EventTypeAdminController::class, 'store']);
-        Route::put('/event-types/{eventType}', [EventTypeAdminController::class, 'update']);
-        Route::apiResource('services', AdminServiceController::class);
-        Route::apiResource('packages', AdminPackageController::class);
-        Route::get('/seo', [AdminSeoPageController::class, 'index']);
-        Route::get('/seo/{page}', [AdminSeoPageController::class, 'show']);
-        Route::put('/seo/{page}', [AdminSeoPageController::class, 'update']);
-        Route::get('/portfolio', [AdminPortfolioItemController::class, 'index']);
-        Route::post('/portfolio', [AdminPortfolioItemController::class, 'store']);
-        Route::put('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'update']);
-        Route::delete('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'destroy']);
+        Route::middleware('dashboard.module:settings')->group(function (): void {
+            Route::get('/platform-settings', [PlatformSettingController::class, 'show']);
+            Route::put('/platform-settings', [PlatformSettingController::class, 'update']);
+            Route::post('/platform-settings/brand-assets', [PlatformSettingController::class, 'uploadBrandAsset']);
+        });
+        Route::middleware('dashboard.module:catalog')->group(function (): void {
+            Route::get('/printing-catalog', [PrintingCatalogAdminController::class, 'index']);
+            Route::post('/printing-catalog/products', [PrintingCatalogAdminController::class, 'storeProduct']);
+            Route::put('/printing-catalog/products/{printingProduct}', [PrintingCatalogAdminController::class, 'updateProduct']);
+            Route::post('/printing-catalog/categories', [PrintingCatalogAdminController::class, 'storeCategory']);
+            Route::put('/printing-catalog/categories/{printingProductCategory}', [PrintingCatalogAdminController::class, 'updateCategory']);
+            Route::post('/printing-catalog/options', [PrintingCatalogAdminController::class, 'storeOption']);
+            Route::put('/printing-catalog/options/{printingProductOption}', [PrintingCatalogAdminController::class, 'updateOption']);
+            Route::get('/event-types', [EventTypeAdminController::class, 'index']);
+            Route::post('/event-types', [EventTypeAdminController::class, 'store']);
+            Route::put('/event-types/{eventType}', [EventTypeAdminController::class, 'update']);
+            Route::apiResource('services', AdminServiceController::class);
+            Route::apiResource('packages', AdminPackageController::class);
+        });
+        Route::middleware('dashboard.module:content')->group(function (): void {
+            Route::get('/seo', [AdminSeoPageController::class, 'index']);
+            Route::get('/seo/{page}', [AdminSeoPageController::class, 'show']);
+            Route::put('/seo/{page}', [AdminSeoPageController::class, 'update']);
+            Route::get('/portfolio', [AdminPortfolioItemController::class, 'index']);
+            Route::post('/portfolio', [AdminPortfolioItemController::class, 'store']);
+            Route::put('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'update']);
+            Route::delete('/portfolio/{portfolioItem}', [AdminPortfolioItemController::class, 'destroy']);
 
-        Route::get('/blog/posts', [AdminBlogPostController::class, 'index']);
-        Route::post('/blog/posts', [AdminBlogPostController::class, 'store']);
-        Route::get('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'show']);
-        Route::put('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'update']);
-        Route::delete('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'destroy']);
-        Route::get('/blog/categories', [AdminBlogCategoryController::class, 'index']);
-        Route::post('/blog/categories', [AdminBlogCategoryController::class, 'store']);
-        Route::put('/blog/categories/{blogCategory}', [AdminBlogCategoryController::class, 'update']);
-        Route::delete('/blog/categories/{blogCategory}', [AdminBlogCategoryController::class, 'destroy']);
-        Route::get('/blog/tags', [AdminBlogTagController::class, 'index']);
-        Route::post('/blog/tags', [AdminBlogTagController::class, 'store']);
-        Route::put('/blog/tags/{blogTag}', [AdminBlogTagController::class, 'update']);
-        Route::delete('/blog/tags/{blogTag}', [AdminBlogTagController::class, 'destroy']);
-        Route::get('/blog/authors', [AdminBlogAuthorController::class, 'index']);
-        Route::post('/blog/authors', [AdminBlogAuthorController::class, 'store']);
-        Route::put('/blog/authors/{blogAuthor}', [AdminBlogAuthorController::class, 'update']);
-        Route::delete('/blog/authors/{blogAuthor}', [AdminBlogAuthorController::class, 'destroy']);
+            Route::get('/blog/posts', [AdminBlogPostController::class, 'index']);
+            Route::post('/blog/posts', [AdminBlogPostController::class, 'store']);
+            Route::get('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'show']);
+            Route::put('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'update']);
+            Route::delete('/blog/posts/{blogPost}', [AdminBlogPostController::class, 'destroy']);
+            Route::get('/blog/categories', [AdminBlogCategoryController::class, 'index']);
+            Route::post('/blog/categories', [AdminBlogCategoryController::class, 'store']);
+            Route::put('/blog/categories/{blogCategory}', [AdminBlogCategoryController::class, 'update']);
+            Route::delete('/blog/categories/{blogCategory}', [AdminBlogCategoryController::class, 'destroy']);
+            Route::get('/blog/tags', [AdminBlogTagController::class, 'index']);
+            Route::post('/blog/tags', [AdminBlogTagController::class, 'store']);
+            Route::put('/blog/tags/{blogTag}', [AdminBlogTagController::class, 'update']);
+            Route::delete('/blog/tags/{blogTag}', [AdminBlogTagController::class, 'destroy']);
+            Route::get('/blog/authors', [AdminBlogAuthorController::class, 'index']);
+            Route::post('/blog/authors', [AdminBlogAuthorController::class, 'store']);
+            Route::put('/blog/authors/{blogAuthor}', [AdminBlogAuthorController::class, 'update']);
+            Route::delete('/blog/authors/{blogAuthor}', [AdminBlogAuthorController::class, 'destroy']);
 
-        Route::get('/testimonials', [AdminTestimonialController::class, 'index']);
-        Route::post('/testimonials', [AdminTestimonialController::class, 'store']);
-        Route::put('/testimonials/{testimonial}', [AdminTestimonialController::class, 'update']);
-        Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy']);
-        Route::get('/contact-inquiries', [ContactInquiryAdminController::class, 'index']);
-        Route::get('/work-reviews', [WorkReviewController::class, 'index']);
-        Route::get('/work-reviews/{work}', [WorkReviewController::class, 'show']);
-        Route::post('/work-reviews/{work}/approve-publish', [WorkReviewController::class, 'approvePublish']);
-        Route::post('/work-reviews/{work}/reject', [WorkReviewController::class, 'reject']);
-        Route::post('/work-reviews/{work}/request-changes', [WorkReviewController::class, 'requestChanges']);
-        Route::post('/work-reviews/{work}/unpublish', [WorkReviewController::class, 'unpublish']);
-        Route::post('/work-reviews/{work}/archive', [WorkReviewController::class, 'archive']);
-        Route::get('/suppliers', [SupplierAdminController::class, 'index']);
-        Route::post('/suppliers', [SupplierAdminController::class, 'store']);
-        Route::get('/suppliers/{supplier}', [SupplierAdminController::class, 'show']);
-        Route::put('/suppliers/{supplier}', [SupplierAdminController::class, 'update']);
-        Route::delete('/suppliers/{supplier}', [SupplierAdminController::class, 'destroy']);
-        Route::post('/suppliers/{supplier}/activate', [SupplierAdminController::class, 'activate']);
-        Route::post('/suppliers/{supplier}/deactivate', [SupplierAdminController::class, 'deactivate']);
-        Route::post('/suppliers/{supplier}/publish', [SupplierAdminController::class, 'publish']);
-        Route::post('/suppliers/{supplier}/unpublish', [SupplierAdminController::class, 'unpublish']);
-        Route::post('/suppliers/{supplier}/approve', [SupplierLifecycleController::class, 'approve']);
-        Route::post('/suppliers/{supplier}/reject', [SupplierLifecycleController::class, 'reject']);
-        Route::post('/suppliers/{supplier}/suspend', [SupplierLifecycleController::class, 'suspend']);
-        Route::post('/suppliers/{supplier}/block', [SupplierLifecycleController::class, 'block']);
-        Route::post('/suppliers/{supplier}/request-changes', [SupplierLifecycleController::class, 'requestChanges']);
-        Route::post('/suppliers/{supplier}/verify', [SupplierLifecycleController::class, 'verify']);
-        Route::put('/suppliers/{supplier}/locked-fields', [SupplierLifecycleController::class, 'lockFields']);
+            Route::get('/testimonials', [AdminTestimonialController::class, 'index']);
+            Route::post('/testimonials', [AdminTestimonialController::class, 'store']);
+            Route::put('/testimonials/{testimonial}', [AdminTestimonialController::class, 'update']);
+            Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy']);
+            Route::get('/contact-inquiries', [ContactInquiryAdminController::class, 'index']);
+            Route::get('/work-reviews', [WorkReviewController::class, 'index']);
+            Route::get('/work-reviews/{work}', [WorkReviewController::class, 'show']);
+            Route::post('/work-reviews/{work}/approve-publish', [WorkReviewController::class, 'approvePublish']);
+            Route::post('/work-reviews/{work}/reject', [WorkReviewController::class, 'reject']);
+            Route::post('/work-reviews/{work}/request-changes', [WorkReviewController::class, 'requestChanges']);
+            Route::post('/work-reviews/{work}/unpublish', [WorkReviewController::class, 'unpublish']);
+            Route::post('/work-reviews/{work}/archive', [WorkReviewController::class, 'archive']);
+        });
+        Route::middleware('dashboard.module:suppliers')->group(function (): void {
+            Route::get('/suppliers', [SupplierAdminController::class, 'index']);
+            Route::post('/suppliers', [SupplierAdminController::class, 'store']);
+            Route::get('/suppliers/{supplier}', [SupplierAdminController::class, 'show']);
+            Route::put('/suppliers/{supplier}', [SupplierAdminController::class, 'update']);
+            Route::delete('/suppliers/{supplier}', [SupplierAdminController::class, 'destroy']);
+            Route::post('/suppliers/{supplier}/activate', [SupplierAdminController::class, 'activate']);
+            Route::post('/suppliers/{supplier}/deactivate', [SupplierAdminController::class, 'deactivate']);
+            Route::post('/suppliers/{supplier}/publish', [SupplierAdminController::class, 'publish']);
+            Route::post('/suppliers/{supplier}/unpublish', [SupplierAdminController::class, 'unpublish']);
+            Route::post('/suppliers/{supplier}/approve', [SupplierLifecycleController::class, 'approve']);
+            Route::post('/suppliers/{supplier}/reject', [SupplierLifecycleController::class, 'reject']);
+            Route::post('/suppliers/{supplier}/suspend', [SupplierLifecycleController::class, 'suspend']);
+            Route::post('/suppliers/{supplier}/block', [SupplierLifecycleController::class, 'block']);
+            Route::post('/suppliers/{supplier}/request-changes', [SupplierLifecycleController::class, 'requestChanges']);
+            Route::post('/suppliers/{supplier}/verify', [SupplierLifecycleController::class, 'verify']);
+            Route::put('/suppliers/{supplier}/locked-fields', [SupplierLifecycleController::class, 'lockFields']);
 
-        Route::get('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'index']);
-        Route::post('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'store']);
-        Route::put('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'update']);
-        Route::delete('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'destroy']);
+            Route::get('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'index']);
+            Route::post('/suppliers/{supplier}/contacts', [SupplierContactController::class, 'store']);
+            Route::put('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'update']);
+            Route::delete('/suppliers/{supplier}/contacts/{contact}', [SupplierContactController::class, 'destroy']);
 
-        Route::get('/suppliers/{supplier}/services/export', [SupplierServiceController::class, 'export']);
-        Route::post('/suppliers/{supplier}/services/import', [SupplierServiceController::class, 'import']);
-        Route::get('/suppliers/{supplier}/services', [SupplierServiceController::class, 'index']);
-        Route::post('/suppliers/{supplier}/services', [SupplierServiceController::class, 'store']);
-        Route::put('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'update']);
-        Route::delete('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'destroy']);
-        Route::post('/suppliers/{supplier}/services/{service}/duplicate', [SupplierServiceController::class, 'duplicate']);
-        Route::post('/suppliers/{supplier}/services/{service}/archive', [SupplierServiceController::class, 'archive']);
+            Route::get('/suppliers/{supplier}/services/export', [SupplierServiceController::class, 'export']);
+            Route::post('/suppliers/{supplier}/services/import', [SupplierServiceController::class, 'import']);
+            Route::get('/suppliers/{supplier}/services', [SupplierServiceController::class, 'index']);
+            Route::post('/suppliers/{supplier}/services', [SupplierServiceController::class, 'store']);
+            Route::put('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'update']);
+            Route::delete('/suppliers/{supplier}/services/{service}', [SupplierServiceController::class, 'destroy']);
+            Route::post('/suppliers/{supplier}/services/{service}/duplicate', [SupplierServiceController::class, 'duplicate']);
+            Route::post('/suppliers/{supplier}/services/{service}/archive', [SupplierServiceController::class, 'archive']);
 
-        Route::get('/suppliers/{supplier}/products/export', [SupplierProductAdminController::class, 'export']);
-        Route::post('/suppliers/{supplier}/products/import', [SupplierProductAdminController::class, 'import']);
-        Route::get('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'index']);
-        Route::post('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'store']);
-        Route::put('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'update']);
-        Route::delete('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'destroy']);
-        Route::post('/suppliers/{supplier}/products/{product}/duplicate', [SupplierProductAdminController::class, 'duplicate']);
-        Route::post('/suppliers/{supplier}/products/{product}/archive', [SupplierProductAdminController::class, 'archive']);
+            Route::get('/suppliers/{supplier}/products/export', [SupplierProductAdminController::class, 'export']);
+            Route::post('/suppliers/{supplier}/products/import', [SupplierProductAdminController::class, 'import']);
+            Route::get('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'index']);
+            Route::post('/suppliers/{supplier}/products', [SupplierProductAdminController::class, 'store']);
+            Route::put('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'update']);
+            Route::delete('/suppliers/{supplier}/products/{product}', [SupplierProductAdminController::class, 'destroy']);
+            Route::post('/suppliers/{supplier}/products/{product}/duplicate', [SupplierProductAdminController::class, 'duplicate']);
+            Route::post('/suppliers/{supplier}/products/{product}/archive', [SupplierProductAdminController::class, 'archive']);
 
-        Route::get('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'index']);
-        Route::post('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'store']);
-        Route::put('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'update']);
-        Route::delete('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'destroy']);
+            Route::get('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'index']);
+            Route::post('/suppliers/{supplier}/portfolio', [SupplierPortfolioAdminController::class, 'store']);
+            Route::put('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'update']);
+            Route::delete('/suppliers/{supplier}/portfolio/{item}', [SupplierPortfolioAdminController::class, 'destroy']);
 
-        Route::get('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
-        Route::post('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
-        Route::get('/suppliers/{supplier}/documents/{document}/download', [SupplierDocumentController::class, 'download']);
-        Route::delete('/suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
+            Route::get('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
+            Route::post('/suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
+            Route::get('/suppliers/{supplier}/documents/{document}/download', [SupplierDocumentController::class, 'download']);
+            Route::delete('/suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
 
-        Route::get('/supplier-categories', [SupplierCategoryController::class, 'index']);
-        Route::post('/supplier-categories', [SupplierCategoryController::class, 'store']);
-        Route::put('/supplier-categories/{category}', [SupplierCategoryController::class, 'update']);
-        Route::delete('/supplier-categories/{category}', [SupplierCategoryController::class, 'destroy']);
+            Route::get('/supplier-categories', [SupplierCategoryController::class, 'index']);
+            Route::post('/supplier-categories', [SupplierCategoryController::class, 'store']);
+            Route::put('/supplier-categories/{category}', [SupplierCategoryController::class, 'update']);
+            Route::delete('/supplier-categories/{category}', [SupplierCategoryController::class, 'destroy']);
 
-        Route::get('/tags', [SupplierTagController::class, 'index']);
-        Route::post('/tags', [SupplierTagController::class, 'store']);
-        Route::put('/tags/{tag}', [SupplierTagController::class, 'update']);
-        Route::delete('/tags/{tag}', [SupplierTagController::class, 'destroy']);
+            Route::get('/tags', [SupplierTagController::class, 'index']);
+            Route::post('/tags', [SupplierTagController::class, 'store']);
+            Route::put('/tags/{tag}', [SupplierTagController::class, 'update']);
+            Route::delete('/tags/{tag}', [SupplierTagController::class, 'destroy']);
 
-        Route::get('/supplier-reviews', [SupplierReviewController::class, 'index']);
-        Route::post('/supplier-reviews/{type}/{id}/approve-publish', [SupplierReviewController::class, 'approvePublish']);
-        Route::post('/supplier-reviews/{type}/{id}/reject', [SupplierReviewController::class, 'reject']);
-        Route::post('/supplier-reviews/{type}/{id}/request-changes', [SupplierReviewController::class, 'requestChanges']);
+            Route::get('/supplier-reviews', [SupplierReviewController::class, 'index']);
+            Route::post('/supplier-reviews/{type}/{id}/approve-publish', [SupplierReviewController::class, 'approvePublish']);
+            Route::post('/supplier-reviews/{type}/{id}/reject', [SupplierReviewController::class, 'reject']);
+            Route::post('/supplier-reviews/{type}/{id}/request-changes', [SupplierReviewController::class, 'requestChanges']);
+        });
     });
 
-    Route::middleware('role:OWNER,ADMIN_MANAGER,PRINTING_SPECIALIST')->group(function (): void {
+    Route::middleware(['role:OWNER,ADMIN_MANAGER,PRINTING_SPECIALIST', 'dashboard.module:printing'])->group(function (): void {
         Route::get('/printing-requests', [AdminPrintingRequestController::class, 'index']);
         Route::get('/printing-requests/{printing_request}', [AdminPrintingRequestController::class, 'show']);
         Route::get('/printing-requests/{printing_request}/file', [AdminPrintingRequestController::class, 'file']);

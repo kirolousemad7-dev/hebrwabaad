@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'title',
     'description',
     'project_id',
+    'phase_id',
+    'milestone_id',
     'department_id',
     'order_item_id',
     'supplier_id',
@@ -44,6 +46,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'google_sync_version',
     'google_sync_enabled',
     'calendar_item_id',
+    'is_client_visible',
 ])]
 class Task extends Model
 {
@@ -66,6 +69,7 @@ class Task extends Model
             'google_synced_at' => 'datetime',
             'google_sync_version' => 'integer',
             'google_sync_enabled' => 'boolean',
+            'is_client_visible' => 'boolean',
         ];
     }
 
@@ -75,6 +79,22 @@ class Task extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * @return BelongsTo<ProjectPhase, $this>
+     */
+    public function phase(): BelongsTo
+    {
+        return $this->belongsTo(ProjectPhase::class, 'phase_id');
+    }
+
+    /**
+     * @return BelongsTo<ProjectMilestone, $this>
+     */
+    public function milestone(): BelongsTo
+    {
+        return $this->belongsTo(ProjectMilestone::class, 'milestone_id');
     }
 
     /**

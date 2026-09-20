@@ -331,7 +331,36 @@ export function OwnerSupplierDetailPage() {
       ) : null}
 
       {tab === 'المعرض' ? (
-        <ul className="space-y-2">{portfolio.map((item) => <li key={String(item.id)} className="rounded-xl border bg-white p-3">{String(item.title)} · {String(item.status)} · {String(item.visibility ?? '—')} · {String(item.client_type ?? '')}</li>)}</ul>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            الأعمال السابقة للمورد. ارفع صور المعرض لكل عمل عبر طبقة الوسائط الموحدة.
+          </p>
+          {portfolio.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+              لا توجد أعمال سابقة بعد.
+            </p>
+          ) : (
+            portfolio.map((item) => (
+              <div key={String(item.id)} className="space-y-3 rounded-2xl border bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-medium text-slate-900">{String(item.title)}</h3>
+                    <p className="text-xs text-slate-500">
+                      {String(item.status)} · {String(item.visibility ?? '—')} · {String(item.client_type ?? '')}
+                    </p>
+                  </div>
+                </div>
+                <MediaUploader
+                  entityType="supplier_portfolio_item"
+                  entityId={Number(item.id)}
+                  title="صور العمل السابق"
+                  visibility="SUPPLIER"
+                />
+              </div>
+            ))
+          )}
+          <MediaUploader entityType="supplier" entityId={supplierId} title="صور ملف المورد (شعار / غلاف)" visibility="SUPPLIER" />
+        </div>
       ) : null}
       {tab === 'المنتجات' ? (
         <div className="grid gap-4">

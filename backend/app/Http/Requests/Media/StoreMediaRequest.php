@@ -32,6 +32,8 @@ class StoreMediaRequest extends FormRequest
             'entity_type' => ['required', 'string', Rule::in($registry->keys())],
             'entity_id' => ['required', 'integer', 'min:1'],
             'visibility' => ['nullable', 'string', Rule::in(MediaVisibility::values())],
+            'collection' => ['nullable', 'string', 'max:64'],
+            'is_primary' => ['nullable', 'boolean'],
             'metadata' => ['nullable', 'array'],
         ];
     }

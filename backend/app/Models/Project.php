@@ -14,7 +14,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
-#[Fillable(['title', 'description', 'customer_id', 'account_manager_id', 'status', 'started_at', 'deadline'])]
+#[Fillable([
+    'title',
+    'description',
+    'brief',
+    'client_profile',
+    'requirements',
+    'scope',
+    'customer_id',
+    'account_manager_id',
+    'status',
+    'started_at',
+    'deadline',
+])]
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
@@ -29,6 +41,10 @@ class Project extends Model
             'status' => ProjectStatus::class,
             'started_at' => 'date',
             'deadline' => 'date',
+            'brief' => 'array',
+            'client_profile' => 'array',
+            'requirements' => 'array',
+            'scope' => 'array',
         ];
     }
 
@@ -83,6 +99,30 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<ProjectPhase, $this>
+     */
+    public function phases(): HasMany
+    {
+        return $this->hasMany(ProjectPhase::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<ProjectMilestone, $this>
+     */
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(ProjectMilestone::class);
+    }
+
+    /**
+     * @return HasMany<ProjectReference, $this>
+     */
+    public function references(): HasMany
+    {
+        return $this->hasMany(ProjectReference::class);
+    }
+
+    /**
      * @return HasMany<Order, $this>
      */
     public function orders(): HasMany
@@ -109,8 +149,34 @@ class Project extends Model
     /**
      * @return array{total: int, todo: int, in_progress: int, review: int, revision: int, completed: int, overdue: int, percent: float}
      */
-    public function progress(): array
+    public function progress(bool $clientVisibleOnly = false): array
     {
+        if ($clientVisibleOnly) {
+            $base = $this->tasks()->where('is_client_visible', true);
+            $total = (clone $base)->count();
+            $todo = (clone $base)->where('status', TaskStatus::Todo->value)->count();
+            $inProgress = (clone $base)->where('status', TaskStatus::InProgress->value)->count();
+            $review = (clone $base)->where('status', TaskStatus::Review->value)->count();
+            $revision = (clone $base)->where('status', TaskStatus::Revision->value)->count();
+            $completed = (clone $base)->where('status', TaskStatus::Completed->value)->count();
+            $overdue = (clone $base)
+                ->where('status', '!=', TaskStatus::Completed->value)
+                ->whereNotNull('deadline')
+                ->whereDate('deadline', '<', now()->toDateString())
+                ->count();
+
+            return [
+                'total' => $total,
+                'todo' => $todo,
+                'in_progress' => $inProgress,
+                'review' => $review,
+                'revision' => $revision,
+                'completed' => $completed,
+                'overdue' => $overdue,
+                'percent' => $total === 0 ? 0.0 : round(($completed / $total) * 100, 1),
+            ];
+        }
+
         $total = (int) ($this->tasks_count ?? $this->tasks()->count());
         $todo = (int) ($this->todo_tasks_count ?? $this->tasks()->where('status', TaskStatus::Todo->value)->count());
         $inProgress = (int) ($this->in_progress_tasks_count ?? $this->tasks()->where('status', TaskStatus::InProgress->value)->count());

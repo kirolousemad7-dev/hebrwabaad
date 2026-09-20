@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ContentStatus;
 use App\Enums\SupplierVisibility;
+use App\Models\Concerns\HasMedia;
 use Database\Factories\SupplierPortfolioItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,7 +41,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SupplierPortfolioItem extends Model
 {
     /** @use HasFactory<SupplierPortfolioItemFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasMedia, SoftDeletes;
 
     /**
      * @var array<string, mixed>

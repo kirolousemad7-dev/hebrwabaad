@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Media;
 
 use App\Enums\MediaVisibility;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Media\ReorderMediaRequest;
 use App\Http\Requests\Media\StoreMediaRequest;
 use App\Http\Requests\Media\UpdateMediaRequest;
 use App\Http\Resources\MediaResource;
@@ -58,7 +59,7 @@ class MediaController extends Controller
         $item = $this->mediaService->store(
             $request->user(),
             $request->file('file'),
-            $request->safe()->only(['entity_type', 'entity_id', 'visibility', 'metadata']),
+            $request->safe()->only(['entity_type', 'entity_id', 'visibility', 'metadata', 'collection', 'is_primary']),
         );
 
         return ApiResponse::success(MediaResource::make($item)->resolve($request), 201);
@@ -82,16 +83,43 @@ class MediaController extends Controller
                 $request->user(),
                 $media,
                 $request->file('file'),
-                $request->safe()->only(['visibility', 'metadata']),
+                $request->safe()->only(['visibility', 'metadata', 'collection', 'sort_order', 'is_primary']),
             );
         } else {
             $item = $this->mediaService->updateMeta(
                 $media,
-                $request->safe()->only(['visibility', 'metadata']),
+                $request->safe()->only(['visibility', 'metadata', 'collection', 'sort_order', 'is_primary']),
             );
         }
 
         return ApiResponse::success(MediaResource::make($item)->resolve($request));
+    }
+
+    public function setPrimary(Request $request, Media $media): JsonResponse
+    {
+        $this->authorize('update', $media);
+
+        $item = $this->mediaService->setPrimary($media);
+
+        return ApiResponse::success(MediaResource::make($item)->resolve($request));
+    }
+
+    public function reorder(ReorderMediaRequest $request): JsonResponse
+    {
+        $this->authorize('create', Media::class);
+
+        $validated = $request->validated();
+        $items = $this->mediaService->reorder(
+            $request->user(),
+            (string) $validated['entity_type'],
+            (int) $validated['entity_id'],
+            $validated['ordered_ids'],
+            (string) ($validated['collection'] ?? 'default'),
+        );
+
+        return ApiResponse::success([
+            'items' => MediaResource::collection($items)->resolve($request),
+        ]);
     }
 
     public function duplicate(Request $request, Media $media): JsonResponse

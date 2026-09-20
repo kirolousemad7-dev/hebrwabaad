@@ -39,10 +39,12 @@ import { SectorsPage } from '../pages/SectorsPage'
 import { SectorDetailPage } from '../pages/SectorDetailPage'
 import { ServiceDetailPage } from '../pages/ServiceDetailPage'
 import { LoginPage } from '../pages/LoginPage'
+import { GoogleAuthCallbackPage } from '../pages/GoogleAuthCallbackPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '../pages/ResetPasswordPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { OwnerEmployeesPage } from '../pages/owner/OwnerEmployeesPage'
+import { OwnerRoleDashboardAccessPage } from '../pages/owner/OwnerRoleDashboardAccessPage'
 import { OwnerFilesPage } from '../pages/owner/OwnerFilesPage'
 import { OwnerCalendarPage } from '../pages/owner/OwnerCalendarPage'
 import { OwnerHomePage } from '../pages/owner/OwnerHomePage'
@@ -234,6 +236,7 @@ export function AppRoutes() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
+        <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />
       </Route>
 
       <Route path="/q/:token" element={<PublicPrintingQuotePage />} />
@@ -323,6 +326,7 @@ export function AppRoutes() {
           <Route path="/owner" element={<OwnerHomePage />} />
           <Route path="/owner/calendar" element={<OwnerCalendarPage />} />
           <Route path="/owner/employees" element={<OwnerEmployeesPage />} />
+          <Route path="/owner/role-dashboard-access" element={<OwnerRoleDashboardAccessPage />} />
           <Route path="/owner/orders" element={<OwnerOrdersPage />} />
           <Route path="/owner/orders/:orderId" element={<OwnerOrderDetailPage />} />
           <Route path="/owner/payments" element={<OwnerPaymentsPage />} />

@@ -8,6 +8,7 @@ import {
   formatMediaSize,
   listEntityMedia,
   previewMedia,
+  setPrimaryMedia,
   uploadMedia,
   type MediaEntityType,
   type MediaItem,
@@ -226,6 +227,20 @@ export function MediaUploader({
     }
   }
 
+  async function onSetPrimary(item: MediaItem) {
+    if (!canManage || busyId || item.is_primary) return
+    setBusyId(item.id)
+    try {
+      await setPrimaryMedia(item.id)
+      setNotice('تم تعيين الصورة الأساسية.')
+      await reload()
+    } catch (caught) {
+      setError(describeApiError(caught, 'تعذر تعيين الصورة الأساسية.'))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -327,7 +342,14 @@ export function MediaUploader({
           items.map((item) => (
             <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm">
               <div className="min-w-0">
-                <p className="truncate font-medium text-slate-900">{item.original_name}</p>
+                <p className="truncate font-medium text-slate-900">
+                  {item.original_name}
+                  {item.is_primary ? (
+                    <span className="ms-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800">
+                      أساسي
+                    </span>
+                  ) : null}
+                </p>
                 <p className="text-xs text-slate-500">
                   {formatMediaSize(item.size)} · {item.visibility}
                   {item.is_image && item.metadata?.width ? ` · ${String(item.metadata.width)}×${String(item.metadata.height)}` : ''}
@@ -345,6 +367,11 @@ export function MediaUploader({
                 </button>
                 {canManage ? (
                   <>
+                    {item.is_image && !item.is_primary ? (
+                      <button type="button" className="underline" disabled={busyId === item.id} onClick={() => void onSetPrimary(item)}>
+                        تعيين كأساسي
+                      </button>
+                    ) : null}
                     <button type="button" className="underline" disabled={busyId === item.id} onClick={() => void onDuplicate(item)}>
                       نسخ
                     </button>

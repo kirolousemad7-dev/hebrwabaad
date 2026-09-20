@@ -19,6 +19,8 @@ class TaskResource extends JsonResource
         return [
             'id' => $this->id,
             'project_id' => $this->project_id,
+            'phase_id' => $this->phase_id,
+            'milestone_id' => $this->milestone_id,
             'title' => $this->title,
             'description' => $this->description,
             'priority' => $this->priority?->value ?? $this->priority,
@@ -30,6 +32,7 @@ class TaskResource extends JsonResource
             'location' => $this->location,
             'supplier_id' => $this->supplier_id,
             'calendar_item_id' => $this->calendar_item_id,
+            'is_client_visible' => (bool) $this->is_client_visible,
             'is_overdue' => $this->isOverdue(),
             'assigned_to' => $this->assigned_to,
             'created_by' => $this->created_by,

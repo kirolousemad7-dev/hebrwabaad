@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../../components/brand/BrandLogo'
+import { ContinueWithGoogleButton } from '../../components/auth/ContinueWithGoogleButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { useAuth } from '../../context/AuthContext'
 import { persistSession } from '../../services/auth'
@@ -81,6 +82,10 @@ export function SupplierRegisterPage() {
           </>
         ) : null}
         <button type="submit" disabled={loading} className="min-h-11 rounded-xl bg-slate-900 text-sm text-white disabled:opacity-60">إرسال الطلب</button>
+        <div className="relative py-1 text-center text-xs text-slate-400">
+          <span className="bg-white px-2">أو</span>
+        </div>
+        <ContinueWithGoogleButton intent="supplier" next="/supplier" />
         <p className="text-center text-sm">لديك حساب؟ <Link className="underline" to="/supplier/login">تسجيل دخول المورد</Link></p>
       </form>
     </section>

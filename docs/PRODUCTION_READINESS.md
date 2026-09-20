@@ -1,11 +1,11 @@
 # HEBR & ABAAD — Production Readiness Report
 
-**Updated:** 2026-09-18 (production hardening + invoices)  
-**Verification:** `php artisan test` — **722 passed**; frontend `tsc -b` + `vite build` — **passed**.
+**Updated:** 2026-09-18 (Google OAuth / Continue with Google)  
+**Verification:** run `php artisan test`, frontend `tsc -b`, `npm run build` after deploy.  
 
-**Overall verdict:** Core RED invoice blocker is cleared. The platform is **conditionally production-ready** when operators configure real mail, S3-compatible storage, and set secrets in the host (Render/dashboard). Remaining items below are **YELLOW operational requirements**, not missing product modules.
+**Overall verdict:** Core RED invoice blocker is cleared. Google sign-in is implemented in code (Sanctum Bearer exchange). **Code is ready, but Google Cloud Console credentials/redirect configuration must be verified manually.** Remaining items below are **YELLOW operational requirements**, not missing product modules.
 
-Do not claim “unconditionally production ready” until mail + durable storage credentials are live in the target environment.
+Do not claim “unconditionally production ready” until mail + durable storage credentials are live in the target environment, and Google OAuth client redirect URIs match the live API route.
 
 ---
 
@@ -23,7 +23,7 @@ Do not claim “unconditionally production ready” until mail + durable storage
 
 | Module | Status |
 |--------|--------|
-| Authentication | **GREEN** (Sanctum PAT + configurable TTL) |
+| Authentication | **GREEN** (Sanctum PAT + configurable TTL + Google OAuth exchange) |
 | Authorization | **GREEN** |
 | Owner / Employees / CRM | **GREEN** |
 | Suppliers / portal / registration | **GREEN** |
@@ -118,10 +118,63 @@ Do not claim “unconditionally production ready” until mail + durable storage
   - Optional R2/compatible: `AWS_ENDPOINT`, `AWS_URL`, `AWS_USE_PATH_STYLE_ENDPOINT`
 
 ### Optional integrations
-- `GOOGLE_*`, `ZOOM_*`, `PAYTABS_*`, `SMS_*`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI` — Calendar connect callback (`/api/google-calendar/callback`)
+- `GOOGLE_AUTH_REDIRECT_URI` — Continue with Google (`/api/auth/google/callback`)
+- `ZOOM_*`, `PAYTABS_*`, `SMS_*`
 
 ### Deploy flags
 - `RUN_DB_SEED=false` after first boot
+
+---
+
+## Google OAuth (Continue with Google)
+
+**Implemented in code.** Operators must configure Google Cloud Console before the button works in production.
+
+### Application routes (actual)
+| Step | Method | Path |
+|------|--------|------|
+| Status | `GET` | `/api/auth/google/status` |
+| Start | `GET` | `/api/auth/google/redirect?intent=login\|register\|supplier` |
+| Google → API | `GET` | `/api/auth/google/callback` |
+| SPA exchange | `POST` | `/api/auth/google/exchange` `{ code }` |
+| Frontend finish | page | `/auth/google/callback` |
+
+Production examples (must match Console + env):
+- API callback: `https://api.hebrwabaad.com/api/auth/google/callback`
+- Frontend origin: `https://hebrwabaad.com`
+- Frontend callback page: `https://hebrwabaad.com/auth/google/callback` (SPA route; not registered in Google Console)
+
+### Env
+```
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=https://api.hebrwabaad.com/api/google-calendar/callback
+GOOGLE_AUTH_REDIRECT_URI=https://api.hebrwabaad.com/api/auth/google/callback
+FRONTEND_URL=https://hebrwabaad.com
+APP_URL=https://api.hebrwabaad.com
+```
+
+### Google Cloud Console checklist
+1. Create OAuth 2.0 Client ID (Web application).
+2. Authorized JavaScript origins:
+   - `https://hebrwabaad.com`
+   - `http://localhost:5173` (local Vite)
+3. Authorized redirect URIs (exact):
+   - `https://api.hebrwabaad.com/api/auth/google/callback`
+   - `https://api.hebrwabaad.com/api/google-calendar/callback` (if Calendar connect is used)
+   - local: `http://127.0.0.1:8000/api/auth/google/callback` (or your `APP_URL`)
+4. Copy Client ID/Secret into host env; never commit secrets.
+5. Confirm `GET /api/auth/google/status` returns `configured: true`.
+
+### Behaviour
+- New Google email + `login`/`register` intent → Customer + `email_verified_at`
+- `supplier` intent → Supplier user + Pending supplier profile (approval unchanged)
+- Existing email → link `oauth_accounts` row; no duplicate user
+- Never creates Owner/Admin via Google
+- Inactive / Blocked / Rejected / Suspended supplier → denied
+- Google tokens stay server-side; SPA receives one-time exchange code → Sanctum Bearer token
 
 ---
 
@@ -153,13 +206,14 @@ Includes: reminders, digests, webhooks, printing/commercial/supplier quote expir
 - Token TTL via `SANCTUM_TOKEN_EXPIRATION_MINUTES`.
 - Frontend stores token in `localStorage`; clears on logout and HTTP 401.
 - Cookie SPA auth not enabled (`SANCTUM_STATEFUL_DOMAINS` empty).
+- Google OAuth: browser hits API redirect → Google → API callback → redirect to SPA `/auth/google/callback` with one-time code → `POST /api/auth/google/exchange` → Bearer token.
 
 ## Deployment steps
-1. Set all production env vars (mail, queue, storage, CORS, APP_DEBUG=false).
+1. Set all production env vars (mail, queue, storage, CORS, APP_DEBUG=false, Google OAuth).
 2. Build frontend: `npm run build`; deploy static with SPA fallback.
 3. Deploy API Docker image (`backend/Dockerfile` → `scripts/render-start.sh`).
 4. Start script runs: migrate, caches, `schedule:work`, `queue:work`, `artisan serve`.
-5. Confirm `GET /api/health`, `php artisan schedule:list`, send a test invoice email.
+5. Confirm `GET /api/health`, `GET /api/auth/google/status`, `php artisan schedule:list`, send a test invoice email.
 6. Disable `RUN_DB_SEED`.
 
 ## Rollback considerations
@@ -179,6 +233,7 @@ Includes: reminders, digests, webhooks, printing/commercial/supplier quote expir
 4. `User.role` / `is_active` remain fillable (defense-in-depth).
 5. Supplier email/phone/OTP remain supplier-only by product scope.
 6. HTTPS termination depends on host (Render terminates TLS).
+7. Google Cloud Console OAuth client + `GOOGLE_*` env must be verified manually before “Continue with Google” works in prod.
 
 ---
 
@@ -189,5 +244,6 @@ Includes: reminders, digests, webhooks, printing/commercial/supplier quote expir
 - [ ] `FILESYSTEM_DISK=s3` + AWS/R2 secrets
 - [ ] `CORS_ALLOWED_ORIGINS` exact
 - [ ] `SANCTUM_TOKEN_EXPIRATION_MINUTES` set
+- [ ] `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_AUTH_REDIRECT_URI` set and Console redirect URI exact-match
 - [ ] `RUN_DB_SEED=false`
-- [ ] Smoke: login, create/issue/send invoice, customer view, supplier doc upload/download
+- [ ] Smoke: login, Google login, create/issue/send invoice, customer view, supplier doc upload/download

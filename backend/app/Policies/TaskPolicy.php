@@ -57,6 +57,11 @@ class TaskPolicy
             return false;
         }
 
+        $role = $user->role;
+        if ($role === UserRole::Owner) {
+            return true;
+        }
+
         if ($task->created_by === $user->id) {
             return true;
         }

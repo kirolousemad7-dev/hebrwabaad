@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   createService,
@@ -554,12 +555,15 @@ export function OwnerServicesPage() {
                 <input value={form.supplier_ids} onChange={(event) => patch({ supplier_ids: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
               </label>
               {form.id ? (
-                <p className="text-xs text-slate-500">
-                  الصفحة العامة:{' '}
-                  <a className="underline" href={`/services/${form.slug}`} target="_blank" rel="noreferrer">
-                    /services/{form.slug}
-                  </a>
-                </p>
+                <>
+                  <MediaUploader entityType="service" entityId={form.id} title="معرض صور الخدمة" visibility="PUBLIC" />
+                  <p className="text-xs text-slate-500">
+                    الصفحة العامة:{' '}
+                    <a className="underline" href={`/services/${form.slug}`} target="_blank" rel="noreferrer">
+                      /services/{form.slug}
+                    </a>
+                  </p>
+                </>
               ) : null}
             </div>
           ) : null}

@@ -7,11 +7,14 @@ use App\Models\CommercialQuotation;
 use App\Models\CrmCompany;
 use App\Models\Invoice;
 use App\Models\Meeting;
+use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
+use App\Models\PrintingProduct;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\Supplier;
+use App\Models\SupplierPortfolioItem;
 use App\Models\SupplierProduct;
 use App\Models\Task;
 use App\Models\User;
@@ -21,6 +24,9 @@ use Illuminate\Validation\ValidationException;
 class MediaEntityRegistry
 {
     /**
+     * Existing platform entities that can attach reusable Media rows.
+     * Keys are morph aliases (and API entity_type values).
+     *
      * @var array<string, class-string<Model>>
      */
     public const MAP = [
@@ -28,7 +34,10 @@ class MediaEntityRegistry
         'company' => CrmCompany::class,
         'supplier' => Supplier::class,
         'product' => SupplierProduct::class,
+        'supplier_portfolio_item' => SupplierPortfolioItem::class,
         'service' => Service::class,
+        'package' => Package::class,
+        'printing_product' => PrintingProduct::class,
         'portfolio' => PortfolioItem::class,
         'project' => Project::class,
         'task' => Task::class,

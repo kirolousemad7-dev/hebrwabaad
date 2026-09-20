@@ -26,6 +26,9 @@ class UpdateMediaRequest extends FormRequest
                 File::types(MediaService::ALLOWED_EXTENSIONS)->max(MediaService::MAX_KILOBYTES),
             ],
             'visibility' => ['nullable', 'string', Rule::in(MediaVisibility::values())],
+            'collection' => ['nullable', 'string', 'max:64'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_primary' => ['nullable', 'boolean'],
             'metadata' => ['nullable', 'array'],
         ];
     }

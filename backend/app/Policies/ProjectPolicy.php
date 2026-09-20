@@ -29,6 +29,10 @@ class ProjectPolicy
             return true;
         }
 
+        if ($project->members()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
         if (! $role->canReceiveAssignedTasks()) {
             return false;
         }
@@ -43,7 +47,17 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        return $this->create($user) && $project->account_manager_id === $user->id;
+        $role = $user->role;
+
+        if (! $role instanceof UserRole || ! $user->is_active) {
+            return false;
+        }
+
+        if ($role === UserRole::Owner) {
+            return true;
+        }
+
+        return $role->canManageProjects() && $project->account_manager_id === $user->id;
     }
 
     public function manageMembers(User $user, Project $project): bool

@@ -42,12 +42,14 @@ class CustomerDashboardTest extends TestCase
             'status' => TaskStatus::Completed,
             'assigned_to' => User::factory()->webDeveloper(),
             'created_by' => $manager->id,
+            'is_client_visible' => true,
         ]);
         Task::factory()->create([
             'project_id' => $project->id,
             'status' => TaskStatus::InProgress,
             'assigned_to' => User::factory()->graphicDesigner(),
             'created_by' => $manager->id,
+            'is_client_visible' => true,
         ]);
         PrintingRequest::factory()->create([
             'user_id' => $customer->id,

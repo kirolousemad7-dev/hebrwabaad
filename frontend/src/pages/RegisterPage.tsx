@@ -2,6 +2,7 @@ import { FeedbackBanner } from '../components/ui/FeedbackBanner'
 import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../components/brand/BrandLogo'
+import { ContinueWithGoogleButton } from '../components/auth/ContinueWithGoogleButton'
 import { useAuth } from '../context/AuthContext'
 import { ApiRequestError } from '../services/api'
 
@@ -128,6 +129,10 @@ export function RegisterPage() {
         >
           {loading ? 'جاري الإنشاء...' : 'تسجيل'}
         </button>
+        <div className="relative py-1 text-center text-xs text-slate-400">
+          <span className="bg-white px-2">أو</span>
+        </div>
+        <ContinueWithGoogleButton intent="register" next="/dashboard" />
       </form>
       <p className="text-center text-sm text-slate-600">
         لديك حساب؟ <Link to="/login" className="underline">تسجيل الدخول</Link>

@@ -1,3 +1,6 @@
+import type { DashboardAccessMap } from './dashboardAccess'
+import { canAccessDashboardPath } from './dashboardAccess'
+
 export type DashboardIconName =
   | 'home'
   | 'services'
@@ -125,6 +128,12 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
     items: [
       { to: '/owner/employees', label: 'المستخدمون', icon: 'employees', roles: ['OWNER'] },
       {
+        to: '/owner/role-dashboard-access',
+        label: 'صلاحيات لوحة التحكم',
+        icon: 'employees',
+        roles: ['OWNER'],
+      },
+      {
         to: '/owner/integrations/webhooks',
         label: 'التكاملات',
         icon: 'messages',
@@ -167,16 +176,25 @@ function itemVisibleToRole(item: DashboardNavItem, role: string | undefined): bo
   return role !== undefined && item.roles.includes(role)
 }
 
-export function ownerNavSectionsForRole(role: string | undefined): DashboardNavSection[] {
+export function ownerNavSectionsForRole(
+  role: string | undefined,
+  dashboardAccess?: DashboardAccessMap | null,
+): DashboardNavSection[] {
   return OWNER_NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => itemVisibleToRole(item, role)),
+    items: section.items.filter(
+      (item) =>
+        itemVisibleToRole(item, role) && canAccessDashboardPath(role, dashboardAccess, item.to),
+    ),
   })).filter((section) => section.items.length > 0)
 }
 
 /** Flat list derived from grouped nav (used by existing tests and printing specialist fallbacks). */
-export function ownerNavForRole(role: string | undefined): DashboardNavItem[] {
-  return ownerNavSectionsForRole(role).flatMap((section) => section.items)
+export function ownerNavForRole(
+  role: string | undefined,
+  dashboardAccess?: DashboardAccessMap | null,
+): DashboardNavItem[] {
+  return ownerNavSectionsForRole(role, dashboardAccess).flatMap((section) => section.items)
 }
 
 export const PRINTING_SPECIALIST_NAV: DashboardNavItem[] = [

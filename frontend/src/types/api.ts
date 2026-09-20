@@ -21,11 +21,14 @@ export type AuthUser = {
   role: string
   is_active?: boolean
   workspace?: string | null
+  /** Staff-only effective Role → Dashboard module map from /api/auth/me. */
+  dashboard_access?: Record<string, boolean>
 }
 
 export type AuthPayload = {
   user: AuthUser
   token: string
+  next?: string | null
 }
 
 export const SERVICE_CATEGORIES = [
@@ -324,6 +327,34 @@ export type CustomerProject = {
     status_key: string
     status_label: string
   }>
+  current_phase?: { id: number; title: string; status: string; starts_at: string | null; ends_at: string | null } | null
+  phases?: Array<{ id: number; title: string; status: string; starts_at: string | null; ends_at: string | null }>
+  completed_milestones?: Array<{ id: number; title: string; status: string; due_date: string | null; phase_id: number | null }>
+  upcoming_milestones?: Array<{ id: number; title: string; status: string; due_date: string | null; phase_id: number | null }>
+  next_milestone?: { id: number; title: string; status: string; due_date: string | null; phase_id: number | null } | null
+  client_action_items?: Array<{ id: number; title: string; status: string; deadline: string | null }>
+  references?: Array<{
+    id: number
+    title: string
+    description: string | null
+    url: string | null
+    type: string
+    is_client_visible: boolean
+  }>
+  deliverables?: Array<{
+    source: string
+    id: string
+    name: string
+    quantity: number
+    status_key: string
+    status_label: string
+    task_id: number | null
+    is_client_visible: boolean
+    requires_customer_approval: boolean
+    url: string | null
+  }>
+  client_profile?: Record<string, unknown>
+  brief?: Record<string, unknown>
   created_at: string | null
   updated_at: string | null
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import {
   DashboardErrorState,
   DashboardPanelSkeleton,
@@ -281,6 +282,16 @@ export function OwnerPrintingCatalogPage() {
               </button>
             ) : null}
           </div>
+          {editingId ? (
+            <div className="lg:col-span-2">
+              <MediaUploader
+                entityType="printing_product"
+                entityId={editingId}
+                title="صور منتج الطباعة"
+                visibility="PUBLIC"
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="overflow-x-auto">

@@ -35,8 +35,9 @@ describe('owner grouped navigation', () => {
     const ids = sections.map((section) => section.id)
     expect(ids).toEqual(['dashboard', 'crm', 'operations', 'suppliers', 'catalog', 'content', 'reports', 'settings'])
     expect(sections.every((section) => section.items.length > 0)).toBe(true)
-    expect(ownerNavForRole('OWNER').some((item) => item.to.includes('invoice'))).toBe(false)
-    expect(ownerNavForRole('OWNER').some((item) => item.label.includes('صلاحيات'))).toBe(false)
+    expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/invoices')).toBe(true)
+    expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/role-dashboard-access')).toBe(true)
+    expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/roles-matrix')).toBe(false)
   })
 
   it('distinguishes settings deep-links by query tab', () => {

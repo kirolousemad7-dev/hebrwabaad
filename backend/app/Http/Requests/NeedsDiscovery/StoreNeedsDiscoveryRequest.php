@@ -54,7 +54,7 @@ class StoreNeedsDiscoveryRequest extends FormRequest
         $validator->after(function ($validator): void {
             $phone = $this->input('phone');
             $email = $this->input('email');
-            if ((!$phone || trim((string) $phone) === '') && (!$email || trim((string) $email) === '')) {
+            if ((! $phone || trim((string) $phone) === '') && (! $email || trim((string) $email) === '')) {
                 $validator->errors()->add('phone', 'Phone or email is required.');
             }
         });

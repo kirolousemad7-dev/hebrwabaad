@@ -216,6 +216,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<OAuthAccount, $this>
+     */
+    public function oauthAccounts(): HasMany
+    {
+        return $this->hasMany(OAuthAccount::class);
+    }
+
+    /**
      * @return HasOne<GoogleCalendarConnection, $this>
      */
     public function googleCalendarConnection(): HasOne

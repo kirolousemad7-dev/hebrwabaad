@@ -10,7 +10,7 @@ export function PrintingOperationsLayout() {
   return (
     <DashboardLayout
       title={catalogManager ? 'لوحة المالك' : 'طلبات الطباعة'}
-      sections={catalogManager ? ownerNavSectionsForRole(user?.role) : undefined}
+      sections={catalogManager ? ownerNavSectionsForRole(user?.role, user?.dashboard_access) : undefined}
       items={catalogManager ? undefined : PRINTING_SPECIALIST_NAV}
     />
   )

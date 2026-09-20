@@ -37,6 +37,9 @@ class MediaFactory extends Factory
             'owner_type' => 'task',
             'owner_id' => Task::factory(),
             'metadata' => ['kind' => 'pdf'],
+            'collection' => 'default',
+            'sort_order' => 0,
+            'is_primary' => false,
         ];
     }
 }

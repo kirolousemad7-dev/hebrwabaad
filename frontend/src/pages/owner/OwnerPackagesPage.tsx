@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react'
+import { MediaUploader } from '../../components/files/MediaUploader'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   createPackage,
@@ -675,6 +676,12 @@ export function OwnerPackagesPage() {
               })}
             </ul>
           </fieldset>
+
+          {form.id ? (
+            <MediaUploader entityType="package" entityId={form.id} title="صور الباقة" visibility="PUBLIC" />
+          ) : (
+            <p className="text-xs text-slate-500">احفظ الباقة أولاً ثم ارفع الصور من طبقة الوسائط الموحدة.</p>
+          )}
 
           <div className="flex gap-3">
             <button

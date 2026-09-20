@@ -38,7 +38,18 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // Calendar connect callback (staff Google Calendar integration).
         'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+        // Sign-in / Continue with Google callback (must be listed in Google Cloud Console).
+        'auth_redirect_uri' => env('GOOGLE_AUTH_REDIRECT_URI'),
+    ],
+
+    // Dedicated Gmail API sender (OTP / transactional). Separate from Customer Google Login.
+    'gmail' => [
+        'client_id' => env('GMAIL_CLIENT_ID'),
+        'client_secret' => env('GMAIL_CLIENT_SECRET'),
+        'refresh_token' => env('GMAIL_REFRESH_TOKEN'),
+        'sender_email' => env('GMAIL_SENDER_EMAIL'),
     ],
 
     'zoom' => [

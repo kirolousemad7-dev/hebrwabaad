@@ -35,12 +35,18 @@ class ProjectMilestoneController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'phase_id' => ['nullable', 'integer', 'exists:project_phases,id'],
+            'starts_at' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['nullable', 'string', Rule::in([
                 ProjectMilestone::STATUS_PENDING,
                 ProjectMilestone::STATUS_DONE,
                 ProjectMilestone::STATUS_MISSED,
             ])],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_client_visible' => ['nullable', 'boolean'],
+            'responsible_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -57,16 +63,22 @@ class ProjectMilestoneController extends Controller
 
         $data = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'phase_id' => ['nullable', 'integer', 'exists:project_phases,id'],
+            'starts_at' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['sometimes', 'string', Rule::in([
                 ProjectMilestone::STATUS_PENDING,
                 ProjectMilestone::STATUS_DONE,
                 ProjectMilestone::STATUS_MISSED,
             ])],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_client_visible' => ['nullable', 'boolean'],
+            'responsible_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $milestone = $this->milestones->update($milestone, $data);
+        $milestone = $this->milestones->update($project, $milestone, $data);
 
         return ApiResponse::success($this->milestones->serialize($milestone));
     }

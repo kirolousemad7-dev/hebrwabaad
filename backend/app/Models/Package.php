@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CatalogPricingMode;
 use App\Enums\PackageCategory;
+use App\Models\Concerns\HasMedia;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\PackageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -34,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
-    use HasFactory, HasSlug;
+    use HasFactory, HasMedia, HasSlug;
 
     /**
      * Mirrors the database defaults so freshly created models report them.

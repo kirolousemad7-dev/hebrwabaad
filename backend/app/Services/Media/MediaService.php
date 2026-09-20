@@ -9,11 +9,14 @@ use App\Models\CrmCompany;
 use App\Models\Invoice;
 use App\Models\Media;
 use App\Models\Meeting;
+use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
+use App\Models\PrintingProduct;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\Supplier;
+use App\Models\SupplierPortfolioItem;
 use App\Models\SupplierProduct;
 use App\Models\Task;
 use App\Models\User;
@@ -21,6 +24,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -95,7 +99,7 @@ class MediaService
             $query->where('visibility', (string) $filters['visibility']);
         }
 
-        return $query->latest()->paginate($this->perPage($filters));
+        return $query->orderByDesc('is_primary')->orderBy('sort_order')->orderByDesc('id')->paginate($this->perPage($filters));
     }
 
     /**
@@ -125,20 +129,64 @@ class MediaService
         $absolute = Storage::disk($this->disk())->path($path);
         $checksum = is_file($absolute) ? hash_file('sha256', $absolute) : null;
 
-        $media = Media::query()->create([
-            'disk' => $this->disk(),
-            'path' => $path,
-            'original_name' => $this->safeOriginalName($upload),
-            'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
-            'extension' => $extension,
-            'size' => (int) ($upload->getSize() ?: 0),
-            'checksum' => $checksum,
-            'visibility' => $visibility,
-            'uploaded_by' => $actor->id,
-            'owner_type' => $this->registry->morphAlias($entityType),
-            'owner_id' => $owner->getKey(),
-            'metadata' => $this->buildMetadata($upload, $attributes['metadata'] ?? null),
-        ]);
+        $collection = is_string($attributes['collection'] ?? null) && $attributes['collection'] !== ''
+            ? (string) $attributes['collection']
+            : 'default';
+
+        $nextOrder = (int) Media::query()
+            ->where('owner_type', $this->registry->morphAlias($entityType))
+            ->where('owner_id', $owner->getKey())
+            ->where('collection', $collection)
+            ->max('sort_order');
+
+        $makePrimary = (bool) ($attributes['is_primary'] ?? false)
+            || ! Media::query()
+                ->where('owner_type', $this->registry->morphAlias($entityType))
+                ->where('owner_id', $owner->getKey())
+                ->where('collection', $collection)
+                ->where('is_primary', true)
+                ->exists();
+
+        $media = DB::transaction(function () use (
+            $actor,
+            $attributes,
+            $checksum,
+            $collection,
+            $entityType,
+            $extension,
+            $makePrimary,
+            $nextOrder,
+            $owner,
+            $path,
+            $upload,
+            $visibility,
+        ): Media {
+            if ($makePrimary) {
+                Media::query()
+                    ->where('owner_type', $this->registry->morphAlias($entityType))
+                    ->where('owner_id', $owner->getKey())
+                    ->where('collection', $collection)
+                    ->update(['is_primary' => false]);
+            }
+
+            return Media::query()->create([
+                'disk' => $this->disk(),
+                'path' => $path,
+                'original_name' => $this->safeOriginalName($upload),
+                'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
+                'extension' => $extension,
+                'size' => (int) ($upload->getSize() ?: 0),
+                'checksum' => $checksum,
+                'visibility' => $visibility,
+                'uploaded_by' => $actor->id,
+                'owner_type' => $this->registry->morphAlias($entityType),
+                'owner_id' => $owner->getKey(),
+                'metadata' => $this->buildMetadata($upload, $attributes['metadata'] ?? null),
+                'collection' => $collection,
+                'sort_order' => $nextOrder + 1,
+                'is_primary' => $makePrimary,
+            ]);
+        });
 
         return $media->load($this->eagerLoad());
     }
@@ -204,9 +252,87 @@ class MediaService
             $media->metadata = array_merge($media->metadata ?? [], $attributes['metadata']);
         }
 
+        if (isset($attributes['collection']) && is_string($attributes['collection']) && $attributes['collection'] !== '') {
+            $media->collection = $attributes['collection'];
+        }
+
+        if (array_key_exists('sort_order', $attributes) && $attributes['sort_order'] !== null) {
+            $media->sort_order = (int) $attributes['sort_order'];
+        }
+
         $media->save();
 
+        if (array_key_exists('is_primary', $attributes) && (bool) $attributes['is_primary'] === true) {
+            return $this->setPrimary($media);
+        }
+
         return $media->fresh($this->eagerLoad()) ?? $media->load($this->eagerLoad());
+    }
+
+    public function setPrimary(Media $media): Media
+    {
+        return DB::transaction(function () use ($media): Media {
+            Media::query()
+                ->where('owner_type', $media->owner_type)
+                ->where('owner_id', $media->owner_id)
+                ->where('collection', $media->collection ?: 'default')
+                ->whereKeyNot($media->id)
+                ->update(['is_primary' => false]);
+
+            $media->is_primary = true;
+            $media->save();
+
+            return $media->fresh($this->eagerLoad()) ?? $media->load($this->eagerLoad());
+        });
+    }
+
+    /**
+     * @param  list<int>  $orderedIds
+     * @return list<Media>
+     */
+    public function reorder(User $actor, string $entityType, int $entityId, array $orderedIds, string $collection = 'default'): array
+    {
+        $owner = $this->registry->resolve($entityType, $entityId);
+        $this->assertCanAttach($actor, $owner);
+
+        $morph = $this->registry->morphAlias($entityType);
+        $ids = array_values(array_unique(array_map('intval', $orderedIds)));
+
+        $existing = Media::query()
+            ->where('owner_type', $morph)
+            ->where('owner_id', $owner->getKey())
+            ->where('collection', $collection)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->all();
+
+        if (count($existing) !== count($ids)) {
+            throw ValidationException::withMessages([
+                'ordered_ids' => ['One or more media items do not belong to this entity.'],
+            ]);
+        }
+
+        DB::transaction(function () use ($ids, $morph, $owner, $collection): void {
+            foreach ($ids as $index => $id) {
+                Media::query()
+                    ->whereKey($id)
+                    ->where('owner_type', $morph)
+                    ->where('owner_id', $owner->getKey())
+                    ->where('collection', $collection)
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+
+        return Media::query()
+            ->with($this->eagerLoad())
+            ->where('owner_type', $morph)
+            ->where('owner_id', $owner->getKey())
+            ->where('collection', $collection)
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->all();
     }
 
     public function duplicate(User $actor, Media $media): Media
@@ -236,6 +362,13 @@ class MediaService
             'metadata' => array_merge($media->metadata ?? [], [
                 'duplicated_from' => $media->id,
             ]),
+            'collection' => $media->collection ?: 'default',
+            'sort_order' => ((int) Media::query()
+                ->where('owner_type', $media->owner_type)
+                ->where('owner_id', $media->owner_id)
+                ->where('collection', $media->collection ?: 'default')
+                ->max('sort_order')) + 1,
+            'is_primary' => false,
         ]);
 
         return $copy->load($this->eagerLoad());
@@ -341,9 +474,13 @@ class MediaService
         if ($owner instanceof CrmCompany
             || $owner instanceof Supplier
             || $owner instanceof SupplierProduct
+            || $owner instanceof SupplierPortfolioItem
             || $owner instanceof Service
+            || $owner instanceof Package
+            || $owner instanceof PrintingProduct
             || $owner instanceof PortfolioItem
             || $owner instanceof Payment
+            || $owner instanceof Invoice
             || $owner instanceof User) {
             return $actor->role === UserRole::AccountManager
                 || $actor->role->canManageCatalog()
@@ -391,6 +528,10 @@ class MediaService
         }
 
         if ($owner instanceof SupplierProduct) {
+            return (int) $owner->supplier_id === (int) $supplier->id;
+        }
+
+        if ($owner instanceof SupplierPortfolioItem) {
             return (int) $owner->supplier_id === (int) $supplier->id;
         }
 
@@ -462,6 +603,9 @@ class MediaService
                                     $q->where('owner_type', 'product')
                                         ->whereIn('owner_id', SupplierProduct::query()->where('supplier_id', $supplierId)->select('id'));
                                 })->orWhere(function (Builder $q) use ($supplierId): void {
+                                    $q->where('owner_type', 'supplier_portfolio_item')
+                                        ->whereIn('owner_id', SupplierPortfolioItem::query()->where('supplier_id', $supplierId)->select('id'));
+                                })->orWhere(function (Builder $q) use ($supplierId): void {
                                     $q->where('owner_type', 'task')
                                         ->whereIn('owner_id', Task::query()->where('supplier_id', $supplierId)->select('id'));
                                 });
@@ -480,8 +624,8 @@ class MediaService
 
         return match ($entityType) {
             'customer' => MediaVisibility::Customer,
-            'supplier', 'product' => MediaVisibility::Supplier,
-            'portfolio' => MediaVisibility::Public,
+            'supplier', 'product', 'supplier_portfolio_item' => MediaVisibility::Supplier,
+            'portfolio', 'package', 'service', 'printing_product' => MediaVisibility::Public,
             default => MediaVisibility::Internal,
         };
     }

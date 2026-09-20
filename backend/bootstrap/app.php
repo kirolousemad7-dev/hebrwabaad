@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureDashboardModule;
 use App\Http\Middleware\EnsureRole;
 use App\Support\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureRole::class,
             'account.active' => EnsureAccountIsActive::class,
+            'dashboard.module' => EnsureDashboardModule::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

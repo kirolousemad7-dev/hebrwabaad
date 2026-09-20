@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
+use App\Models\ProjectMilestone;
+use App\Models\ProjectPhase;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\GoogleCalendar\GoogleCalendarTaskSyncService;
@@ -105,11 +107,18 @@ class TaskService
     {
         $this->projects->assertManagedBy($creator, (int) $attributes['project_id']);
         $assignee = $this->assertAssignableEmployee((int) $attributes['assigned_to']);
+        $this->assertPhaseAndMilestoneBelongToProject(
+            (int) $attributes['project_id'],
+            $attributes['phase_id'] ?? null,
+            $attributes['milestone_id'] ?? null,
+        );
 
         $task = Task::query()->create([
             'title' => $attributes['title'],
             'description' => $attributes['description'] ?? null,
             'project_id' => (int) $attributes['project_id'],
+            'phase_id' => $attributes['phase_id'] ?? null,
+            'milestone_id' => $attributes['milestone_id'] ?? null,
             'assigned_to' => $assignee->id,
             'created_by' => $creator->id,
             'priority' => $attributes['priority'],
@@ -120,6 +129,7 @@ class TaskService
             'timezone' => $attributes['timezone'] ?? config('app.timezone'),
             'location' => $attributes['location'] ?? null,
             'supplier_id' => $attributes['supplier_id'] ?? null,
+            'is_client_visible' => (bool) ($attributes['is_client_visible'] ?? false),
         ]);
 
         $task = $task->load(['assignee', 'creator', 'project', 'supplier']);
@@ -140,6 +150,17 @@ class TaskService
     {
         $this->projects->assertManagedBy($actor, (int) $attributes['project_id']);
         $assignee = $this->assertAssignableEmployee((int) $attributes['assigned_to']);
+        $phaseId = array_key_exists('phase_id', $attributes)
+            ? $attributes['phase_id']
+            : $task->phase_id;
+        $milestoneId = array_key_exists('milestone_id', $attributes)
+            ? $attributes['milestone_id']
+            : $task->milestone_id;
+        $this->assertPhaseAndMilestoneBelongToProject(
+            (int) $attributes['project_id'],
+            $phaseId,
+            $milestoneId,
+        );
         $previousAssigneeId = $task->assigned_to;
         $previousTitle = $task->title;
         $previousStatus = $task->status instanceof TaskStatus
@@ -156,6 +177,12 @@ class TaskService
             'title' => $attributes['title'],
             'description' => $attributes['description'] ?? null,
             'project_id' => (int) $attributes['project_id'],
+            'phase_id' => array_key_exists('phase_id', $attributes)
+                ? $attributes['phase_id']
+                : $task->phase_id,
+            'milestone_id' => array_key_exists('milestone_id', $attributes)
+                ? $attributes['milestone_id']
+                : $task->milestone_id,
             'assigned_to' => $assignee->id,
             'priority' => $attributes['priority'],
             'status' => $attributes['status'],
@@ -167,6 +194,9 @@ class TaskService
             'supplier_id' => array_key_exists('supplier_id', $attributes)
                 ? $attributes['supplier_id']
                 : $task->supplier_id,
+            'is_client_visible' => array_key_exists('is_client_visible', $attributes)
+                ? (bool) $attributes['is_client_visible']
+                : $task->is_client_visible,
         ]);
 
         $changedForGoogle = $shouldQueueGoogle && $task->wasChanged([
@@ -268,6 +298,38 @@ class TaskService
         }
 
         return $employee;
+    }
+
+    private function assertPhaseAndMilestoneBelongToProject(
+        int $projectId,
+        mixed $phaseId,
+        mixed $milestoneId,
+    ): void {
+        if ($phaseId !== null && $phaseId !== '') {
+            $exists = ProjectPhase::query()
+                ->where('project_id', $projectId)
+                ->where('id', (int) $phaseId)
+                ->exists();
+
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    'phase_id' => ['Selected phase does not belong to this project.'],
+                ]);
+            }
+        }
+
+        if ($milestoneId !== null && $milestoneId !== '') {
+            $exists = ProjectMilestone::query()
+                ->where('project_id', $projectId)
+                ->where('id', (int) $milestoneId)
+                ->exists();
+
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    'milestone_id' => ['Selected milestone does not belong to this project.'],
+                ]);
+            }
+        }
     }
 
     /**

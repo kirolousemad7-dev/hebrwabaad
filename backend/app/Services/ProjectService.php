@@ -190,9 +190,12 @@ class ProjectService
         }
 
         if ($project->account_manager_id !== $user->id) {
-            throw ValidationException::withMessages([
-                'project_id' => ['You cannot assign tasks to this project.'],
-            ]);
+            $role = $user->role;
+            if (! ($role instanceof UserRole) || $role !== UserRole::Owner) {
+                throw ValidationException::withMessages([
+                    'project_id' => ['You cannot assign tasks to this project.'],
+                ]);
+            }
         }
 
         return $project;

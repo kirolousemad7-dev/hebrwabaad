@@ -8,12 +8,16 @@ export type MediaEntityType =
   | 'company'
   | 'supplier'
   | 'product'
+  | 'supplier_portfolio_item'
   | 'service'
+  | 'package'
+  | 'printing_product'
   | 'portfolio'
   | 'project'
   | 'task'
   | 'quotation'
   | 'invoice'
+  | 'payment'
   | 'meeting'
 
 export type MediaItem = {
@@ -29,6 +33,9 @@ export type MediaItem = {
   is_pdf: boolean
   is_video: boolean
   metadata: Record<string, unknown>
+  collection: string
+  sort_order: number
+  is_primary: boolean
   entity_type: MediaEntityType | string
   entity_id: number
   created_at: string | null
@@ -82,6 +89,24 @@ export function deleteMedia(id: number) {
 
 export function duplicateMedia(id: number) {
   return apiPost<MediaItem>(`/api/media/${id}/duplicate`)
+}
+
+export function setPrimaryMedia(id: number) {
+  return apiPost<MediaItem>(`/api/media/${id}/primary`)
+}
+
+export function reorderEntityMedia(
+  entityType: MediaEntityType,
+  entityId: number,
+  orderedIds: number[],
+  collection = 'default',
+) {
+  return apiPost<{ items: MediaItem[] }>('/api/media/reorder', {
+    entity_type: entityType,
+    entity_id: entityId,
+    ordered_ids: orderedIds,
+    collection,
+  })
 }
 
 export type UploadMediaOptions = {

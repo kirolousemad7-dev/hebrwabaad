@@ -62,12 +62,12 @@ enum UserRole: string
 
     public function canAssignTasks(): bool
     {
-        return $this === self::AccountManager;
+        return $this === self::AccountManager || $this === self::Owner;
     }
 
     public function canManageProjects(): bool
     {
-        return $this === self::AccountManager;
+        return $this === self::AccountManager || $this === self::Owner;
     }
 
     public function canOverseeProjects(): bool

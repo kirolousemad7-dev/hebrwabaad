@@ -56,6 +56,107 @@ export type ProjectWorkspaceMember = {
   user: { id: number; name: string; role?: string | null } | null
 }
 
+export type ProjectPhaseStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | string
+
+export type ProjectPhase = {
+  id: number
+  project_id: number
+  title: string
+  description: string | null
+  status: ProjectPhaseStatus
+  starts_at: string | null
+  ends_at: string | null
+  sort_order: number
+  is_client_visible: boolean
+  responsible_user_id: number | null
+  responsible?: { id: number; name: string } | null
+  progress?: {
+    total: number
+    completed: number
+    in_progress: number
+    pending: number
+    overdue: number
+    percent: number
+  }
+  milestones?: ProjectStructureMilestone[]
+  tasks?: ProjectStructureTask[]
+}
+
+export type ProjectStructureTask = {
+  id: number
+  title: string
+  status: string
+  priority?: string | null
+  phase_id: number | null
+  milestone_id: number | null
+  assigned_to: number | null
+  assignee?: { id: number; name: string } | null
+  deadline: string | null
+  start_at: string | null
+  due_at: string | null
+  calendar_item_id: number | null
+  is_client_visible: boolean
+}
+
+export type ProjectStructureMilestone = {
+  id: number
+  project_id: number
+  phase_id: number | null
+  title: string
+  description?: string | null
+  starts_at?: string | null
+  due_date: string | null
+  status: string
+  sort_order?: number
+  is_client_visible?: boolean
+  responsible_user_id?: number | null
+  responsible?: { id: number; name: string } | null
+  progress?: { total: number; completed: number; percent: number }
+  tasks?: ProjectStructureTask[]
+}
+
+export type ProjectStructure = {
+  project_id: number
+  phases: ProjectPhase[]
+  unassigned_milestones: ProjectStructureMilestone[]
+  unassigned_tasks: ProjectStructureTask[]
+  progress: {
+    total: number
+    completed: number
+    in_progress: number
+    pending: number
+    overdue: number
+    percent: number
+  }
+}
+
+export type ProjectReference = {
+  id: number
+  project_id: number
+  title: string
+  description: string | null
+  url: string | null
+  type: string
+  category: string | null
+  is_client_visible: boolean
+  file_id: number | null
+  file?: { id: number; original_name: string } | null
+  created_by: number | null
+  creator?: { id: number; name: string } | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export type ProjectTeamStat = {
+  user_id: number
+  name: string
+  role: string
+  assigned: number
+  completed: number
+  open: number
+  overdue: number
+}
+
 export type ProjectWorkspace = {
   project: {
     id: number
@@ -64,8 +165,30 @@ export type ProjectWorkspace = {
     status: string
     deadline: string | null
     started_at: string | null
-    customer: { id: number; name: string } | null
+    customer: { id: number; name: string; email?: string | null } | null
     account_manager: { id: number; name: string } | null
+  }
+  brief: Record<string, unknown>
+  client_profile: Record<string, unknown>
+  requirements: Record<string, unknown>
+  scope: Record<string, unknown>
+  references: ProjectReference[]
+  phases: ProjectPhase[]
+  structure: ProjectStructure
+  current_phase: ProjectPhase | null
+  next_milestone: ProjectMilestone | null
+  next_task: {
+    id: number
+    title: string
+    status: string
+    deadline: string | null
+    assignee: { id: number; name: string } | null
+  } | null
+  next_deadline?: string | null
+  risks?: {
+    overdue_tasks: number
+    overdue_milestones: number
+    due_soon: boolean
   }
   progress: {
     total: number
@@ -77,6 +200,7 @@ export type ProjectWorkspace = {
     overdue: number
     percent: number
   }
+  team_stats?: ProjectTeamStat[]
   required_services?: Array<{
     order_item_id: number
     service_id: number
@@ -99,10 +223,88 @@ export type ProjectWorkspace = {
     completed: number
     overdue: number
   }
+  unified_work?: { open: number; overdue: number }
   members: ProjectWorkspaceMember[]
   files_count: number
   health: ProjectHealth
   upcoming_calendar_items: CalendarItem[]
+  timeline_preview?: ProjectTimelineEvent[]
+  recent_activity?: ProjectTimelineEvent[]
+  milestones?: ProjectMilestone[]
+  execution_summary?: ProjectExecutionSummary
+  attention?: ProjectAttention
+  deliverables?: ProjectDeliverableRow[]
+  pending_approvals?: Array<{
+    id: number
+    type: string
+    title: string
+    status: string
+    requested_by: { id: number; name: string } | null
+    assigned_to: { id: number; name: string } | null
+    created_at: string | null
+  }>
+  closure_readiness?: ProjectClosureReadiness
+}
+
+export type ProjectExecutionSummary = {
+  current_phase: { id: number; title: string; status: string } | null
+  active_milestone: {
+    id: number
+    title: string
+    due_date: string | null
+    status: string
+  } | null
+  open_tasks: number
+  overdue_tasks: number
+  in_review_tasks: number
+  next_deadline: string | null
+  completion_percent: number
+  attention_count: number
+  recent_activity_count: number | null
+  health?: ProjectHealth
+  risks?: { overdue_tasks: number; attention_count: number }
+  closure?: ProjectClosureReadiness
+}
+
+export type ProjectAttentionItem = {
+  kind: string
+  related_type: string
+  related_id: number
+  title: string
+  due_date: string | null
+  assignee_name: string | null
+}
+
+export type ProjectAttention = {
+  items: ProjectAttentionItem[]
+  counts: {
+    overdue: number
+    due_soon: number
+    unassigned: number
+    waiting: number
+  }
+}
+
+export type ProjectClosureReadiness = {
+  state: 'ready' | 'attention' | string
+  label: string
+  issues: Array<{ key: string; label: string; count: number }>
+}
+
+export type ProjectDeliverableRow = {
+  source: string
+  id: string
+  name: string
+  quantity: number
+  status_key: string
+  status_label: string
+  task_id?: number | null
+  milestone_id: number | null
+  due_date: string | null
+  is_client_visible: boolean
+  requires_customer_approval: boolean
+  url: string | null
+  file_id?: number | null
 }
 
 export type ProjectTimelineEvent = {
@@ -119,21 +321,66 @@ export type ProjectMilestoneStatus = 'PENDING' | 'DONE' | 'MISSED' | string
 export type ProjectMilestone = {
   id: number
   project_id: number
+  phase_id?: number | null
+  phase?: { id: number; title: string } | null
   title: string
+  description?: string | null
+  starts_at?: string | null
   due_date: string | null
   status: ProjectMilestoneStatus
+  sort_order?: number
+  is_client_visible?: boolean
+  is_overdue?: boolean
+  open_tasks?: number
+  responsible_user_id?: number | null
+  responsible?: { id: number; name: string } | null
   notes: string | null
   created_by: number | null
   completed_at: string | null
+  progress?: { total: number; completed: number; overdue?: number; percent: number }
   created_at?: string | null
   updated_at?: string | null
 }
 
 export type ProjectMilestonePayload = {
   title: string
+  description?: string | null
+  phase_id?: number | null
+  starts_at?: string | null
   due_date?: string | null
   status?: ProjectMilestoneStatus
+  sort_order?: number
+  is_client_visible?: boolean
+  responsible_user_id?: number | null
   notes?: string | null
+}
+
+export type ProjectPhasePayload = {
+  title: string
+  description?: string | null
+  status?: ProjectPhaseStatus
+  starts_at?: string | null
+  ends_at?: string | null
+  sort_order?: number
+  is_client_visible?: boolean
+  responsible_user_id?: number | null
+}
+
+export type ProjectBriefPayload = {
+  brief?: Record<string, unknown> | null
+  client_profile?: Record<string, unknown> | null
+  requirements?: Record<string, unknown> | null
+  scope?: Record<string, unknown> | null
+}
+
+export type ProjectReferencePayload = {
+  title: string
+  description?: string | null
+  url?: string | null
+  type?: string
+  category?: string | null
+  is_client_visible?: boolean
+  file_id?: number | null
 }
 
 export type WorkflowTrigger =
@@ -839,6 +1086,133 @@ export function getProjectTimeline(projectId: number | string, filter?: string) 
   return apiGet<{ items: ProjectTimelineEvent[] }>(
     `/api/operations/projects/${projectId}/timeline${queryString({ filter })}`,
   )
+}
+
+export function getProjectStructure(projectId: number | string) {
+  return apiGet<ProjectStructure>(`/api/operations/projects/${projectId}/structure`)
+}
+
+export type ProjectWorkspaceTask = {
+  id: number
+  project_id: number
+  phase_id?: number | null
+  milestone_id?: number | null
+  title: string
+  description: string | null
+  priority: string
+  status: string
+  deadline: string | null
+  start_at?: string | null
+  due_at?: string | null
+  calendar_item_id?: number | null
+  is_client_visible?: boolean
+  is_overdue?: boolean
+  assigned_to: number
+  assignee?: { id: number; name: string; role?: string | null } | null
+  created_at?: string | null
+}
+
+export type ProjectWorkspaceTaskPayload = {
+  title: string
+  description?: string | null
+  assigned_to: number
+  priority: string
+  status?: string
+  deadline?: string | null
+  start_at?: string | null
+  due_at?: string | null
+  phase_id?: number | null
+  milestone_id?: number | null
+  is_client_visible?: boolean
+  link_to_calendar?: boolean
+}
+
+export function getProjectWorkspaceTasks(projectId: number | string, page = 1) {
+  return apiGet<{
+    items: ProjectWorkspaceTask[]
+    meta: { current_page: number; last_page: number; per_page: number; total: number }
+  }>(`/api/operations/projects/${projectId}/tasks${queryString({ page })}`)
+}
+
+export function createProjectWorkspaceTask(
+  projectId: number | string,
+  payload: ProjectWorkspaceTaskPayload,
+) {
+  return apiPost<{ task: ProjectWorkspaceTask; calendar_item_id: number | null }>(
+    `/api/operations/projects/${projectId}/tasks`,
+    payload,
+  )
+}
+
+export function updateProjectWorkspaceTask(
+  projectId: number | string,
+  taskId: number,
+  payload: ProjectWorkspaceTaskPayload & { status: string },
+) {
+  return apiPut<{ task: ProjectWorkspaceTask; calendar_item_id: number | null }>(
+    `/api/operations/projects/${projectId}/tasks/${taskId}`,
+    payload,
+  )
+}
+
+export function linkProjectWorkspaceTaskCalendar(
+  projectId: number | string,
+  taskId: number,
+  payload?: { starts_at?: string | null; ends_at?: string | null; all_day?: boolean },
+) {
+  return apiPost<{ task: ProjectWorkspaceTask; calendar_item_id: number | null }>(
+    `/api/operations/projects/${projectId}/tasks/${taskId}/link-calendar`,
+    payload ?? {},
+  )
+}
+
+export function updateProjectBrief(projectId: number | string, payload: ProjectBriefPayload) {
+  return apiPut<ProjectBriefPayload>(`/api/operations/projects/${projectId}/brief`, payload)
+}
+
+export function getProjectReferences(projectId: number | string) {
+  return apiGet<{ items: ProjectReference[] }>(`/api/operations/projects/${projectId}/references`)
+}
+
+export function createProjectReference(projectId: number | string, payload: ProjectReferencePayload) {
+  return apiPost<ProjectReference>(`/api/operations/projects/${projectId}/references`, payload)
+}
+
+export function updateProjectReference(
+  projectId: number | string,
+  referenceId: number,
+  payload: Partial<ProjectReferencePayload>,
+) {
+  return apiPut<ProjectReference>(
+    `/api/operations/projects/${projectId}/references/${referenceId}`,
+    payload,
+  )
+}
+
+export function deleteProjectReference(projectId: number | string, referenceId: number) {
+  return apiDelete<{ deleted: boolean }>(
+    `/api/operations/projects/${projectId}/references/${referenceId}`,
+  )
+}
+
+export function getProjectPhases(projectId: number | string) {
+  return apiGet<{ items: ProjectPhase[] }>(`/api/operations/projects/${projectId}/phases`)
+}
+
+export function createProjectPhase(projectId: number | string, payload: ProjectPhasePayload) {
+  return apiPost<ProjectPhase>(`/api/operations/projects/${projectId}/phases`, payload)
+}
+
+export function updateProjectPhase(
+  projectId: number | string,
+  phaseId: number,
+  payload: Partial<ProjectPhasePayload>,
+) {
+  return apiPut<ProjectPhase>(`/api/operations/projects/${projectId}/phases/${phaseId}`, payload)
+}
+
+export function deleteProjectPhase(projectId: number | string, phaseId: number) {
+  return apiDelete<{ deleted: boolean }>(`/api/operations/projects/${projectId}/phases/${phaseId}`)
 }
 
 export function getProjectMilestones(projectId: number | string) {

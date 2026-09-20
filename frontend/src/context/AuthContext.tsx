@@ -21,6 +21,7 @@ type AuthContextValue = {
     password: string
     password_confirmation: string
   }) => Promise<AuthUser>
+  acceptSession: (payload: { token: string; user: AuthUser }) => AuthUser
   logout: () => Promise<void>
   discardSession: () => void
   refreshUser: () => Promise<AuthUser | null>
@@ -86,6 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persistSession(response.data)
       setUser(response.data.user)
       return response.data.user
+    },
+    acceptSession(payload) {
+      persistSession(payload)
+      setUser(payload.user)
+      return payload.user
     },
     async logout() {
       try {

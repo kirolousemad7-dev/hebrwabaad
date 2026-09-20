@@ -7,8 +7,10 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Media;
+use App\Models\Package;
 use App\Models\Project;
 use App\Models\Supplier;
+use App\Models\SupplierPortfolioItem;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -313,5 +315,121 @@ class MediaManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1)
             ->assertJsonPath('data.items.0.entity_type', 'task');
+    }
+
+    public function test_package_and_supplier_portfolio_accept_media(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $package = Package::factory()->create();
+        $supplier = Supplier::factory()->create();
+        $portfolioItem = SupplierPortfolioItem::factory()->create([
+            'supplier_id' => $supplier->id,
+        ]);
+
+        $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('pkg.png', 20, 20),
+                'entity_type' => 'package',
+                'entity_id' => $package->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.entity_type', 'package')
+            ->assertJsonPath('data.is_primary', true);
+
+        $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('work.png', 20, 20),
+                'entity_type' => 'supplier_portfolio_item',
+                'entity_id' => $portfolioItem->id,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.entity_type', 'supplier_portfolio_item')
+            ->assertJsonPath('data.visibility', MediaVisibility::Supplier->value);
+    }
+
+    public function test_set_primary_and_reorder_media(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $supplier = Supplier::factory()->create();
+
+        $first = $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('a.png', 10, 10),
+                'entity_type' => 'supplier',
+                'entity_id' => $supplier->id,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $second = $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('b.png', 10, 10),
+                'entity_type' => 'supplier',
+                'entity_id' => $supplier->id,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertTrue((bool) Media::query()->findOrFail($first)->is_primary);
+        $this->assertFalse((bool) Media::query()->findOrFail($second)->is_primary);
+
+        $this->asUser($owner)
+            ->postJson('/api/media/'.$second.'/primary')
+            ->assertOk()
+            ->assertJsonPath('data.is_primary', true);
+
+        $this->assertFalse((bool) Media::query()->findOrFail($first)->fresh()->is_primary);
+        $this->assertTrue((bool) Media::query()->findOrFail($second)->fresh()->is_primary);
+
+        $this->asUser($owner)
+            ->postJson('/api/media/reorder', [
+                'entity_type' => 'supplier',
+                'entity_id' => $supplier->id,
+                'ordered_ids' => [$second, $first],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.items.0.id', $second);
+
+        $this->assertSame(1, (int) Media::query()->findOrFail($second)->sort_order);
+        $this->assertSame(2, (int) Media::query()->findOrFail($first)->sort_order);
+    }
+
+    public function test_supplier_cannot_mutate_another_suppliers_portfolio_media(): void
+    {
+        $supplierUserA = User::factory()->create(['role' => UserRole::Supplier->value]);
+        $supplierA = Supplier::factory()->create(['user_id' => $supplierUserA->id]);
+        $portfolioA = SupplierPortfolioItem::factory()->create(['supplier_id' => $supplierA->id]);
+
+        $supplierUserB = User::factory()->create(['role' => UserRole::Supplier->value]);
+        Supplier::factory()->create(['user_id' => $supplierUserB->id]);
+
+        $mediaId = $this->asUser(User::factory()->owner()->create())
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('a.png', 10, 10),
+                'entity_type' => 'supplier_portfolio_item',
+                'entity_id' => $portfolioA->id,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->asUser($supplierUserB)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('hack.png', 10, 10),
+                'entity_type' => 'supplier_portfolio_item',
+                'entity_id' => $portfolioA->id,
+            ])
+            ->assertUnprocessable();
+
+        $this->asUser($supplierUserB)
+            ->deleteJson('/api/media/'.$mediaId)
+            ->assertForbidden();
+
+        $this->asUser($supplierUserA)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('own.png', 10, 10),
+                'entity_type' => 'supplier_portfolio_item',
+                'entity_id' => $portfolioA->id,
+            ])
+            ->assertCreated();
     }
 }

@@ -10,8 +10,10 @@ use App\Models\CrmCompany;
 use App\Models\Invoice;
 use App\Models\ManagedFile;
 use App\Models\Meeting;
+use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PortfolioItem;
+use App\Models\PrintingProduct;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\Supplier;
@@ -69,6 +71,8 @@ class AppServiceProvider extends ServiceProvider
             'company' => CrmCompany::class,
             'product' => SupplierProduct::class,
             'service' => Service::class,
+            'package' => Package::class,
+            'printing_product' => PrintingProduct::class,
             'portfolio' => PortfolioItem::class,
             'project' => Project::class,
             'task' => Task::class,
@@ -148,6 +152,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('hebr-supplier-otp', function (Request $request) {
+            return $this->perMinute(
+                5,
+                Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip()),
+            );
+        });
+
+        RateLimiter::for('hebr-customer-otp', function (Request $request) {
             return $this->perMinute(
                 5,
                 Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip()),

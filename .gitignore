@@ -17,11 +17,21 @@ backend/storage/logs/*
 backend/storage/framework/cache/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
+backend/storage/backups/
 backend/bootstrap/cache/*.php
 backend/public/hot
 backend/public/storage
 backend/.phpunit.result.cache
 backend/.phpunit.cache
+
+# Local scratch / agent temp artifacts (never deploy)
+backend/_pdf_*
+backend/_phase*
+backend/_patch_*
+backend/_ensure_*
+backend/.claude/
+backend/.cursor/
+backend/.mcp.json
 
 # Frontend
 frontend/node_modules/

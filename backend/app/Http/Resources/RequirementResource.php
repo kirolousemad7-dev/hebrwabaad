@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\RequirementStatus;
 use App\Models\Requirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,7 +40,7 @@ class RequirementResource extends JsonResource
             'summary' => $this->summary,
             'recommended_services' => $this->recommended_services ?? [],
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
-            'status_label' => $this->status instanceof \App\Enums\RequirementStatus
+            'status_label' => $this->status instanceof RequirementStatus
                 ? $this->status->labelAr()
                 : (string) $this->status,
             'notes' => $this->notes,

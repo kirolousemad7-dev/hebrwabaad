@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'owner_type',
     'owner_id',
     'metadata',
+    'collection',
+    'sort_order',
+    'is_primary',
 ])]
 class Media extends Model
 {
@@ -38,6 +41,8 @@ class Media extends Model
             'visibility' => MediaVisibility::class,
             'size' => 'integer',
             'metadata' => 'array',
+            'sort_order' => 'integer',
+            'is_primary' => 'boolean',
         ];
     }
 

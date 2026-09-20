@@ -15,6 +15,8 @@ use App\Services\Calendar\CalendarService;
 use App\Services\Operations\OperationsAuditLogger;
 use App\Services\TaskService;
 use App\Support\Operations\TaskCalendarSyncContext;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -40,48 +42,74 @@ class TaskCalendarLinkService
      */
     public function linkFromTask(User $actor, Task $task, array $schedule): CalendarItem
     {
-        if ($task->calendar_item_id !== null) {
-            throw ValidationException::withMessages([
-                'task' => ['This task is already linked to a calendar item.'],
-            ]);
-        }
+        return DB::transaction(function () use ($actor, $task, $schedule): CalendarItem {
+            /** @var Task $locked */
+            $locked = Task::query()->whereKey($task->id)->lockForUpdate()->firstOrFail();
 
-        if (! isset($schedule['starts_at']) || ! is_string($schedule['starts_at']) || $schedule['starts_at'] === '') {
-            throw ValidationException::withMessages([
-                'starts_at' => ['A start time is required to link a calendar item.'],
-            ]);
-        }
+            $existing = $this->resolveLinkedCalendar($locked);
+            if ($existing !== null) {
+                if ($locked->calendar_item_id === null) {
+                    $locked->forceFill(['calendar_item_id' => $existing->id])->save();
+                }
 
-        $priority = $task->priority instanceof TaskPriority
-            ? $task->priority->value
-            : (string) $task->priority;
+                return $existing->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
+            }
 
-        return TaskCalendarSyncContext::with('task_to_calendar', function () use ($actor, $task, $schedule, $priority): CalendarItem {
-            $item = $this->calendar->create($actor, [
-                'title' => $task->title,
-                'description' => $task->description,
-                'type' => CalendarItemType::Task->value,
-                'priority' => $priority,
-                'source' => CalendarSource::Project->value,
-                'starts_at' => $schedule['starts_at'],
-                'ends_at' => $schedule['ends_at'] ?? null,
-                'all_day' => (bool) ($schedule['all_day'] ?? false),
-                'reminders' => $schedule['reminders'] ?? [],
-                'related_type' => 'workspace_task',
-                'related_id' => $task->id,
-                'assignee_ids' => $task->assigned_to
-                    ? [(int) $task->assigned_to]
-                    : [$actor->id],
-            ]);
+            if (! isset($schedule['starts_at']) || ! is_string($schedule['starts_at']) || $schedule['starts_at'] === '') {
+                throw ValidationException::withMessages([
+                    'starts_at' => ['A start time is required to link a calendar item.'],
+                ]);
+            }
 
-            $task->forceFill(['calendar_item_id' => $item->id])->save();
+            $priority = $locked->priority instanceof TaskPriority
+                ? $locked->priority->value
+                : (string) $locked->priority;
 
-            $this->audit->log($actor, 'task_calendar.linked', $task, [
-                'direction' => 'task_to_calendar',
-                'calendar_item_id' => $item->id,
-            ]);
+            try {
+                return TaskCalendarSyncContext::with('task_to_calendar', function () use ($actor, $locked, $schedule, $priority): CalendarItem {
+                    $item = $this->calendar->create($actor, [
+                        'title' => $locked->title,
+                        'description' => $locked->description,
+                        'type' => CalendarItemType::Task->value,
+                        'priority' => $priority,
+                        'source' => CalendarSource::Project->value,
+                        'starts_at' => $schedule['starts_at'],
+                        'ends_at' => $schedule['ends_at'] ?? null,
+                        'all_day' => (bool) ($schedule['all_day'] ?? false),
+                        'reminders' => $schedule['reminders'] ?? [],
+                        'related_type' => 'workspace_task',
+                        'related_id' => $locked->id,
+                        'assignee_ids' => $locked->assigned_to
+                            ? [(int) $locked->assigned_to]
+                            : [$actor->id],
+                    ]);
 
-            return $item->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
+                    $locked->forceFill(['calendar_item_id' => $item->id])->save();
+
+                    $this->audit->log($actor, 'task_calendar.linked', $locked, [
+                        'direction' => 'task_to_calendar',
+                        'calendar_item_id' => $item->id,
+                    ]);
+
+                    return $item->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
+                });
+            } catch (QueryException $exception) {
+                // Concurrent create hit uniqueness — reuse the winner.
+                if (! $this->isUniqueConstraintViolation($exception)) {
+                    throw $exception;
+                }
+
+                $winner = $this->resolveLinkedCalendar($locked->fresh() ?? $locked);
+                if ($winner === null) {
+                    throw $exception;
+                }
+
+                if ($locked->calendar_item_id !== $winner->id) {
+                    $locked->forceFill(['calendar_item_id' => $winner->id])->save();
+                }
+
+                return $winner->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
+            }
         });
     }
 
@@ -286,7 +314,17 @@ class TaskCalendarLinkService
     private function resolveLinkedCalendar(Task $task): ?CalendarItem
     {
         if ($task->calendar_item_id !== null) {
-            return CalendarItem::query()->find((int) $task->calendar_item_id);
+            $byFk = CalendarItem::query()->find((int) $task->calendar_item_id);
+            if (
+                $byFk !== null
+                && $byFk->related_type === 'workspace_task'
+                && (int) $byFk->related_id === (int) $task->id
+            ) {
+                return $byFk;
+            }
+
+            // Stale FK — clear and fall through to related lookup / recreate.
+            $task->forceFill(['calendar_item_id' => null])->save();
         }
 
         return CalendarItem::query()
@@ -334,5 +372,17 @@ class TaskCalendarLinkService
         }
 
         return User::query()->findOrFail((int) ($task->assigned_to ?? $task->created_by));
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+        $message = $exception->getMessage();
+
+        return $sqlState === '23000'
+            || str_contains($message, 'UNIQUE constraint failed')
+            || str_contains($message, 'Duplicate entry')
+            || str_contains($message, 'calendar_items_workspace_task')
+            || str_contains($message, 'tasks_calendar_item_id_unique');
     }
 }
