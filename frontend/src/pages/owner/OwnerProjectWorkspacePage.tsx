@@ -30,7 +30,6 @@ import {
   deleteProjectReference,
   getProjectCalendarItems,
   getProjectMilestones,
-  getProjectTimeline,
   getProjectWorkspace,
   getProjectWorkspaceTasks,
   linkProjectWorkspaceTaskCalendar,
@@ -43,13 +42,19 @@ import {
   type ProjectPhase,
   type ProjectReference,
   type ProjectStructure,
-  type ProjectTimelineEvent,
   type ProjectWorkspace,
   type ProjectWorkspaceTask,
 } from '../../services/operations'
+import { getProjectActivities } from '../../services/projectActivities'
+import type { ProjectActivity } from '../../types/api'
 import { formatDateTimeShort, formatTimeShort } from '../../utils/calendarDates'
 import { calendarStatusLabel, calendarTypeLabel } from '../../utils/calendarLabels'
 import { describeApiError } from '../../utils/errors'
+import {
+  projectActivityLabel,
+  projectActivityMatchesFilter,
+  projectActivitySecondaryLine,
+} from '../../utils/projectActivityLabels'
 
 type TabKey =
   | 'overview'
@@ -185,8 +190,12 @@ export function OwnerProjectWorkspacePage() {
   const [workspace, setWorkspace] = useState<ProjectWorkspace | null>(null)
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([])
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([])
-  const [activity, setActivity] = useState<ProjectTimelineEvent[]>([])
+  const [activity, setActivity] = useState<ProjectActivity[]>([])
+  const [recentActivities, setRecentActivities] = useState<ProjectActivity[]>([])
   const [activityFilter, setActivityFilter] = useState<string>('all')
+  const [recentActivityLoading, setRecentActivityLoading] = useState(false)
+  const [recentActivityError, setRecentActivityError] = useState<string | null>(null)
+  const [activityLoading, setActivityLoading] = useState(false)
   const [assignees, setAssignees] = useState<CalendarAssignee[]>([])
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
@@ -308,10 +317,34 @@ export function OwnerProjectWorkspacePage() {
   }, [projectId])
 
   useEffect(() => {
+    if (!projectId) return
+    let cancelled = false
+    setRecentActivityLoading(true)
+    setRecentActivityError(null)
+    void getProjectActivities(Number(projectId), 1, 12)
+      .then((response) => {
+        if (!cancelled) setRecentActivities(response.data.items ?? [])
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setRecentActivities([])
+          setRecentActivityError(describeApiError(caught, 'تعذر تحميل النشاط.'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRecentActivityLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [projectId])
+
+  useEffect(() => {
     if (!projectId || tab !== 'activity') return
     let cancelled = false
     setActivityError(null)
-    void getProjectTimeline(projectId, activityFilter)
+    setActivityLoading(true)
+    void getProjectActivities(Number(projectId), 1, 50)
       .then((response) => {
         if (!cancelled) setActivity(response.data.items ?? [])
       })
@@ -321,10 +354,13 @@ export function OwnerProjectWorkspacePage() {
           setActivityError(describeApiError(caught, 'تعذر تحميل النشاط.'))
         }
       })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false)
+      })
     return () => {
       cancelled = true
     }
-  }, [projectId, tab, activityFilter])
+  }, [projectId, tab])
 
   async function saveBrief() {
     if (!projectId || savingBrief) return
@@ -783,7 +819,11 @@ export function OwnerProjectWorkspacePage() {
           ) : null}
 
           <DashboardSection title="أحدث التحديثات">
-            <ProjectRecentActivity events={workspace.recent_activity ?? workspace.timeline_preview} />
+            <ProjectRecentActivity
+              activities={recentActivities}
+              loading={recentActivityLoading}
+              error={recentActivityError}
+            />
           </DashboardSection>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -1468,25 +1508,34 @@ export function OwnerProjectWorkspacePage() {
             ))}
           </div>
           {activityError ? <p className="mb-2 text-xs text-red-700">{activityError}</p> : null}
-          {activity.length === 0 ? (
+          {activityLoading ? (
+            <div className="space-y-2" aria-busy="true" aria-label="جاري تحميل النشاط">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          ) : null}
+          {!activityLoading && activity.filter((row) => projectActivityMatchesFilter(row, activityFilter)).length === 0 ? (
             <p className="text-sm text-slate-500">
               {activityError ? 'تعذر عرض النشاط حالياً.' : 'لا أحداث في هذا الفلتر.'}
             </p>
-          ) : (
+          ) : null}
+          {!activityLoading && activity.filter((row) => projectActivityMatchesFilter(row, activityFilter)).length > 0 ? (
             <ul className="space-y-2">
-              {activity.map((event, index) => (
-                <li
-                  key={`${event.type}-${event.related_id ?? index}-${event.occurred_at}`}
-                  className="rounded-xl border border-slate-100 px-3 py-2 text-sm"
-                >
-                  <p className="font-medium text-slate-900">{event.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {event.type} · {formatDateTimeShort(event.occurred_at)}
-                  </p>
-                </li>
-              ))}
+              {activity
+                .filter((row) => projectActivityMatchesFilter(row, activityFilter))
+                .map((event) => (
+                  <li key={event.id} className="rounded-xl border border-slate-100 px-3 py-2 text-sm">
+                    <p className="font-medium text-slate-900">
+                      {event.description?.trim() || projectActivityLabel(event.action)}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {projectActivitySecondaryLine(event)} · {formatDateTimeShort(event.created_at)}
+                    </p>
+                  </li>
+                ))}
             </ul>
-          )}
+          ) : null}
           {workspace.upcoming_calendar_items.length > 0 ? (
             <div className="mt-4">
               <h3 className="mb-2 text-sm font-semibold">قادم في التقويم</h3>

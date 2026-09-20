@@ -9,6 +9,7 @@ const sample: ManagedFileItem = {
   extension: 'pdf',
   size: 2_400_000,
   can_preview: true,
+  is_client_visible: false,
   created_at: '2026-09-03T00:00:00+00:00',
   project: { id: 12, title: 'هوية المطعم' },
   order: null,

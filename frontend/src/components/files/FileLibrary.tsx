@@ -1,9 +1,17 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { FeedbackBanner } from '../ui/FeedbackBanner'
 import { WorkspaceEmptyState, WorkspaceErrorState } from '../workspace/WorkspaceStatus'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { downloadManagedFile, getManagedFiles, previewManagedFile, uploadManagedFile, type FileScope } from '../../services/files'
+import {
+  downloadManagedFile,
+  getManagedFiles,
+  previewManagedFile,
+  updateFileClientVisibility,
+  uploadManagedFile,
+  type FileScope,
+} from '../../services/files'
 import type { ManagedFileItem } from '../../types/api'
 import { describeApiError } from '../../utils/errors'
 import { FILE_ACCEPT, FILE_COPY, fileContextLabel, formatFileSize } from '../../utils/files'
@@ -23,6 +31,10 @@ type FileLibraryProps = {
   tasks?: FileUploadContextOption[]
 }
 
+function fileVisibilityLabel(isClientVisible: boolean): string {
+  return isClientVisible ? 'ظاهر للعميل' : 'داخلي'
+}
+
 export function FileLibrary({
   scope,
   query = '',
@@ -31,25 +43,41 @@ export function FileLibrary({
   orders = [],
   tasks = [],
 }: FileLibraryProps) {
+  const { user } = useAuth()
   const toast = useToast()
-  const { state, reload } = useAsyncData(() => getManagedFiles(scope, query || '?per_page=15'))
+  const { state, reload } = useAsyncData(() => getManagedFiles(scope, query || '?per_page=15'), [scope, query])
   const [file, setFile] = useState<File | null>(null)
   const [context, setContext] = useState('')
   const [uploading, setUploading] = useState(false)
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const [items, setItems] = useState<ManagedFileItem[]>([])
+  const [visibilityPendingId, setVisibilityPendingId] = useState<number | null>(null)
+
+  const showVisibilityControls = scope === 'workspace'
+  const showVisibilityToggle =
+    showVisibilityControls && (user?.role === 'OWNER' || user?.role === 'ACCOUNT_MANAGER')
+
+  useEffect(() => {
+    if (state.status === 'loading') {
+      setItems([])
+    }
+    if (state.status === 'ready') {
+      setItems(state.data.items)
+    }
+  }, [state])
 
   const contextOptions = useMemo(() => {
-    const items: Array<{ value: string; label: string }> = []
+    const next: Array<{ value: string; label: string }> = []
     for (const project of projects) {
-      items.push({ value: `project:${project.id}`, label: `مشروع · ${project.label}` })
+      next.push({ value: `project:${project.id}`, label: `مشروع · ${project.label}` })
     }
     for (const order of orders) {
-      items.push({ value: `order:${order.id}`, label: `طلب · ${order.label}` })
+      next.push({ value: `order:${order.id}`, label: `طلب · ${order.label}` })
     }
     for (const task of tasks) {
-      items.push({ value: `task:${task.id}`, label: `مهمة · ${task.label}` })
+      next.push({ value: `task:${task.id}`, label: `مهمة · ${task.label}` })
     }
-    return items
+    return next
   }, [projects, orders, tasks])
 
   async function onUpload(event: FormEvent<HTMLFormElement>) {
@@ -106,6 +134,33 @@ export function FileLibrary({
       await previewManagedFile(scope, item)
     } catch (caught) {
       setFeedback({ kind: 'error', text: describeApiError(caught, 'تعذر عرض الملف.') })
+    }
+  }
+
+  async function onToggleVisibility(item: ManagedFileItem) {
+    if (visibilityPendingId !== null) {
+      return
+    }
+
+    const nextVisible = !Boolean(item.is_client_visible)
+    setFeedback(null)
+    setVisibilityPendingId(item.id)
+
+    try {
+      const response = await updateFileClientVisibility(item.id, nextVisible)
+      setItems((current) =>
+        current.map((row) => (row.id === item.id ? { ...row, ...response.data } : row)),
+      )
+      const label = fileVisibilityLabel(Boolean(response.data.is_client_visible))
+      setFeedback({ kind: 'success', text: `تم تحديث الظهور: ${label}` })
+      toast.success(`تم تحديث الظهور: ${label}`)
+    } catch (caught) {
+      setFeedback({
+        kind: 'error',
+        text: describeApiError(caught, 'تعذر تحديث ظهور الملف للعميل.'),
+      })
+    } finally {
+      setVisibilityPendingId(null)
     }
   }
 
@@ -168,44 +223,67 @@ export function FileLibrary({
         <WorkspaceErrorState message={FILE_COPY.error} onRetry={() => void reload()} />
       ) : null}
 
-      {state.status === 'ready' && state.data.items.length === 0 ? (
+      {state.status === 'ready' && items.length === 0 ? (
         <WorkspaceEmptyState
           title={FILE_COPY.empty}
           description="ستظهر هنا الملفات المرتبطة بالمشاريع أو الطلبات أو المهام المصرّح لك بها."
         />
       ) : null}
 
-      {state.status === 'ready' && state.data.items.length > 0 ? (
+      {state.status === 'ready' && items.length > 0 ? (
         <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          {state.data.items.map((item) => (
-            <li key={item.id} className="flex min-w-0 flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{item.original_name}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {item.extension.toUpperCase()} · {formatFileSize(item.size)} · {fileContextLabel(item)} ·{' '}
-                  {formatDashboardDateTime(item.created_at)}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {item.can_preview ? (
+          {items.map((item) => {
+            const isClientVisible = Boolean(item.is_client_visible)
+            const pending = visibilityPendingId === item.id
+
+            return (
+              <li
+                key={item.id}
+                className="flex min-w-0 flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{item.original_name}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {item.extension.toUpperCase()} · {formatFileSize(item.size)} · {fileContextLabel(item)}
+                    {showVisibilityControls ? ` · ${fileVisibilityLabel(isClientVisible)}` : ''} ·{' '}
+                    {formatDashboardDateTime(item.created_at)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {showVisibilityToggle ? (
+                    <button
+                      type="button"
+                      disabled={pending || visibilityPendingId !== null}
+                      onClick={() => void onToggleVisibility(item)}
+                      className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-3 text-sm disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                    >
+                      {pending
+                        ? 'جاري التحديث...'
+                        : isClientVisible
+                          ? 'جعل الملف داخلياً'
+                          : 'إظهار للعميل'}
+                    </button>
+                  ) : null}
+                  {item.can_preview ? (
+                    <button
+                      type="button"
+                      onClick={() => void onPreview(item)}
+                      className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                    >
+                      {FILE_COPY.preview}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    onClick={() => void onPreview(item)}
-                    className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                    onClick={() => void onDownload(item)}
+                    className="inline-flex min-h-11 items-center rounded-lg bg-slate-900 px-3 text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
                   >
-                    {FILE_COPY.preview}
+                    {FILE_COPY.download}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => void onDownload(item)}
-                  className="inline-flex min-h-11 items-center rounded-lg bg-slate-900 px-3 text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-                >
-                  {FILE_COPY.download}
-                </button>
-              </div>
-            </li>
-          ))}
+                </div>
+              </li>
+            )
+          })}
         </ul>
       ) : null}
     </section>

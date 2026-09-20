@@ -35,6 +35,7 @@ export const CUSTOMER_LIVE_ROUTES = [
   '/customer',
   '/dashboard/projects',
   '/dashboard/orders',
+  '/dashboard/invoices',
   '/dashboard/messages',
   '/dashboard/files',
   '/dashboard/notifications',

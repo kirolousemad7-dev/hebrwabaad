@@ -575,6 +575,7 @@ export type ManagedFileItem = {
   extension: string
   size: number
   can_preview: boolean
+  is_client_visible: boolean
   created_at: string | null
   project?: { id: number; title: string } | null
   order?: { id: number; reference: string } | null
@@ -584,6 +585,48 @@ export type ManagedFileItem = {
 
 export type ManagedFileListData = {
   items: ManagedFileItem[]
+  meta: EmployeeListMeta
+}
+
+export type ProjectActivityActor = {
+  type: 'user' | 'customer' | 'staff' | string
+  id: number | null
+  name: string
+}
+
+/** Staff / workspace project activity (may include metadata). */
+export type ProjectActivity = {
+  id: number
+  action: string
+  description: string | null
+  actor: ProjectActivityActor | null
+  entity_type: string | null
+  entity_id: number | null
+  metadata?: Record<string, unknown> | null
+  is_client_visible?: boolean
+  created_at: string
+}
+
+export type ProjectActivityListData = {
+  items: ProjectActivity[]
+  meta: EmployeeListMeta
+}
+
+/**
+ * Customer-safe project activity — backend omits metadata and anonymizes staff actors.
+ */
+export type CustomerProjectActivity = {
+  id: number
+  action: string
+  description: string | null
+  actor: ProjectActivityActor | null
+  entity_type: string | null
+  entity_id: number | null
+  created_at: string
+}
+
+export type CustomerProjectActivityListData = {
+  items: CustomerProjectActivity[]
   meta: EmployeeListMeta
 }
 

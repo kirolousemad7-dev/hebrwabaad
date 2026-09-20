@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
+import { CustomerProjectActivityList } from '../../components/customer/CustomerProjectActivityList'
 import { FileLibrary } from '../../components/files/FileLibrary'
 import { CatalogErrorState, CatalogSkeleton } from '../../components/catalog/CatalogStatus'
 import { SupportContextButton } from '../../components/support/SupportContextButton'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { getCustomerProject } from '../../services/customerDashboard'
+import { getCustomerProject, getCustomerProjectActivities } from '../../services/customerDashboard'
 import { formatProjectDate, formatProjectProgress, PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
 
 function phaseMarker(status: string): string {
@@ -218,6 +219,11 @@ export function CustomerProjectDetailPage() {
       <SupportContextButton projectId={project.id} />
 
       <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="font-semibold">أحدث التحديثات</h2>
+        <CustomerProjectActivitySection projectId={project.id} />
+      </article>
+
+      <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="font-semibold">ملفات المشروع</h2>
         <FileLibrary
           scope="customer"
@@ -230,5 +236,23 @@ export function CustomerProjectDetailPage() {
         كل المشاريع
       </Link>
     </section>
+  )
+}
+
+function CustomerProjectActivitySection({ projectId }: { projectId: number }) {
+  const { state } = useAsyncData(
+    () => getCustomerProjectActivities(projectId, 1, 12),
+    [projectId],
+  )
+
+  if (state.status === 'error') {
+    return <CustomerProjectActivityList activities={[]} error={state.message} />
+  }
+
+  return (
+    <CustomerProjectActivityList
+      activities={state.status === 'ready' ? state.data.items : []}
+      loading={state.status === 'loading'}
+    />
   )
 }

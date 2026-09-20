@@ -1,4 +1,5 @@
 import { FileLibrary } from '../../components/files/FileLibrary'
+import { ProjectRecentActivity } from '../../components/owner/project-workspace/ProjectRecentActivity'
 import { FormEvent, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { TaskStatusSelect } from '../../components/workspace/WorkspaceListControls'
@@ -6,6 +7,7 @@ import { WorkspaceEmptyState, WorkspaceErrorState, WorkspaceSkeleton } from '../
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { ApiRequestError } from '../../services/api'
+import { getProjectActivities } from '../../services/projectActivities'
 import { getWorkspaceProjectTasks, updateWorkspaceProject } from '../../services/workspaceProjects'
 import { createManagedTask, getTaskAssignees, updateMyTaskStatus } from '../../services/workspaceTasks'
 import { formatProjectDate, formatProjectProgress, PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
@@ -237,6 +239,11 @@ export function WorkspaceProjectDetailPage() {
       </div>
 
       <article className="space-y-3">
+        <h2 className="text-lg font-semibold">أحدث التحديثات</h2>
+        <WorkspaceProjectActivity projectId={project.id} />
+      </article>
+
+      <article className="space-y-3">
         <h2 className="text-lg font-semibold">ملفات المشروع</h2>
         <FileLibrary
           scope="workspace"
@@ -245,6 +252,26 @@ export function WorkspaceProjectDetailPage() {
         />
       </article>
     </section>
+  )
+}
+
+function WorkspaceProjectActivity({ projectId }: { projectId: number }) {
+  const { state, reload } = useAsyncData(
+    () => getProjectActivities(projectId, 1, 12),
+    [projectId],
+  )
+
+  if (state.status === 'error') {
+    return (
+      <WorkspaceErrorState message={state.message} onRetry={() => void reload()} />
+    )
+  }
+
+  return (
+    <ProjectRecentActivity
+      activities={state.status === 'ready' ? state.data.items : []}
+      loading={state.status === 'loading'}
+    />
   )
 }
 
