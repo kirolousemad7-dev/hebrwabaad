@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Schema;
  * - tasks.calendar_item_id becomes unique (nullable)
  * - calendar_items gains a unique workspace_task link key
  *   (partial unique on SQLite/Postgres; generated column on MySQL)
+ *
+ * MySQL/MariaDB: drop the FK before replacing tasks_calendar_item_id_index
+ * with a unique index, then recreate the FK (ON DELETE SET NULL).
  */
 return new class extends Migration
 {
@@ -18,12 +21,25 @@ return new class extends Migration
     {
         $this->dedupeWorkspaceTaskCalendarLinks();
 
-        Schema::table('tasks', function (Blueprint $table): void {
-            $table->dropIndex(['calendar_item_id']);
-            $table->unique('calendar_item_id');
-        });
-
         $driver = Schema::getConnection()->getDriverName();
+
+        if ($this->isMysqlFamily($driver)) {
+            Schema::table('tasks', function (Blueprint $table): void {
+                $table->dropForeign(['calendar_item_id']);
+                $table->dropIndex(['calendar_item_id']);
+                $table->unique('calendar_item_id');
+                $table->foreign('calendar_item_id')
+                    ->references('id')
+                    ->on('calendar_items')
+                    ->nullOnDelete();
+            });
+        } else {
+            // SQLite / PostgreSQL: index swap only (no MySQL FK/index coupling).
+            Schema::table('tasks', function (Blueprint $table): void {
+                $table->dropIndex(['calendar_item_id']);
+                $table->unique('calendar_item_id');
+            });
+        }
 
         if (in_array($driver, ['sqlite', 'pgsql'], true)) {
             DB::statement(
@@ -56,10 +72,29 @@ return new class extends Migration
             });
         }
 
+        if ($this->isMysqlFamily($driver)) {
+            Schema::table('tasks', function (Blueprint $table): void {
+                $table->dropForeign(['calendar_item_id']);
+                $table->dropUnique(['calendar_item_id']);
+                $table->index('calendar_item_id');
+                $table->foreign('calendar_item_id')
+                    ->references('id')
+                    ->on('calendar_items')
+                    ->nullOnDelete();
+            });
+
+            return;
+        }
+
         Schema::table('tasks', function (Blueprint $table): void {
             $table->dropUnique(['calendar_item_id']);
             $table->index('calendar_item_id');
         });
+    }
+
+    private function isMysqlFamily(string $driver): bool
+    {
+        return in_array($driver, ['mysql', 'mariadb'], true);
     }
 
     /**
