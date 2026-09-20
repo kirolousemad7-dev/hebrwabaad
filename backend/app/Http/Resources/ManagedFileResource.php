@@ -23,6 +23,7 @@ class ManagedFileResource extends JsonResource
             'extension' => $this->extension,
             'size' => $this->size,
             'can_preview' => $this->isPreviewable(),
+            'is_client_visible' => (bool) $this->is_client_visible,
             'created_at' => $this->created_at?->toIso8601String(),
             'project' => $this->whenLoaded('project', fn () => $this->project === null ? null : [
                 'id' => $this->project->id,

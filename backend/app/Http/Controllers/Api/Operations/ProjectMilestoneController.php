@@ -78,7 +78,7 @@ class ProjectMilestoneController extends Controller
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $milestone = $this->milestones->update($project, $milestone, $data);
+        $milestone = $this->milestones->update($request->user(), $project, $milestone, $data);
 
         return ApiResponse::success($this->milestones->serialize($milestone));
     }

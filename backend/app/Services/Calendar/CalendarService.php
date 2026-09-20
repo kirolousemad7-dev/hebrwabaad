@@ -28,6 +28,7 @@ use App\Notifications\CalendarNotification;
 use App\Services\Crm\CrmCalendarService;
 use App\Services\Operations\OperationalNotifier;
 use App\Services\Operations\Work\TaskCalendarLinkService;
+use App\Services\ProjectActivityService;
 use App\Services\Workflow\WorkflowAutomationEngine;
 use App\Support\Calendar\CalendarDateTime;
 use App\Support\Calendar\CalendarOccurrenceReference;
@@ -49,6 +50,7 @@ class CalendarService
         private readonly CalendarActivityLogger $activityLogger,
         private readonly CalendarDerivedEventsService $derivedEvents,
         private readonly CalendarRelatedEntityUrlResolver $relatedUrls,
+        private readonly ProjectActivityService $projectActivities,
     ) {}
 
     /**
@@ -172,6 +174,7 @@ class CalendarService
             $this->syncReminders($item, $data['reminders'] ?? []);
             $this->notifyAssignees($item, $assigneeIds, $actor, 'assigned');
             $this->activityLogger->log($item, $actor, 'created', 'تم إنشاء عنصر التقويم');
+            $this->projectActivities->recordFromCalendarItem($item, $actor, 'created');
 
             $fresh = $item->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
             $this->dispatchTaskCreatedHook($actor, $fresh);
@@ -266,6 +269,7 @@ class CalendarService
 
         $this->notifyAssignees($item, $item->assignees()->pluck('users.id')->all(), $actor, 'updated');
         $this->activityLogger->log($item, $actor, 'updated', 'تم تحديث عنصر التقويم');
+        $this->projectActivities->recordFromCalendarItem($item, $actor, 'updated');
 
         $fresh = $item->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
 
@@ -667,6 +671,7 @@ class CalendarService
 
         $this->notifyAssignees($item, $item->assignees()->pluck('users.id')->all(), $actor, 'completed');
         $this->activityLogger->log($item, $actor, 'completed', 'تم إكمال عنصر التقويم');
+        $this->projectActivities->recordFromCalendarItem($item, $actor, 'completed');
 
         $fresh = $item->fresh(['creator', 'assignees', 'reminders'])->loadCount(['comments', 'files']);
         $this->dispatchTaskCompletedHook($actor, $fresh);

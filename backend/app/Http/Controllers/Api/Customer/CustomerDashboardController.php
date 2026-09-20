@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CustomerConversationResource;
 use App\Http\Resources\CustomerOrderResource;
+use App\Http\Resources\CustomerProjectActivityResource;
 use App\Http\Resources\CustomerProjectResource;
 use App\Http\Resources\ManagedFileResource;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\PrintingRequestResource;
 use App\Models\Project;
+use App\Models\ProjectActivity;
 use App\Services\CustomerDashboardService;
+use App\Services\ProjectActivityService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +22,7 @@ class CustomerDashboardController extends Controller
 {
     public function __construct(
         private readonly CustomerDashboardService $dashboard,
+        private readonly ProjectActivityService $activities,
     ) {}
 
     public function show(Request $request): JsonResponse
@@ -62,5 +66,23 @@ class CustomerDashboardController extends Controller
         return ApiResponse::success(
             CustomerProjectResource::make($this->dashboard->load($project))->resolve($request)
         );
+    }
+
+    public function activities(Request $request, Project $project): JsonResponse
+    {
+        $this->authorize('viewOwned', $project);
+        $this->authorize('viewAny', [ProjectActivity::class, $project]);
+
+        $page = $this->activities->paginateForProject($project, $request->query(), clientVisibleOnly: true);
+
+        return ApiResponse::success([
+            'items' => CustomerProjectActivityResource::collection($page->items())->resolve($request),
+            'meta' => [
+                'current_page' => $page->currentPage(),
+                'last_page' => $page->lastPage(),
+                'per_page' => $page->perPage(),
+                'total' => $page->total(),
+            ],
+        ]);
     }
 }

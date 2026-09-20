@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Http\Requests\ApiFormRequest;
 use App\Models\Project;
+use App\Models\Task;
 use Illuminate\Validation\Rule;
 
 class UpdateWorkspaceTaskRequest extends ApiFormRequest
@@ -13,6 +14,13 @@ class UpdateWorkspaceTaskRequest extends ApiFormRequest
     protected function prepareForValidation(): void
     {
         $project = $this->route('project');
+        $task = $this->route('task');
+
+        if ($project instanceof Project && $task instanceof Task
+            && (int) $task->project_id !== (int) $project->id) {
+            abort(404);
+        }
+
         if ($project instanceof Project) {
             $this->merge(['project_id' => $project->id]);
         }

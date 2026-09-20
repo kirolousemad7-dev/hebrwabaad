@@ -40,8 +40,44 @@ class ManagedFilePolicy
         return $user->is_active && $user->role instanceof UserRole;
     }
 
+    /**
+     * Publishing / unpublishing for customers — Owner or managing Account Manager only.
+     * Project members and task assignees can view files but cannot mark them client-visible.
+     */
+    public function updateClientVisibility(User $user, ManagedFile $file): bool
+    {
+        if (! $user->is_active || ! $user->role instanceof UserRole) {
+            return false;
+        }
+
+        if ($user->role === UserRole::Customer) {
+            return false;
+        }
+
+        if ($user->role === UserRole::Owner) {
+            return true;
+        }
+
+        if ($user->role !== UserRole::AccountManager) {
+            return false;
+        }
+
+        $file->loadMissing(['project', 'order']);
+
+        if ($file->project && (int) $file->project->account_manager_id === (int) $user->id) {
+            return true;
+        }
+
+        return $file->order !== null
+            && (int) $file->order->account_manager_id === (int) $user->id;
+    }
+
     private function customerOwns(User $user, ManagedFile $file): bool
     {
+        if (! $file->is_client_visible) {
+            return false;
+        }
+
         $file->loadMissing(['project', 'order']);
 
         if ($file->project && $file->project->customer_id === $user->id) {
@@ -56,8 +92,14 @@ class ManagedFilePolicy
         $file->loadMissing(['project', 'order', 'task']);
 
         if ($user->role === UserRole::AccountManager) {
-            if ($file->project && $file->project->account_manager_id === $user->id) {
-                return true;
+            if ($file->project) {
+                if ($file->project->account_manager_id === $user->id) {
+                    return true;
+                }
+
+                if ($file->project->members()->where('user_id', $user->id)->exists()) {
+                    return true;
+                }
             }
 
             return $file->order !== null && $file->order->account_manager_id === $user->id;
@@ -67,7 +109,14 @@ class ManagedFilePolicy
             return true;
         }
 
-        return $file->project !== null
-            && $file->project->tasks()->where('assigned_to', $user->id)->exists();
+        if ($file->project === null) {
+            return false;
+        }
+
+        if ($file->project->members()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        return $file->project->tasks()->where('assigned_to', $user->id)->exists();
     }
 }

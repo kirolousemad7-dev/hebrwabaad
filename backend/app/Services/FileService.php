@@ -27,6 +27,10 @@ class FileService
      */
     public const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'csv'];
 
+    public function __construct(
+        private readonly ProjectActivityService $activities,
+    ) {}
+
     /**
      * @return list<string>
      */
@@ -96,9 +100,35 @@ class FileService
             'order_id' => $context['order_id'],
             'task_id' => $context['task_id'],
             'calendar_item_id' => $context['calendar_item_id'],
+            'is_client_visible' => $this->resolveClientVisibility($actor, $attributes, $context),
         ]);
 
-        return $file->load($this->eagerLoad());
+        $file = $file->load($this->eagerLoad());
+        $this->activities->recordFileUploaded($file, $actor);
+
+        return $file;
+    }
+
+    public function updateClientVisibility(User $actor, ManagedFile $file, bool $isClientVisible): ManagedFile
+    {
+        if ($actor->role === UserRole::Customer) {
+            abort(403);
+        }
+
+        if (! $actor->can('updateClientVisibility', $file)) {
+            abort(403);
+        }
+
+        $old = (bool) $file->is_client_visible;
+        if ($old === $isClientVisible) {
+            return $file->load($this->eagerLoad());
+        }
+
+        $file->update(['is_client_visible' => $isClientVisible]);
+        $file = $file->fresh($this->eagerLoad()) ?? $file->load($this->eagerLoad());
+        $this->activities->recordFileClientVisibilityChanged($file, $actor, $old, $isClientVisible);
+
+        return $file;
     }
 
     public function download(ManagedFile $file): StreamedResponse
@@ -252,10 +282,12 @@ class FileService
         }
 
         if ($actor->role === UserRole::AccountManager) {
-            return $project->account_manager_id === $actor->id;
+            return $project->account_manager_id === $actor->id
+                || $project->members()->where('user_id', $actor->id)->exists();
         }
 
-        return $project->tasks()->where('assigned_to', $actor->id)->exists();
+        return $project->members()->where('user_id', $actor->id)->exists()
+            || $project->tasks()->where('assigned_to', $actor->id)->exists();
     }
 
     private function staffCanUseOrder(User $actor, Order $order): bool
@@ -277,18 +309,21 @@ class FileService
         }
 
         if ($user->role === UserRole::Customer) {
-            $query->where(function (Builder $inner) use ($user): void {
-                $inner->whereHas('project', fn (Builder $project) => $project->where('customer_id', $user->id))
-                    ->orWhereHas('order', fn (Builder $order) => $order->where('customer_id', $user->id));
-            });
+            $query->where('is_client_visible', true)
+                ->where(function (Builder $inner) use ($user): void {
+                    $inner->whereHas('project', fn (Builder $project) => $project->where('customer_id', $user->id))
+                        ->orWhereHas('order', fn (Builder $order) => $order->where('customer_id', $user->id));
+                });
 
             return;
         }
 
         if ($user->role === UserRole::AccountManager) {
             $query->where(function (Builder $inner) use ($user): void {
-                $inner->whereHas('project', fn (Builder $project) => $project->where('account_manager_id', $user->id))
-                    ->orWhereHas('order', fn (Builder $order) => $order->where('account_manager_id', $user->id));
+                $inner->whereHas('project', function (Builder $project) use ($user): void {
+                    $project->where('account_manager_id', $user->id)
+                        ->orWhereHas('members', fn (Builder $members) => $members->where('user_id', $user->id));
+                })->orWhereHas('order', fn (Builder $order) => $order->where('account_manager_id', $user->id));
             });
 
             return;
@@ -296,10 +331,13 @@ class FileService
 
         $query->where(function (Builder $inner) use ($user): void {
             $inner->whereHas('task', fn (Builder $task) => $task->where('assigned_to', $user->id))
-                ->orWhereHas('project', fn (Builder $project) => $project->whereHas(
-                    'tasks',
-                    fn (Builder $task) => $task->where('assigned_to', $user->id),
-                ));
+                ->orWhereHas('project', function (Builder $project) use ($user): void {
+                    $project->whereHas('members', fn (Builder $members) => $members->where('user_id', $user->id))
+                        ->orWhereHas(
+                            'tasks',
+                            fn (Builder $task) => $task->where('assigned_to', $user->id),
+                        );
+                });
         });
     }
 
@@ -343,6 +381,49 @@ class FileService
         if (! Storage::disk($file->disk)->exists($file->path)) {
             abort(404, 'Not found.');
         }
+    }
+
+    /**
+     * Customers always create client-visible files (their own uploads).
+     * Staff may mark client-visible only when Owner or the managing Account Manager.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array{project_id: int|null, order_id: int|null, task_id: int|null, calendar_item_id: int|null}  $context
+     */
+    private function resolveClientVisibility(User $actor, array $attributes, array $context): bool
+    {
+        if ($actor->role === UserRole::Customer) {
+            return true;
+        }
+
+        $requested = filter_var($attributes['is_client_visible'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (! $requested) {
+            return false;
+        }
+
+        if ($actor->role === UserRole::Owner) {
+            return true;
+        }
+
+        if ($actor->role === UserRole::AccountManager) {
+            if ($context['project_id'] !== null) {
+                $project = Project::query()->find((int) $context['project_id']);
+                if ($project !== null && (int) $project->account_manager_id === (int) $actor->id) {
+                    return true;
+                }
+            }
+
+            if ($context['order_id'] !== null) {
+                $order = Order::query()->find((int) $context['order_id']);
+                if ($order !== null && (int) $order->account_manager_id === (int) $actor->id) {
+                    return true;
+                }
+            }
+        }
+
+        throw ValidationException::withMessages([
+            'is_client_visible' => ['You are not allowed to mark files as client visible.'],
+        ]);
     }
 
     /**

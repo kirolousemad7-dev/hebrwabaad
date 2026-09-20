@@ -147,6 +147,7 @@ use App\Http\Controllers\Api\Webhooks\InboundWebhookController;
 use App\Http\Controllers\Api\Webhooks\PayTabsWebhookController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceFileController;
+use App\Http\Controllers\Api\WorkspaceProjectActivityController;
 use App\Http\Controllers\Api\WorkspaceProjectController;
 use App\Http\Controllers\Api\WorkspaceTaskController;
 use Illuminate\Support\Facades\Route;
@@ -694,6 +695,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/workspace/files/{file}', [WorkspaceFileController::class, 'show']);
     Route::get('/workspace/files/{file}/download', [WorkspaceFileController::class, 'download']);
     Route::get('/workspace/files/{file}/preview', [WorkspaceFileController::class, 'preview']);
+    Route::patch('/workspace/files/{file}/client-visibility', [WorkspaceFileController::class, 'updateClientVisibility']);
 
     Route::get('/workspace', [WorkspaceController::class, 'show']);
     Route::get('/workspace/developer', [WorkspaceController::class, 'developer']);
@@ -708,6 +710,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {
     Route::get('/workspace/projects', [WorkspaceProjectController::class, 'index']);
     Route::get('/workspace/projects/{project}', [WorkspaceProjectController::class, 'show']);
     Route::get('/workspace/projects/{project}/tasks', [WorkspaceProjectController::class, 'tasks']);
+    Route::get('/workspace/projects/{project}/activities', [WorkspaceProjectActivityController::class, 'index']);
     Route::get('/workspace/tasks', [WorkspaceTaskController::class, 'index']);
     Route::get('/workspace/tasks/{task}', [WorkspaceTaskController::class, 'show']);
     Route::patch('/workspace/tasks/{task}/status', [WorkspaceTaskController::class, 'updateStatus']);
@@ -837,6 +840,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CUSTOMER'])->group(fu
     Route::get('/customer/dashboard', [CustomerDashboardController::class, 'show']);
     Route::get('/customer/projects', [CustomerDashboardController::class, 'projects']);
     Route::get('/customer/projects/{project}', [CustomerDashboardController::class, 'project']);
+    Route::get('/customer/projects/{project}/activities', [CustomerDashboardController::class, 'activities']);
     Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
     Route::post('/customer/orders', [CustomerOrderController::class, 'storePackage'])->middleware('throttle:hebr-payments');
     Route::post('/customer/orders/custom-package', [CustomerOrderController::class, 'storeCustomPackage'])->middleware('throttle:hebr-payments');

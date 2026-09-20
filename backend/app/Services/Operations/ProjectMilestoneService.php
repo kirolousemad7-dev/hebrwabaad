@@ -8,11 +8,17 @@ use App\Models\ProjectMilestone;
 use App\Models\ProjectPhase;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\ProjectActivityService;
+use App\Support\ProjectActivityAction;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class ProjectMilestoneService
 {
+    public function __construct(
+        private readonly ProjectActivityService $activities,
+    ) {}
+
     /**
      * @return list<array<string, mixed>>
      */
@@ -60,7 +66,7 @@ class ProjectMilestoneService
             ? (int) $attributes['sort_order']
             : (int) (ProjectMilestone::query()->where('project_id', $project->id)->max('sort_order') ?? 0) + 1;
 
-        return ProjectMilestone::query()->create([
+        $milestone = ProjectMilestone::query()->create([
             'project_id' => $project->id,
             'phase_id' => $phaseId,
             'title' => $attributes['title'],
@@ -75,14 +81,44 @@ class ProjectMilestoneService
             'created_by' => $actor->id,
             'completed_at' => $status === ProjectMilestone::STATUS_DONE ? now() : null,
         ]);
+
+        $this->activities->recordUserAction(
+            project: $project,
+            user: $actor,
+            action: ProjectActivityAction::MILESTONE_CREATED,
+            entityType: 'milestone',
+            entityId: (int) $milestone->id,
+            description: 'Milestone created',
+            metadata: [
+                'title' => $milestone->title,
+                'status' => $milestone->status,
+            ],
+            isClientVisible: (bool) $milestone->is_client_visible,
+        );
+
+        if ($status === ProjectMilestone::STATUS_DONE) {
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $actor,
+                action: ProjectActivityAction::MILESTONE_COMPLETED,
+                entityType: 'milestone',
+                entityId: (int) $milestone->id,
+                description: 'Milestone completed',
+                metadata: ['title' => $milestone->title],
+                isClientVisible: (bool) $milestone->is_client_visible,
+            );
+        }
+
+        return $milestone;
     }
 
     /**
      * @param  array<string, mixed>  $attributes
      */
-    public function update(Project $project, ProjectMilestone $milestone, array $attributes): ProjectMilestone
+    public function update(User $actor, Project $project, ProjectMilestone $milestone, array $attributes): ProjectMilestone
     {
         $payload = [];
+        $oldStatus = $milestone->status;
 
         foreach (['title', 'description', 'starts_at', 'due_date', 'notes', 'sort_order', 'responsible_user_id'] as $field) {
             if (array_key_exists($field, $attributes)) {
@@ -108,8 +144,37 @@ class ProjectMilestoneService
         }
 
         $milestone->update($payload);
+        $milestone = $milestone->fresh(['responsible:id,name', 'phase:id,title']) ?? $milestone;
 
-        return $milestone->fresh(['responsible:id,name', 'phase:id,title']) ?? $milestone;
+        if (
+            array_key_exists('status', $attributes)
+            && $oldStatus !== $milestone->status
+            && $milestone->status === ProjectMilestone::STATUS_DONE
+        ) {
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $actor,
+                action: ProjectActivityAction::MILESTONE_COMPLETED,
+                entityType: 'milestone',
+                entityId: (int) $milestone->id,
+                description: 'Milestone completed',
+                metadata: ['title' => $milestone->title],
+                isClientVisible: (bool) $milestone->is_client_visible,
+            );
+        } else {
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $actor,
+                action: ProjectActivityAction::MILESTONE_UPDATED,
+                entityType: 'milestone',
+                entityId: (int) $milestone->id,
+                description: 'Milestone updated',
+                metadata: ['title' => $milestone->title],
+                isClientVisible: (bool) $milestone->is_client_visible,
+            );
+        }
+
+        return $milestone;
     }
 
     public function delete(ProjectMilestone $milestone): void

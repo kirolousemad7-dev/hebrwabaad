@@ -92,7 +92,7 @@ class ProjectWorkspaceController extends Controller
             'members.*.role' => ['nullable', 'string', 'in:manager,member'],
         ]);
 
-        $project = $this->projects->syncMembers($project, $data['members']);
+        $project = $this->projects->syncMembers($request->user(), $project, $data['members']);
 
         return ApiResponse::success([
             'members' => $project->members->map(fn ($member) => [

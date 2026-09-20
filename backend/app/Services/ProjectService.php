@@ -10,6 +10,7 @@ use App\Models\ProjectMember;
 use App\Models\User;
 use App\Services\Operations\ProjectHealthService;
 use App\Services\Workflow\WorkflowAutomationEngine;
+use App\Support\ProjectActivityAction;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class ProjectService
 {
     public function __construct(
         private readonly ProjectHealthService $healthService,
+        private readonly ProjectActivityService $activities,
     ) {}
 
     /**
@@ -50,15 +52,49 @@ class ProjectService
     {
         $customer = $this->assertAssignableCustomer((int) $attributes['customer_id']);
 
-        $project = Project::query()->create([
-            'title' => $attributes['title'],
-            'description' => $attributes['description'] ?? null,
-            'customer_id' => $customer->id,
-            'account_manager_id' => $manager->id,
-            'status' => $attributes['status'] ?? ProjectStatus::Planning->value,
-            'started_at' => $attributes['started_at'] ?? null,
-            'deadline' => $attributes['deadline'] ?? null,
-        ]);
+        $project = DB::transaction(function () use ($manager, $attributes, $customer): Project {
+            $project = Project::query()->create([
+                'title' => $attributes['title'],
+                'description' => $attributes['description'] ?? null,
+                'customer_id' => $customer->id,
+                'account_manager_id' => $manager->id,
+                'status' => $attributes['status'] ?? ProjectStatus::Planning->value,
+                'started_at' => $attributes['started_at'] ?? null,
+                'deadline' => $attributes['deadline'] ?? null,
+            ]);
+
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $manager,
+                action: ProjectActivityAction::PROJECT_CREATED,
+                entityType: 'project',
+                entityId: (int) $project->id,
+                description: 'Project created',
+                metadata: [
+                    'title' => $project->title,
+                    'status' => $project->status instanceof ProjectStatus
+                        ? $project->status->value
+                        : (string) $project->status,
+                    'customer_id' => $project->customer_id,
+                ],
+                isClientVisible: true,
+            );
+
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $manager,
+                action: ProjectActivityAction::PROJECT_ACCOUNT_MANAGER_ASSIGNED,
+                entityType: 'project',
+                entityId: (int) $project->id,
+                description: 'Account manager assigned',
+                metadata: [
+                    'account_manager_id' => $manager->id,
+                    'account_manager_name' => $manager->name,
+                ],
+            );
+
+            return $project;
+        });
 
         return $this->load($project);
     }
@@ -66,22 +102,56 @@ class ProjectService
     /**
      * @param  array<string, mixed>  $attributes
      */
-    public function update(Project $project, array $attributes): Project
+    public function update(User $actor, Project $project, array $attributes): Project
     {
         $customer = $this->assertAssignableCustomer((int) $attributes['customer_id']);
         $oldStatus = $project->status instanceof ProjectStatus
             ? $project->status->value
             : (string) $project->status;
         $newStatus = (string) $attributes['status'];
+        $oldTitle = $project->title;
 
-        $project->update([
-            'title' => $attributes['title'],
-            'description' => $attributes['description'] ?? null,
-            'customer_id' => $customer->id,
-            'status' => $attributes['status'],
-            'started_at' => $attributes['started_at'] ?? null,
-            'deadline' => $attributes['deadline'] ?? null,
-        ]);
+        $project = DB::transaction(function () use ($actor, $project, $attributes, $customer, $oldStatus, $newStatus, $oldTitle): Project {
+            $project->update([
+                'title' => $attributes['title'],
+                'description' => $attributes['description'] ?? null,
+                'customer_id' => $customer->id,
+                'status' => $attributes['status'],
+                'started_at' => $attributes['started_at'] ?? null,
+                'deadline' => $attributes['deadline'] ?? null,
+            ]);
+
+            if ($oldStatus !== $newStatus) {
+                $this->activities->recordUserAction(
+                    project: $project,
+                    user: $actor,
+                    action: ProjectActivityAction::PROJECT_STATUS_CHANGED,
+                    entityType: 'project',
+                    entityId: (int) $project->id,
+                    description: 'Project status changed',
+                    metadata: [
+                        'old_status' => $oldStatus,
+                        'new_status' => $newStatus,
+                    ],
+                    isClientVisible: true,
+                );
+            } else {
+                $this->activities->recordUserAction(
+                    project: $project,
+                    user: $actor,
+                    action: ProjectActivityAction::PROJECT_UPDATED,
+                    entityType: 'project',
+                    entityId: (int) $project->id,
+                    description: 'Project updated',
+                    metadata: [
+                        'old_title' => $oldTitle,
+                        'new_title' => $project->title,
+                    ],
+                );
+            }
+
+            return $project;
+        });
 
         if ($oldStatus !== $newStatus) {
             try {
@@ -111,9 +181,15 @@ class ProjectService
     /**
      * @param  list<array{user_id: int, role?: string}>  $members
      */
-    public function syncMembers(Project $project, array $members): Project
+    public function syncMembers(User $actor, Project $project, array $members): Project
     {
-        DB::transaction(function () use ($project, $members): void {
+        DB::transaction(function () use ($actor, $project, $members): void {
+            $before = ProjectMember::query()
+                ->where('project_id', $project->id)
+                ->pluck('user_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
             $keep = [];
             foreach ($members as $row) {
                 $userId = (int) ($row['user_id'] ?? 0);
@@ -133,17 +209,54 @@ class ProjectService
                     $role = 'member';
                 }
 
+                $wasExisting = in_array($userId, $before, true);
+
                 ProjectMember::query()->updateOrCreate(
                     ['project_id' => $project->id, 'user_id' => $userId],
                     ['role' => $role],
                 );
                 $keep[] = $userId;
+
+                if (! $wasExisting) {
+                    $this->activities->recordUserAction(
+                        project: $project,
+                        user: $actor,
+                        action: ProjectActivityAction::PROJECT_MEMBER_ADDED,
+                        entityType: 'project_member',
+                        entityId: $userId,
+                        description: 'Project member added',
+                        metadata: [
+                            'member_user_id' => $userId,
+                            'member_name' => $user->name,
+                            'role' => $role,
+                        ],
+                    );
+                }
             }
 
-            ProjectMember::query()
-                ->where('project_id', $project->id)
-                ->when($keep !== [], fn ($q) => $q->whereNotIn('user_id', $keep), fn ($q) => $q)
-                ->delete();
+            $removed = array_values(array_diff($before, $keep));
+            if ($removed !== []) {
+                $removedUsers = User::query()->whereIn('id', $removed)->get()->keyBy('id');
+                ProjectMember::query()
+                    ->where('project_id', $project->id)
+                    ->whereIn('user_id', $removed)
+                    ->delete();
+
+                foreach ($removed as $removedUserId) {
+                    $this->activities->recordUserAction(
+                        project: $project,
+                        user: $actor,
+                        action: ProjectActivityAction::PROJECT_MEMBER_REMOVED,
+                        entityType: 'project_member',
+                        entityId: $removedUserId,
+                        description: 'Project member removed',
+                        metadata: [
+                            'member_user_id' => $removedUserId,
+                            'member_name' => $removedUsers->get($removedUserId)?->name,
+                        ],
+                    );
+                }
+            }
         });
 
         return $project->fresh(['members.user:id,name,role']) ?? $project->load(['members.user:id,name,role']);
@@ -202,6 +315,16 @@ class ProjectService
     }
 
     /**
+     * Apply the same visibility rules used by ProjectPolicy::view to a Project query.
+     *
+     * @param  Builder<Project>  $query
+     */
+    public function applyVisibleTo(Builder $query, User $user): void
+    {
+        $this->scopeVisibleTo($query, $user);
+    }
+
+    /**
      * @return array<int, string|\Closure>
      */
     private function progressCounts(): array
@@ -221,6 +344,9 @@ class ProjectService
     }
 
     /**
+     * Mirror ProjectPolicy::view for list/query scoping.
+     * Does not grant update/manageMembers — those stay on the policy.
+     *
      * @param  Builder<Project>  $query
      */
     private function scopeVisibleTo(Builder $query, User $user): void
@@ -231,14 +357,29 @@ class ProjectService
             return;
         }
 
-        if ($role instanceof UserRole && $role->canManageProjects()) {
-            $query->where('account_manager_id', $user->id);
+        if (! $role instanceof UserRole) {
+            $query->whereRaw('0 = 1');
 
             return;
         }
 
-        $query->whereHas('tasks', function (Builder $tasks) use ($user): void {
-            $tasks->where('assigned_to', $user->id);
+        if ($role->canManageProjects()) {
+            $query->where(function (Builder $inner) use ($user): void {
+                $inner->where('account_manager_id', $user->id)
+                    ->orWhereHas('members', function (Builder $members) use ($user): void {
+                        $members->where('user_id', $user->id);
+                    });
+            });
+
+            return;
+        }
+
+        $query->where(function (Builder $inner) use ($user): void {
+            $inner->whereHas('members', function (Builder $members) use ($user): void {
+                $members->where('user_id', $user->id);
+            })->orWhereHas('tasks', function (Builder $tasks) use ($user): void {
+                $tasks->where('assigned_to', $user->id);
+            });
         });
     }
 

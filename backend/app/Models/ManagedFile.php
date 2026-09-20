@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quote_request_id',
     'commercial_quotation_id',
     'calendar_item_id',
+    'is_client_visible',
 ])]
 class ManagedFile extends Model
 {
@@ -33,6 +34,17 @@ class ManagedFile extends Model
     use HasFactory;
 
     protected $table = 'files';
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_client_visible' => 'boolean',
+            'size' => 'integer',
+        ];
+    }
 
     /**
      * @return BelongsTo<User, $this>

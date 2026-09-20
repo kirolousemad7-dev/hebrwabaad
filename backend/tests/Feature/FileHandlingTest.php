@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\TaskPriority;
 use App\Models\ManagedFile;
 use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,7 @@ class FileHandlingTest extends TestCase
             ->assertJsonPath('data.original_name', 'homepage-design.png')
             ->assertJsonPath('data.extension', 'png')
             ->assertJsonPath('data.can_preview', true)
+            ->assertJsonPath('data.is_client_visible', true)
             ->assertJsonPath('data.project.id', $project->id)
             ->assertJsonMissingPath('data.path')
             ->assertJsonMissingPath('data.disk')
@@ -258,7 +260,7 @@ class FileHandlingTest extends TestCase
             ->assertOk();
     }
 
-    public function test_account_manager_can_upload_to_managed_project_and_customer_can_see_it(): void
+    public function test_account_manager_upload_is_internal_until_marked_client_visible(): void
     {
         $manager = User::factory()->accountManager()->create();
         $customer = User::factory()->create();
@@ -267,20 +269,122 @@ class FileHandlingTest extends TestCase
             'account_manager_id' => $manager->id,
         ]);
 
-        $created = $this->asUser($manager)
+        $internal = $this->asUser($manager)
             ->post('/api/workspace/files', [
                 'file' => UploadedFile::fake()->create('brand-guidelines.pdf', 80, 'application/pdf'),
                 'project_id' => $project->id,
             ])
             ->assertCreated()
             ->assertJsonPath('data.original_name', 'brand-guidelines.pdf')
+            ->assertJsonPath('data.is_client_visible', false)
             ->assertJsonPath('data.can_preview', true)
             ->json('data');
 
         $this->asUser($customer)
-            ->getJson('/api/customer/files/'.$created['id'])
+            ->getJson('/api/customer/files/'.$internal['id'])
+            ->assertForbidden();
+
+        $this->asUser($customer)
+            ->get('/api/customer/files/'.$internal['id'].'/download')
+            ->assertForbidden();
+
+        $visible = $this->asUser($manager)
+            ->post('/api/workspace/files', [
+                'file' => UploadedFile::fake()->create('client-brief.pdf', 80, 'application/pdf'),
+                'project_id' => $project->id,
+                'is_client_visible' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.is_client_visible', true)
+            ->json('data');
+
+        $this->asUser($customer)
+            ->getJson('/api/customer/files/'.$visible['id'])
             ->assertOk()
-            ->assertJsonPath('data.original_name', 'brand-guidelines.pdf');
+            ->assertJsonPath('data.original_name', 'client-brief.pdf');
+    }
+
+    public function test_only_owner_or_managing_am_can_mark_file_client_visible(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $manager = User::factory()->accountManager()->create();
+        $developer = User::factory()->webDeveloper()->create();
+        $customer = User::factory()->create();
+        $project = Project::factory()->create([
+            'customer_id' => $customer->id,
+            'account_manager_id' => $manager->id,
+        ]);
+        ProjectMember::query()->create([
+            'project_id' => $project->id,
+            'user_id' => $developer->id,
+            'role' => 'member',
+        ]);
+
+        $file = $this->asUser($manager)
+            ->post('/api/workspace/files', [
+                'file' => UploadedFile::fake()->create('secret.pdf', 40, 'application/pdf'),
+                'project_id' => $project->id,
+            ])
+            ->assertCreated()
+            ->json('data');
+
+        $this->asUser($developer)
+            ->patchJson('/api/workspace/files/'.$file['id'].'/client-visibility', [
+                'is_client_visible' => true,
+            ])
+            ->assertForbidden();
+
+        $this->asUser($developer)
+            ->post('/api/workspace/files', [
+                'file' => UploadedFile::fake()->create('member-share.pdf', 40, 'application/pdf'),
+                'project_id' => $project->id,
+                'is_client_visible' => true,
+            ])
+            ->assertUnprocessable();
+
+        $this->asUser($customer)
+            ->patchJson('/api/workspace/files/'.$file['id'].'/client-visibility', [
+                'is_client_visible' => true,
+            ])
+            ->assertForbidden();
+
+        $this->asUser($manager)
+            ->patchJson('/api/workspace/files/'.$file['id'].'/client-visibility', [
+                'is_client_visible' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.is_client_visible', true);
+
+        $otherFile = $this->asUser($manager)
+            ->post('/api/workspace/files', [
+                'file' => UploadedFile::fake()->create('owner-share.pdf', 40, 'application/pdf'),
+                'project_id' => $project->id,
+            ])
+            ->assertCreated()
+            ->json('data');
+
+        $this->asUser($owner)
+            ->patchJson('/api/workspace/files/'.$otherFile['id'].'/client-visibility', [
+                'is_client_visible' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.is_client_visible', true);
+
+        $foreign = Project::factory()->create([
+            'customer_id' => User::factory()->create()->id,
+            'account_manager_id' => User::factory()->accountManager()->create()->id,
+        ]);
+        $foreignFile = ManagedFile::factory()->create([
+            'uploaded_by' => $owner->id,
+            'project_id' => $foreign->id,
+            'is_client_visible' => false,
+        ]);
+
+        $this->asUser($manager)
+            ->patchJson('/api/workspace/files/'.$foreignFile->id.'/client-visibility', [
+                'is_client_visible' => true,
+            ])
+            ->assertForbidden();
     }
 
     public function test_nonexistent_file_is_not_found_and_traversal_names_are_stored_safely(): void

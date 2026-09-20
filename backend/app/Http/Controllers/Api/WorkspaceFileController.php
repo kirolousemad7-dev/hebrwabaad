@@ -45,7 +45,7 @@ class WorkspaceFileController extends Controller
         $file = $this->files->store(
             $request->user(),
             $request->file('file'),
-            $request->safe()->only(['project_id', 'order_id', 'task_id', 'calendar_item_id']),
+            $request->safe()->only(['project_id', 'order_id', 'task_id', 'calendar_item_id', 'is_client_visible']),
         );
 
         return ApiResponse::success(ManagedFileResource::make($file)->resolve($request), 201);
@@ -78,5 +78,24 @@ class WorkspaceFileController extends Controller
         $this->authorize('download', $file);
 
         return $this->files->preview($file);
+    }
+
+    public function updateClientVisibility(Request $request, ManagedFile $file): JsonResponse
+    {
+        abort_if($request->user()?->role === UserRole::Customer, 403);
+
+        $this->authorize('updateClientVisibility', $file);
+
+        $data = $request->validate([
+            'is_client_visible' => ['required', 'boolean'],
+        ]);
+
+        $file = $this->files->updateClientVisibility(
+            $request->user(),
+            $file,
+            (bool) $data['is_client_visible'],
+        );
+
+        return ApiResponse::success(ManagedFileResource::make($file)->resolve($request));
     }
 }

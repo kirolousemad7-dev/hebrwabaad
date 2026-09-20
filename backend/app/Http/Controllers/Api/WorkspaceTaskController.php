@@ -53,7 +53,7 @@ class WorkspaceTaskController extends Controller
         $this->authorize('updateStatus', $task);
 
         $status = TaskStatus::from($request->validated('status'));
-        $task = $this->tasks->updateStatus($task, $status);
+        $task = $this->tasks->updateStatus($request->user(), $task, $status);
 
         return ApiResponse::success(TaskResource::make($task)->resolve($request));
     }

@@ -61,7 +61,7 @@ class WorkspaceProjectController extends Controller
     {
         $this->authorize('update', $project);
 
-        $project = $this->projects->update($project, $request->validated());
+        $project = $this->projects->update($request->user(), $project, $request->validated());
 
         return ApiResponse::success(ProjectResource::make($project)->resolve($request));
     }

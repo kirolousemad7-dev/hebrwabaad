@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
+use App\Models\Project;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectPhase;
 use App\Models\Task;
@@ -13,13 +14,18 @@ use App\Services\GoogleCalendar\GoogleCalendarTaskSyncService;
 use App\Services\GoogleCalendar\TaskReminderService;
 use App\Services\Operations\Work\TaskCalendarLinkService;
 use App\Support\Operations\TaskCalendarSyncContext;
+use App\Support\ProjectActivityAction;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class TaskService
 {
-    public function __construct(private readonly ProjectService $projects) {}
+    public function __construct(
+        private readonly ProjectService $projects,
+        private readonly ProjectActivityService $activities,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $filters
@@ -113,24 +119,61 @@ class TaskService
             $attributes['milestone_id'] ?? null,
         );
 
-        $task = Task::query()->create([
-            'title' => $attributes['title'],
-            'description' => $attributes['description'] ?? null,
-            'project_id' => (int) $attributes['project_id'],
-            'phase_id' => $attributes['phase_id'] ?? null,
-            'milestone_id' => $attributes['milestone_id'] ?? null,
-            'assigned_to' => $assignee->id,
-            'created_by' => $creator->id,
-            'priority' => $attributes['priority'],
-            'status' => $attributes['status'] ?? TaskStatus::Todo->value,
-            'deadline' => $attributes['deadline'] ?? null,
-            'start_at' => $attributes['start_at'] ?? null,
-            'due_at' => $attributes['due_at'] ?? null,
-            'timezone' => $attributes['timezone'] ?? config('app.timezone'),
-            'location' => $attributes['location'] ?? null,
-            'supplier_id' => $attributes['supplier_id'] ?? null,
-            'is_client_visible' => (bool) ($attributes['is_client_visible'] ?? false),
-        ]);
+        $task = DB::transaction(function () use ($creator, $attributes, $assignee): Task {
+            $task = Task::query()->create([
+                'title' => $attributes['title'],
+                'description' => $attributes['description'] ?? null,
+                'project_id' => (int) $attributes['project_id'],
+                'phase_id' => $attributes['phase_id'] ?? null,
+                'milestone_id' => $attributes['milestone_id'] ?? null,
+                'assigned_to' => $assignee->id,
+                'created_by' => $creator->id,
+                'priority' => $attributes['priority'],
+                'status' => $attributes['status'] ?? TaskStatus::Todo->value,
+                'deadline' => $attributes['deadline'] ?? null,
+                'start_at' => $attributes['start_at'] ?? null,
+                'due_at' => $attributes['due_at'] ?? null,
+                'timezone' => $attributes['timezone'] ?? config('app.timezone'),
+                'location' => $attributes['location'] ?? null,
+                'supplier_id' => $attributes['supplier_id'] ?? null,
+                'is_client_visible' => (bool) ($attributes['is_client_visible'] ?? false),
+            ]);
+
+            $project = $task->project()->first()
+                ?? Project::query()->findOrFail($task->project_id);
+
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $creator,
+                action: ProjectActivityAction::TASK_CREATED,
+                entityType: 'task',
+                entityId: (int) $task->id,
+                description: 'Task created',
+                metadata: [
+                    'title' => $task->title,
+                    'assigned_to' => $task->assigned_to,
+                    'status' => $task->status instanceof TaskStatus
+                        ? $task->status->value
+                        : (string) $task->status,
+                ],
+                isClientVisible: (bool) $task->is_client_visible,
+            );
+
+            $this->activities->recordUserAction(
+                project: $project,
+                user: $creator,
+                action: ProjectActivityAction::TASK_ASSIGNED,
+                entityType: 'task',
+                entityId: (int) $task->id,
+                description: 'Task assigned',
+                metadata: [
+                    'assigned_to' => $assignee->id,
+                    'assignee_name' => $assignee->name,
+                ],
+            );
+
+            return $task;
+        });
 
         $task = $task->load(['assignee', 'creator', 'project', 'supplier']);
         app(PlatformNotifier::class)->taskAssigned($task);
@@ -233,10 +276,69 @@ class TaskService
             app(GoogleCalendarTaskSyncService::class)->queueSync($task);
         }
 
+        $project = $task->project;
+        if ($project !== null) {
+            $newStatusEnum = $task->status instanceof TaskStatus
+                ? $task->status
+                : TaskStatus::tryFrom((string) $task->status);
+
+            if ($previousAssigneeId !== $task->assigned_to) {
+                $this->activities->recordUserAction(
+                    project: $project,
+                    user: $actor,
+                    action: ProjectActivityAction::TASK_ASSIGNED,
+                    entityType: 'task',
+                    entityId: (int) $task->id,
+                    description: 'Task assigned',
+                    metadata: [
+                        'old_assigned_to' => $previousAssigneeId,
+                        'assigned_to' => $task->assigned_to,
+                        'assignee_name' => $task->assignee?->name,
+                    ],
+                );
+            }
+
+            if ($previousStatus?->value !== $newStatusEnum?->value) {
+                $action = $newStatusEnum === TaskStatus::Completed
+                    ? ProjectActivityAction::TASK_COMPLETED
+                    : ProjectActivityAction::TASK_STATUS_CHANGED;
+
+                $this->activities->recordUserAction(
+                    project: $project,
+                    user: $actor,
+                    action: $action,
+                    entityType: 'task',
+                    entityId: (int) $task->id,
+                    description: $action === ProjectActivityAction::TASK_COMPLETED
+                        ? 'Task completed'
+                        : 'Task status changed',
+                    metadata: [
+                        'old_status' => $previousStatus?->value,
+                        'new_status' => $newStatusEnum?->value,
+                        'title' => $task->title,
+                    ],
+                    isClientVisible: (bool) $task->is_client_visible,
+                );
+            } else {
+                $this->activities->recordUserAction(
+                    project: $project,
+                    user: $actor,
+                    action: ProjectActivityAction::TASK_UPDATED,
+                    entityType: 'task',
+                    entityId: (int) $task->id,
+                    description: 'Task updated',
+                    metadata: [
+                        'title' => $task->title,
+                    ],
+                    isClientVisible: (bool) $task->is_client_visible,
+                );
+            }
+        }
+
         return $task;
     }
 
-    public function updateStatus(Task $task, TaskStatus $status): Task
+    public function updateStatus(User $actor, Task $task, TaskStatus $status): Task
     {
         $previousStatus = $task->status instanceof TaskStatus
             ? $task->status
@@ -246,6 +348,29 @@ class TaskService
         $task->update(['status' => $status]);
 
         $task = $task->fresh(['assignee', 'creator', 'project']);
+
+        if ($task?->project !== null && $previousStatus?->value !== $status->value) {
+            $action = $status === TaskStatus::Completed
+                ? ProjectActivityAction::TASK_COMPLETED
+                : ProjectActivityAction::TASK_STATUS_CHANGED;
+
+            $this->activities->recordUserAction(
+                project: $task->project,
+                user: $actor,
+                action: $action,
+                entityType: 'task',
+                entityId: (int) $task->id,
+                description: $action === ProjectActivityAction::TASK_COMPLETED
+                    ? 'Task completed'
+                    : 'Task status changed',
+                metadata: [
+                    'old_status' => $previousStatus?->value,
+                    'new_status' => $status->value,
+                    'title' => $task->title,
+                ],
+                isClientVisible: (bool) $task->is_client_visible,
+            );
+        }
 
         if (
             ! TaskCalendarSyncContext::isSyncing()

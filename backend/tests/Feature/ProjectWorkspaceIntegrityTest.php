@@ -135,31 +135,46 @@ class ProjectWorkspaceIntegrityTest extends TestCase
         )->assertForbidden();
     }
 
-    public function test_project_files_remain_customer_readable_by_existing_policy(): void
+    public function test_project_files_respect_client_visible_boundary(): void
     {
         Storage::fake('local');
         ['manager' => $manager, 'customer' => $customer, 'project' => $project] = $this->seedProject();
 
-        $created = $this->asUser($manager)
+        $this->assertTrue(Schema::hasColumn('files', 'is_client_visible'));
+
+        $internal = $this->asUser($manager)
             ->post('/api/workspace/files', [
                 'file' => UploadedFile::fake()->create('internal-brief.pdf', 40, 'application/pdf'),
                 'project_id' => $project->id,
             ])
             ->assertCreated()
+            ->assertJsonPath('data.is_client_visible', false)
             ->json('data');
 
         $this->asUser($customer)
-            ->getJson('/api/customer/files/'.$created['id'])
+            ->getJson('/api/customer/files/'.$internal['id'])
+            ->assertForbidden();
+
+        $visible = $this->asUser($manager)
+            ->post('/api/workspace/files', [
+                'file' => UploadedFile::fake()->create('client-brief.pdf', 40, 'application/pdf'),
+                'project_id' => $project->id,
+                'is_client_visible' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.is_client_visible', true)
+            ->json('data');
+
+        $this->asUser($customer)
+            ->getJson('/api/customer/files/'.$visible['id'])
             ->assertOk()
-            ->assertJsonPath('data.id', $created['id']);
+            ->assertJsonPath('data.id', $visible['id']);
 
         $this->assertDatabaseHas('files', [
-            'id' => $created['id'],
+            'id' => $visible['id'],
             'project_id' => $project->id,
+            'is_client_visible' => 1,
         ]);
-        $this->assertFalse(
-            Schema::hasColumn('files', 'client_visible') || Schema::hasColumn('files', 'is_client_visible')
-        );
     }
 
     public function test_customer_payload_has_no_forbidden_keys_recursively(): void

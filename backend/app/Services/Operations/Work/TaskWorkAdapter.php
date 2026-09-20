@@ -80,7 +80,7 @@ class TaskWorkAdapter
     {
         $this->assertCanMutateStatus($actor, $task);
 
-        $task = $this->tasks->updateStatus($task, TaskStatus::Completed);
+        $task = $this->tasks->updateStatus($actor, $task, TaskStatus::Completed);
 
         return $this->toItem($task, $actor);
     }
@@ -141,7 +141,7 @@ class TaskWorkAdapter
         $this->assertCanMutateStatus($actor, $task);
 
         $mapped = $this->denormalizeStatus($status);
-        $task = $this->tasks->updateStatus($task, $mapped);
+        $task = $this->tasks->updateStatus($actor, $task, $mapped);
 
         return $this->toItem($task, $actor);
     }

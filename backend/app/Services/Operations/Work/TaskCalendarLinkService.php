@@ -261,7 +261,8 @@ class TaskCalendarLinkService
         }
 
         TaskCalendarSyncContext::with('completion_from_calendar', function () use ($task): void {
-            $this->tasks->updateStatus($task, TaskStatus::Completed);
+            $actor = $this->actorForTask($task);
+            $this->tasks->updateStatus($actor, $task, TaskStatus::Completed);
         });
     }
 

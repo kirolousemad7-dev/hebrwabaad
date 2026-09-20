@@ -13,6 +13,7 @@ use App\Models\WorkflowAutomationRun;
 use App\Services\Calendar\CalendarService;
 use App\Services\Operations\Work\UnifiedWorkService;
 use App\Services\Printing\PrintingRevenueService;
+use App\Services\ProjectService;
 use Illuminate\Database\Eloquent\Builder;
 
 class OperationsCommandCenterService
@@ -25,6 +26,7 @@ class OperationsCommandCenterService
         private readonly SlaEvaluationService $sla,
         private readonly PrintingOperationsService $printing,
         private readonly PrintingRevenueService $printingRevenue,
+        private readonly ProjectService $projects,
     ) {}
 
     /**
@@ -50,11 +52,11 @@ class OperationsCommandCenterService
 
         $projectsNeedAttention = 0;
         $projectHealth = [];
-        $projects = Project::query()
+        $projectsQuery = Project::query()
             ->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
-            ->orderBy('deadline')
-            ->limit(30)
-            ->get();
+            ->orderBy('deadline');
+        $this->projects->applyVisibleTo($projectsQuery, $actor);
+        $projects = $projectsQuery->limit(30)->get();
 
         foreach ($projects as $project) {
             $eval = $this->health->evaluate($project);

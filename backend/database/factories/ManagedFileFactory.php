@@ -30,6 +30,21 @@ class ManagedFileFactory extends Factory
             'mime_type' => 'application/pdf',
             'extension' => 'pdf',
             'size' => 2048,
+            'is_client_visible' => false,
         ];
+    }
+
+    public function clientVisible(): static
+    {
+        return $this->state(fn (): array => [
+            'is_client_visible' => true,
+        ]);
+    }
+
+    public function internalOnly(): static
+    {
+        return $this->state(fn (): array => [
+            'is_client_visible' => false,
+        ]);
     }
 }

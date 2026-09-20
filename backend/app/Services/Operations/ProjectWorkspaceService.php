@@ -19,6 +19,7 @@ use App\Services\Catalog\CustomPackageProjectOverviewService;
 use App\Services\Operations\Work\UnifiedWorkService;
 use App\Services\ProjectService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 
 class ProjectWorkspaceService
 {
@@ -350,7 +351,9 @@ class ProjectWorkspaceService
                     });
             })
             ->orderBy('starts_at')
-            ->get();
+            ->get()
+            ->filter(fn (CalendarItem $item): bool => Gate::forUser($actor)->allows('view', $item))
+            ->values();
 
         return $items->map(fn (CalendarItem $item) => $this->calendar->serialize($item))->all();
     }
