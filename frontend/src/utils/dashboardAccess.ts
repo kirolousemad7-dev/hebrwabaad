@@ -22,6 +22,7 @@ const PATH_MODULE_MAP: Array<[string, string]> = [
   ['/owner/catalog-control', 'catalog'],
   ['/owner/printing-catalog', 'catalog'],
   ['/owner/blog', 'content'],
+  ['/owner/pages', 'content'],
   ['/owner/seo', 'content'],
   ['/owner/marketing', 'content'],
   ['/owner/work-reviews', 'content'],

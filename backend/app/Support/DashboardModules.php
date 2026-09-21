@@ -93,6 +93,7 @@ final class DashboardModules
             '/owner/catalog-control' => 'catalog',
             '/owner/printing-catalog' => 'catalog',
             '/owner/blog' => 'content',
+            '/owner/pages' => 'content',
             '/owner/seo' => 'content',
             '/owner/marketing' => 'content',
             '/owner/work-reviews' => 'content',

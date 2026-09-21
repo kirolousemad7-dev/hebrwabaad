@@ -3,8 +3,10 @@ import { ownerNavForRole } from './dashboardNav'
 import {
   DEFAULT_PAGE_SEO,
   PUBLIC_SITEMAP_PATHS,
+  CMS_PUBLIC_PATHS,
   absoluteAssetUrl,
   descriptionLengthHint,
+  isCmsManagedPath,
   isPrivateSeoPath,
   isIndexedCatalogPath,
   seoKeyFromPath,
@@ -60,10 +62,18 @@ describe('seo helpers', () => {
     expect(DEFAULT_PAGE_SEO['printing-packaging'].title).toContain('الطباعة')
   })
 
-  it('lists indexable sitemap paths without private areas', () => {
+  it('lists indexable sitemap paths without private areas or CMS duplicates', () => {
     expect(PUBLIC_SITEMAP_PATHS).toContain('/printing-packaging')
     expect(PUBLIC_SITEMAP_PATHS).toContain('/marketing-packages')
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain('/about')
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain('/golden-warranty')
+    expect(PUBLIC_SITEMAP_PATHS).not.toContain('/terms-and-conditions')
     expect(PUBLIC_SITEMAP_PATHS.some((path) => path.startsWith('/dashboard'))).toBe(false)
+    expect(CMS_PUBLIC_PATHS).toContain('/about')
+    expect(CMS_PUBLIC_PATHS).toContain('/services-and-products-policies')
+    expect(isCmsManagedPath('/about')).toBe(true)
+    expect(isCmsManagedPath('/privacy-policy')).toBe(true)
+    expect(isCmsManagedPath('/services')).toBe(false)
   })
 
   it('warns when title or description exceed search preview lengths', () => {
@@ -135,6 +145,7 @@ describe('public navigation', () => {
   it('keeps SEO management in the owner area only', () => {
     expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/seo')).toBe(true)
     expect(ownerNavForRole('ADMIN_MANAGER').some((item) => item.to === '/owner/seo')).toBe(true)
+    expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/pages')).toBe(true)
     expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/marketing')).toBe(true)
     expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/work-reviews')).toBe(true)
     expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/suppliers')).toBe(true)

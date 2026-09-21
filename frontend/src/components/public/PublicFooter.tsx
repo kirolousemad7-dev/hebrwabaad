@@ -2,6 +2,9 @@ import { Link, useLocation } from 'react-router-dom'
 import { BrandLogo } from '../brand/BrandLogo'
 import { useAuth } from '../../context/AuthContext'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
+import { useAsyncData } from '../../hooks/useAsyncData'
+import { listPublicCmsFooterPages } from '../../services/cmsPages'
+import { groupFooterPages } from '../../utils/cmsPages'
 import { LANDING_SECTION_NAV } from '../../utils/publicNav'
 
 const SOCIAL_LABELS: Record<string, string> = {
@@ -31,6 +34,9 @@ export function PublicFooter() {
   const showContact = settings.website.show_contact_in_footer
   const showQuickLinks = settings.website.show_quick_links
 
+  const { state: cmsFooterState } = useAsyncData(listPublicCmsFooterPages, [])
+  const cmsGroups = cmsFooterState.status === 'ready' ? groupFooterPages(cmsFooterState.data) : []
+
   return (
     <footer className="mt-auto border-t border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
@@ -44,7 +50,12 @@ export function PublicFooter() {
               <p className="text-xs text-slate-500">{settings.brand.tagline}</p>
             ) : null}
           </div>
-          <nav aria-label="روابط تذييل الموقع" className="grid gap-6 text-sm sm:grid-cols-2">
+          <nav
+            aria-label="روابط تذييل الموقع"
+            className={`grid gap-6 text-sm ${
+              cmsGroups.length > 0 ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'sm:grid-cols-2'
+            }`}
+          >
             {showQuickLinks ? (
               <div>
                 <p className="mb-2 font-semibold text-slate-900">
@@ -99,6 +110,23 @@ export function PublicFooter() {
                 </ul>
               </div>
             ) : null}
+            {cmsGroups.map((group) => (
+              <div key={group.group}>
+                <p className="mb-2 font-semibold text-slate-900">{group.group}</p>
+                <ul className="flex flex-col gap-2 text-slate-600">
+                  {group.pages.map((page) => (
+                    <li key={page.id}>
+                      <Link
+                        to={page.path || `/${page.slug}`}
+                        className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                      >
+                        {page.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
             <div>
               <p className="mb-2 font-semibold text-slate-900">الحساب</p>
               <ul className="flex flex-col gap-2 text-slate-600">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Catalog;
 use App\Http\Controllers\Controller;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
+use App\Models\CmsPage;
 use App\Models\PortfolioItem;
 use App\Models\Service;
 use App\Models\Supplier;
@@ -31,9 +32,13 @@ class PublicSitemapController extends Controller
             '/suppliers',
             '/portfolio',
             '/blog',
-            '/about',
-            '/contact',
         ];
+
+        foreach (CmsPage::query()->published()->orderBy('id')->get(['slug']) as $cmsPage) {
+            if (filled($cmsPage->slug)) {
+                $paths[] = '/'.$cmsPage->slug;
+            }
+        }
 
         foreach (Service::query()->active()->public()->orderBy('id')->get(['slug']) as $service) {
             if (filled($service->slug)) {

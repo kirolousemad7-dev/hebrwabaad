@@ -89,8 +89,18 @@ export const PUBLIC_SITEMAP_PATHS = [
   '/suppliers',
   '/portfolio',
   '/blog',
+] as const
+
+/** Public CMS page paths — SEO is owned by PublicCmsPage, not SeoPage/SeoHead. */
+export const CMS_PUBLIC_PATHS = [
   '/about',
   '/contact',
+  '/golden-warranty',
+  '/terms-and-conditions',
+  '/privacy-policy',
+  '/returns-and-refunds',
+  '/shipping-policy',
+  '/services-and-products-policies',
 ] as const
 
 export const DEFAULT_PAGE_SEO: Record<SeoPageKey, PageSeoDefaults> = {
@@ -291,6 +301,10 @@ export function seoKeyFromPath(pathname: string): SeoPageKey | null {
   )
 
   return match?.[0] ?? null
+}
+
+export function isCmsManagedPath(pathname: string): boolean {
+  return (CMS_PUBLIC_PATHS as readonly string[]).includes(pathname)
 }
 
 export function isPrivateSeoPath(pathname: string): boolean {

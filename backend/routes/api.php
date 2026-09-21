@@ -122,9 +122,11 @@ use App\Http\Controllers\Api\Operations\TaskCalendarLinkController;
 use App\Http\Controllers\Api\Operations\UnifiedWorkController;
 use App\Http\Controllers\Api\Operations\WorkflowAutomationController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\Owner\CmsPageController as OwnerCmsPageController;
 use App\Http\Controllers\Api\Owner\OwnerRequirementController;
 use App\Http\Controllers\Api\Payments\PayTabsReturnController;
 use App\Http\Controllers\Api\Printing\PrintingRequestController;
+use App\Http\Controllers\Api\Public\PublicCmsPageController;
 use App\Http\Controllers\Api\PublicCrm\PublicQuotationController;
 use App\Http\Controllers\Api\PublicPortal\PublicCustomerPortalController;
 use App\Http\Controllers\Api\PublicPrinting\PublicPrintingCustomerApprovalController;
@@ -240,7 +242,25 @@ Route::prefix('owner')->middleware([
     Route::get('/requirements/{requirement}/attachments/{index}', [OwnerRequirementController::class, 'downloadAttachment']);
 });
 
+Route::prefix('owner')->middleware([
+    'auth:sanctum',
+    'account.active',
+    'role:OWNER,ADMIN_MANAGER',
+    'dashboard.module:content',
+])->group(function (): void {
+    Route::get('/pages', [OwnerCmsPageController::class, 'index']);
+    Route::post('/pages', [OwnerCmsPageController::class, 'store']);
+    Route::get('/pages/{page}', [OwnerCmsPageController::class, 'show']);
+    Route::put('/pages/{page}', [OwnerCmsPageController::class, 'update']);
+    Route::delete('/pages/{page}', [OwnerCmsPageController::class, 'destroy']);
+    Route::patch('/pages/{page}/publish', [OwnerCmsPageController::class, 'publish']);
+    Route::patch('/pages/{page}/footer', [OwnerCmsPageController::class, 'footer']);
+});
+
 Route::prefix('public')->group(function (): void {
+    Route::get('/pages', [PublicCmsPageController::class, 'index']);
+    Route::get('/pages/{slug}', [PublicCmsPageController::class, 'show']);
+
     Route::get('/quotations/{token}', [PublicQuotationController::class, 'show']);
     Route::post('/quotations/{token}/accept', [PublicQuotationController::class, 'accept']);
     Route::post('/quotations/{token}/reject', [PublicQuotationController::class, 'reject']);

@@ -9,6 +9,7 @@ import {
   absoluteAssetUrl,
   absoluteUrl,
   buildPageSchema,
+  isCmsManagedPath,
   isPrivateSeoPath,
   isIndexedCatalogPath,
   isSupplierPublicPath,
@@ -131,6 +132,11 @@ export function SeoHead() {
         schema: null,
         siteName,
       })
+      return
+    }
+
+    // CMS body pages own their SEO via PublicCmsPage — avoid SeoPage/404 overwrite.
+    if (isCmsManagedPath(location.pathname)) {
       return
     }
 

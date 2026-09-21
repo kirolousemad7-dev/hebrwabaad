@@ -31,6 +31,7 @@ import { BlogCategoryPage } from '../pages/BlogCategoryPage'
 import { BlogPage } from '../pages/BlogPage'
 import { BlogPostPage } from '../pages/BlogPostPage'
 import { ContactPage } from '../pages/ContactPage'
+import { PublicCmsPage } from '../components/cms/PublicCmsPage'
 import { EventsPage } from '../pages/EventsPage'
 import { HomePage } from '../pages/HomePage'
 import { PortfolioPage } from '../pages/PortfolioPage'
@@ -59,6 +60,8 @@ import { OwnerSupportPage } from '../pages/owner/OwnerSupportPage'
 import { OwnerMarketingPage } from '../pages/owner/OwnerMarketingPage'
 import { OwnerPackagesPage } from '../pages/owner/OwnerPackagesPage'
 import { OwnerSeoPage } from '../pages/owner/OwnerSeoPage'
+import { OwnerPagesPage } from '../pages/owner/OwnerPagesPage'
+import { OwnerPageEditorPage } from '../pages/owner/OwnerPageEditorPage'
 import { OwnerCatalogControlPage } from '../pages/owner/OwnerCatalogControlPage'
 import { OwnerServicesPage } from '../pages/owner/OwnerServicesPage'
 import { OwnerSupplierDetailPage } from '../pages/owner/OwnerSupplierDetailPage'
@@ -198,6 +201,15 @@ export function AppRoutes() {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/golden-warranty" element={<PublicCmsPage slug="golden-warranty" />} />
+        <Route path="/terms-and-conditions" element={<PublicCmsPage slug="terms-and-conditions" />} />
+        <Route path="/privacy-policy" element={<PublicCmsPage slug="privacy-policy" />} />
+        <Route path="/returns-and-refunds" element={<PublicCmsPage slug="returns-and-refunds" />} />
+        <Route path="/shipping-policy" element={<PublicCmsPage slug="shipping-policy" />} />
+        <Route
+          path="/services-and-products-policies"
+          element={<PublicCmsPage slug="services-and-products-policies" />}
+        />
         <Route path="/marketing-packages" element={<MarketingPackagesPage />} />
         <Route path="/event-packages" element={<EventPackagesPage />} />
         <Route path="/printing-packaging" element={<PrintingPackagingPage />} />
@@ -371,6 +383,9 @@ export function AppRoutes() {
           <Route path="/owner/packages" element={<OwnerPackagesPage />} />
           <Route path="/owner/catalog-control" element={<OwnerCatalogControlPage />} />
           <Route path="/owner/seo" element={<OwnerSeoPage />} />
+          <Route path="/owner/pages" element={<OwnerPagesPage />} />
+          <Route path="/owner/pages/new" element={<OwnerPageEditorPage />} />
+          <Route path="/owner/pages/:id" element={<OwnerPageEditorPage />} />
           <Route path="/owner/marketing" element={<OwnerMarketingPage />} />
           <Route path="/owner/blog" element={<OwnerBlogPage />} />
           <Route path="/owner/work-reviews" element={<OwnerWorkReviewsPage />} />

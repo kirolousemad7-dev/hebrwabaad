@@ -106,6 +106,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
     label: 'المحتوى',
     items: [
       { to: '/owner/blog', label: 'المدونة', icon: 'files', roles: ['OWNER', 'ADMIN_MANAGER'] },
+      { to: '/owner/pages', label: 'الصفحات', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/seo', label: 'الصفحات / SEO', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/marketing', label: 'المعرض التسويقي', icon: 'files', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/work-reviews', label: 'مراجعة الأعمال', icon: 'work', roles: ['OWNER', 'ADMIN_MANAGER'] },

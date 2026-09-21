@@ -13,8 +13,6 @@ const PUBLIC_PATHS = [
   '/consultant',
   '/suppliers',
   '/portfolio',
-  '/about',
-  '/contact',
 ]
 
 function sitemapXml(origin: string): string {

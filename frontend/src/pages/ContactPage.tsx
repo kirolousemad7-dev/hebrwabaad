@@ -1,10 +1,11 @@
 import { FormEvent, useState } from 'react'
+import { PublicCmsPage } from '../components/cms/PublicCmsPage'
 import { FeedbackBanner } from '../components/ui/FeedbackBanner'
 import { LandingCta } from '../components/landing/LandingCta'
 import { ApiRequestError } from '../services/api'
 import { submitContactInquiry } from '../services/marketing'
 
-export function ContactPage() {
+function ContactInquiryForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -29,12 +30,10 @@ export function ContactPage() {
   }
 
   return (
-    <section className="grid gap-10 lg:grid-cols-2">
+    <section className="mx-auto grid max-w-3xl gap-10 lg:grid-cols-2">
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold">تواصل معنا</h1>
-        <p className="leading-8 text-slate-600">
-          أرسل استفسارك، أو ابدأ مباشرة بإنشاء حساب للدخول إلى المنصة.
-        </p>
+        <h2 className="text-2xl font-semibold">أرسل رسالة</h2>
+        <p className="leading-8 text-slate-600">أرسل استفسارك، أو ابدأ مباشرة بإنشاء حساب للدخول إلى المنصة.</p>
         <div className="flex flex-wrap gap-3">
           <LandingCta to="/register" variant="navy">
             ابدأ مشروعك
@@ -75,5 +74,13 @@ export function ContactPage() {
         </form>
       )}
     </section>
+  )
+}
+
+export function ContactPage() {
+  return (
+    <PublicCmsPage slug="contact" softFail>
+      <ContactInquiryForm />
+    </PublicCmsPage>
   )
 }

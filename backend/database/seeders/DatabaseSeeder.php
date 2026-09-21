@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             CatalogAddonSeeder::class,
             RecommendationGoalSeeder::class,
             SeoPageSeeder::class,
+            CmsPageSeeder::class,
             CrmSettingsSeeder::class,
             PlatformCatalogSeeder::class,
             OfficialCatalogSeeder::class,
