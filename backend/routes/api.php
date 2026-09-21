@@ -123,10 +123,13 @@ use App\Http\Controllers\Api\Operations\UnifiedWorkController;
 use App\Http\Controllers\Api\Operations\WorkflowAutomationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\Owner\CmsPageController as OwnerCmsPageController;
+use App\Http\Controllers\Api\Owner\MarketingMediaController as OwnerMarketingMediaController;
+use App\Http\Controllers\Api\Owner\MarketingSectionController as OwnerMarketingSectionController;
 use App\Http\Controllers\Api\Owner\OwnerRequirementController;
 use App\Http\Controllers\Api\Payments\PayTabsReturnController;
 use App\Http\Controllers\Api\Printing\PrintingRequestController;
 use App\Http\Controllers\Api\Public\PublicCmsPageController;
+use App\Http\Controllers\Api\Public\PublicMarketingController;
 use App\Http\Controllers\Api\PublicCrm\PublicQuotationController;
 use App\Http\Controllers\Api\PublicPortal\PublicCustomerPortalController;
 use App\Http\Controllers\Api\PublicPrinting\PublicPrintingCustomerApprovalController;
@@ -255,11 +258,25 @@ Route::prefix('owner')->middleware([
     Route::delete('/pages/{page}', [OwnerCmsPageController::class, 'destroy']);
     Route::patch('/pages/{page}/publish', [OwnerCmsPageController::class, 'publish']);
     Route::patch('/pages/{page}/footer', [OwnerCmsPageController::class, 'footer']);
+
+    Route::get('/marketing/sections', [OwnerMarketingSectionController::class, 'index']);
+    Route::get('/marketing/sections/{section}', [OwnerMarketingSectionController::class, 'show']);
+    Route::put('/marketing/sections/{section}', [OwnerMarketingSectionController::class, 'update']);
+
+    Route::get('/marketing/media', [OwnerMarketingMediaController::class, 'index']);
+    Route::post('/marketing/media', [OwnerMarketingMediaController::class, 'store']);
+    Route::get('/marketing/media/orphans', [OwnerMarketingMediaController::class, 'orphans']);
+    Route::get('/marketing/media/{media}', [OwnerMarketingMediaController::class, 'show']);
+    Route::put('/marketing/media/{media}', [OwnerMarketingMediaController::class, 'update']);
+    Route::post('/marketing/media/{media}/replace', [OwnerMarketingMediaController::class, 'replace']);
+    Route::delete('/marketing/media/{media}', [OwnerMarketingMediaController::class, 'destroy']);
 });
 
 Route::prefix('public')->group(function (): void {
     Route::get('/pages', [PublicCmsPageController::class, 'index']);
     Route::get('/pages/{slug}', [PublicCmsPageController::class, 'show']);
+    Route::get('/marketing', [PublicMarketingController::class, 'index']);
+    Route::get('/marketing/sections/{key}', [PublicMarketingController::class, 'show']);
 
     Route::get('/quotations/{token}', [PublicQuotationController::class, 'show']);
     Route::post('/quotations/{token}/accept', [PublicQuotationController::class, 'accept']);

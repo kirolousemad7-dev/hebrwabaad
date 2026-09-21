@@ -696,7 +696,7 @@ class MediaService
         return match ($entityType) {
             'customer' => MediaVisibility::Customer,
             'supplier', 'product', 'supplier_portfolio_item' => MediaVisibility::Supplier,
-            'portfolio', 'package', 'service', 'printing_product' => MediaVisibility::Public,
+            'portfolio', 'package', 'service', 'printing_product', 'marketing_section', 'marketing_content' => MediaVisibility::Public,
             default => MediaVisibility::Internal,
         };
     }

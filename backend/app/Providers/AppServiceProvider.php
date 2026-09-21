@@ -9,6 +9,8 @@ use App\Models\ContentMedia;
 use App\Models\CrmCompany;
 use App\Models\Invoice;
 use App\Models\ManagedFile;
+use App\Models\MarketingContent;
+use App\Models\MarketingSection;
 use App\Models\Meeting;
 use App\Models\Package;
 use App\Models\Payment;
@@ -80,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
             'invoice' => Invoice::class,
             'payment' => Payment::class,
             'meeting' => Meeting::class,
+            'marketing_section' => MarketingSection::class,
+            'marketing_content' => MarketingContent::class,
         ]);
 
         Route::bind('file', function (string $value): ManagedFile {

@@ -6,6 +6,8 @@ use App\Enums\UserRole;
 use App\Models\CommercialQuotation;
 use App\Models\CrmCompany;
 use App\Models\Invoice;
+use App\Models\MarketingContent;
+use App\Models\MarketingSection;
 use App\Models\Meeting;
 use App\Models\Package;
 use App\Models\Payment;
@@ -45,6 +47,8 @@ class MediaEntityRegistry
         'invoice' => Invoice::class,
         'payment' => Payment::class,
         'meeting' => Meeting::class,
+        'marketing_section' => MarketingSection::class,
+        'marketing_content' => MarketingContent::class,
     ];
 
     /**

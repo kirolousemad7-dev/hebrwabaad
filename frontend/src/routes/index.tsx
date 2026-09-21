@@ -79,6 +79,9 @@ import { OwnerApprovalsPage } from '../pages/owner/OwnerApprovalsPage'
 import { OwnerBlogPage } from '../pages/owner/OwnerBlogPage'
 import { OwnerOperationsInsightsPage } from '../pages/owner/OwnerOperationsInsightsPage'
 import { OwnerNotificationPreferencesPage } from '../pages/owner/OwnerNotificationPreferencesPage'
+import { OwnerWebsiteMediaPage } from '../pages/owner/OwnerWebsiteMediaPage'
+import { OwnerWebsitePage } from '../pages/owner/OwnerWebsitePage'
+import { OwnerWebsiteSectionPage } from '../pages/owner/OwnerWebsiteSectionPage'
 import { OwnerWorkPage } from '../pages/owner/OwnerWorkPage'
 import { OwnerPrintingOpsPage } from '../pages/owner/OwnerPrintingOpsPage'
 import { OwnerPrintingQuotationsPage } from '../pages/owner/OwnerPrintingQuotationsPage'
@@ -386,6 +389,9 @@ export function AppRoutes() {
           <Route path="/owner/pages" element={<OwnerPagesPage />} />
           <Route path="/owner/pages/new" element={<OwnerPageEditorPage />} />
           <Route path="/owner/pages/:id" element={<OwnerPageEditorPage />} />
+          <Route path="/owner/website" element={<OwnerWebsitePage />} />
+          <Route path="/owner/website/media" element={<OwnerWebsiteMediaPage />} />
+          <Route path="/owner/website/:key" element={<OwnerWebsiteSectionPage />} />
           <Route path="/owner/marketing" element={<OwnerMarketingPage />} />
           <Route path="/owner/blog" element={<OwnerBlogPage />} />
           <Route path="/owner/work-reviews" element={<OwnerWorkReviewsPage />} />

@@ -25,6 +25,7 @@ describe('owner grouped navigation', () => {
       expect(paths).toContain('/owner/services')
       expect(paths).toContain('/owner/seo')
       expect(paths).toContain('/owner/pages')
+      expect(paths).toContain('/owner/website')
       expect(paths).toContain('/owner/blog')
       expect(paths).toContain('/crm/leads')
       expect(paths).toContain('/owner/suppliers')
