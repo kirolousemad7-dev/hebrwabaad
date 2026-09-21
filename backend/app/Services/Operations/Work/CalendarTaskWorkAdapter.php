@@ -140,7 +140,7 @@ class CalendarTaskWorkAdapter
         $mapped = CalendarItemPriority::tryFrom(strtoupper($priority));
         if ($mapped === null) {
             throw ValidationException::withMessages([
-                'priority' => ['Invalid priority.'],
+                'priority' => ['الأولوية غير صالحة.'],
             ]);
         }
 

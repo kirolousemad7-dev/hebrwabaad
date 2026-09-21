@@ -26,7 +26,7 @@ class CrmPipelineController extends Controller
         abort_unless(
             $request->user()?->role?->canManageCrmSettings() === true,
             403,
-            'Forbidden.',
+            __('messages.forbidden'),
         );
 
         $data = $request->validate([

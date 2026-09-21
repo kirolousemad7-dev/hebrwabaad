@@ -36,7 +36,7 @@ class EventTypeAdminController extends Controller
     {
         $nameAr = trim(strip_tags((string) ($data['name_ar'] ?? '')));
         if ($nameAr === '') {
-            throw ValidationException::withMessages(['name_ar' => ['Required.']]);
+            throw ValidationException::withMessages(['name_ar' => ['مطلوب.']]);
         }
 
         $attributes = [

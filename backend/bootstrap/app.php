@@ -41,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                return ApiResponse::error('Unauthenticated.', 401);
+                return ApiResponse::error(__('messages.unauthenticated'), 401);
             }
 
             return null;
@@ -49,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (AuthorizationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                return ApiResponse::error('Forbidden.', 403);
+                return ApiResponse::error(__('messages.forbidden'), 403);
             }
 
             return null;
@@ -57,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                return ApiResponse::error('Forbidden.', 403);
+                return ApiResponse::error(__('messages.forbidden'), 403);
             }
 
             return null;
@@ -68,7 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return ApiResponse::error('Validation failed.', 422, $e->errors());
+            return ApiResponse::error(__('messages.validation_failed'), 422, $e->errors());
         });
 
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
@@ -76,7 +76,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return ApiResponse::error('Not found.', 404);
+            return ApiResponse::error(__('messages.not_found'), 404);
         });
 
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
@@ -84,7 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            return ApiResponse::error('Too many attempts. Please try again later.', 429);
+            return ApiResponse::error(__('messages.too_many_attempts'), 429);
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
@@ -98,6 +98,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
             report($e);
 
-            return ApiResponse::error('Server error.', 500);
+            return ApiResponse::error(__('messages.server_error'), 500);
         });
     })->create();

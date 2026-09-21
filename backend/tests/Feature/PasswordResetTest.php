@@ -130,7 +130,7 @@ class PasswordResetTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Unable to reset password.');
+            ->assertJsonPath('message', 'تعذر إعادة تعيين كلمة المرور.');
     }
 
     public function test_invalid_token_and_mismatched_confirmation_are_rejected(): void
@@ -144,7 +144,7 @@ class PasswordResetTest extends TestCase
             'password_confirmation' => 'new-password-123',
         ])
             ->assertStatus(422)
-            ->assertJsonPath('message', 'Unable to reset password.');
+            ->assertJsonPath('message', 'تعذر إعادة تعيين كلمة المرور.');
 
         $this->postJson('/api/auth/reset-password', [
             'email' => $user->email,
@@ -153,7 +153,7 @@ class PasswordResetTest extends TestCase
             'password_confirmation' => 'different-password',
         ])
             ->assertStatus(422)
-            ->assertJsonPath('message', 'Validation failed.');
+            ->assertJsonPath('message', 'فشل التحقق من البيانات.');
     }
 
     public function test_inactive_account_cannot_reset_password(): void
@@ -173,7 +173,7 @@ class PasswordResetTest extends TestCase
             'password_confirmation' => 'new-password-123',
         ])
             ->assertStatus(422)
-            ->assertJsonPath('message', 'Unable to reset password.');
+            ->assertJsonPath('message', 'تعذر إعادة تعيين كلمة المرور.');
 
         $this->assertTrue(Hash::check('old-password-123', $user->fresh()->password));
     }

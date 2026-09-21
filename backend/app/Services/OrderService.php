@@ -436,7 +436,7 @@ class OrderService
 
         if (! $current->canTransitionTo($next)) {
             throw ValidationException::withMessages([
-                'status' => ['This order cannot move to the requested stage.'],
+                'status' => ['لا يمكن نقل هذا الطلب إلى المرحلة المطلوبة.'],
             ]);
         }
 
@@ -598,13 +598,13 @@ class OrderService
 
         if ($customer === null || $customer->role !== UserRole::Customer) {
             throw ValidationException::withMessages([
-                'customer_id' => ['Selected customer is not valid.'],
+                'customer_id' => ['العميل المحدد غير صالح.'],
             ]);
         }
 
         if (! $customer->is_active) {
             throw ValidationException::withMessages([
-                'customer_id' => ['Cannot attach a deactivated customer.'],
+                'customer_id' => ['لا يمكن ربط عميل معطّل.'],
             ]);
         }
 
@@ -625,7 +625,7 @@ class OrderService
 
         if ($manager === null || $manager->role !== UserRole::AccountManager || ! $manager->is_active) {
             throw ValidationException::withMessages([
-                'account_manager_id' => ['Selected account manager is not valid.'],
+                'account_manager_id' => ['مدير الحساب المحدد غير صالح.'],
             ]);
         }
 
@@ -642,13 +642,13 @@ class OrderService
 
         if ($project === null || $project->customer_id !== $customer->id) {
             throw ValidationException::withMessages([
-                'project_id' => ['Selected project does not belong to this customer.'],
+                'project_id' => ['المشروع المحدد لا ينتمي إلى هذا العميل.'],
             ]);
         }
 
         if ($manager->role === UserRole::AccountManager && $project->account_manager_id !== $manager->id) {
             throw ValidationException::withMessages([
-                'project_id' => ['You cannot attach a project you do not manage.'],
+                'project_id' => ['لا يمكنك ربط مشروع لا تديره.'],
             ]);
         }
 
@@ -665,7 +665,7 @@ class OrderService
 
         if ($service === null) {
             throw ValidationException::withMessages([
-                'service_id' => ['Selected service is not valid.'],
+                'service_id' => ['الخدمة المحددة غير صالحة.'],
             ]);
         }
 
@@ -682,7 +682,7 @@ class OrderService
 
         if ($package === null) {
             throw ValidationException::withMessages([
-                'package_id' => ['Selected package is not valid.'],
+                'package_id' => ['الباقة المحددة غير صالحة.'],
             ]);
         }
 

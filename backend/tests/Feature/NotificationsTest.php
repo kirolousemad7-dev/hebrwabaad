@@ -43,7 +43,7 @@ class NotificationsTest extends TestCase
         $this->asUser($customer)
             ->getJson('/api/notifications')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_order_status_change_notifies_owning_customer_only_once(): void

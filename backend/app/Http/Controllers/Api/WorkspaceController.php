@@ -17,7 +17,7 @@ class WorkspaceController extends Controller
         $role = $user?->role;
 
         if (! $role instanceof UserRole || ! $role->usesEmployeeWorkspace()) {
-            return ApiResponse::error('Forbidden.', 403);
+            return ApiResponse::error(__('messages.forbidden'), 403);
         }
 
         return ApiResponse::success(
@@ -30,7 +30,7 @@ class WorkspaceController extends Controller
         $user = $request->user();
 
         if ($user?->role !== UserRole::WebDeveloper) {
-            return ApiResponse::error('Forbidden.', 403);
+            return ApiResponse::error(__('messages.forbidden'), 403);
         }
 
         return $this->show($request);
@@ -79,7 +79,7 @@ class WorkspaceController extends Controller
     private function requireRole(Request $request, UserRole $role): JsonResponse
     {
         if ($request->user()?->role !== $role) {
-            return ApiResponse::error('Forbidden.', 403);
+            return ApiResponse::error(__('messages.forbidden'), 403);
         }
 
         return $this->show($request);

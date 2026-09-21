@@ -444,7 +444,7 @@ class MediaService
     public function preview(Media $media): StreamedResponse
     {
         if (! $media->isPreviewable()) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
 
         $this->assertStored($media);
@@ -465,7 +465,7 @@ class MediaService
     public function publicFile(Media $media): StreamedResponse
     {
         if ($media->visibilityEnum() !== MediaVisibility::Public) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
 
         $this->assertStored($media);
@@ -765,7 +765,7 @@ class MediaService
     private function assertStored(Media $media): void
     {
         if (! Storage::disk($media->disk)->exists($media->path)) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
     }
 

@@ -15,11 +15,11 @@ class EnsureRole
         $user = $request->user();
 
         if ($user === null) {
-            return ApiResponse::error('Unauthenticated.', 401);
+            return ApiResponse::error(__('messages.unauthenticated'), 401);
         }
 
         if ($user->is_active === false) {
-            return ApiResponse::error('Account deactivated.', 403);
+            return ApiResponse::error('الحساب معطّل.', 403);
         }
 
         $currentRole = $user->role instanceof UserRole
@@ -27,7 +27,7 @@ class EnsureRole
             : (string) $user->role;
 
         if (! in_array($currentRole, $roles, true)) {
-            return ApiResponse::error('Forbidden.', 403);
+            return ApiResponse::error(__('messages.forbidden'), 403);
         }
 
         return $next($request);

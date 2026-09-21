@@ -208,7 +208,7 @@ class EmployeeManagementTest extends TestCase
             'email' => $employee->email,
             'password' => 'password',
         ])->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
 
         $this->withToken($this->tokenFor($owner))
             ->patchJson('/api/admin/employees/'.$employee->id.'/status', ['is_active' => true])
@@ -256,12 +256,12 @@ class EmployeeManagementTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/admin/printing-requests')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
 
         $this->withToken($token)
             ->getJson('/api/auth/me')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_owner_accounts_cannot_be_managed_as_employees(): void

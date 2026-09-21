@@ -735,14 +735,14 @@ class SupplierContentService
     private function assertReviewer(User $user): void
     {
         if (! $user->canReviewContent()) {
-            throw new ContentWorkflowException('Forbidden.', 403);
+            throw new ContentWorkflowException(__('messages.forbidden'), 403);
         }
     }
 
     private function assertSupplierOwns(User $user, int $supplierId): void
     {
         if ($user->role !== UserRole::Supplier || (int) $this->supplierFor($user)->id !== $supplierId) {
-            throw new ContentWorkflowException('Forbidden.', 403);
+            throw new ContentWorkflowException(__('messages.forbidden'), 403);
         }
     }
 

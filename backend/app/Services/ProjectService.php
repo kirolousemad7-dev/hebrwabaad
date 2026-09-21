@@ -423,13 +423,13 @@ class ProjectService
 
         if ($customer === null || $customer->role !== UserRole::Customer) {
             throw ValidationException::withMessages([
-                'customer_id' => ['Selected customer is not valid.'],
+                'customer_id' => ['العميل المحدد غير صالح.'],
             ]);
         }
 
         if (! $customer->is_active) {
             throw ValidationException::withMessages([
-                'customer_id' => ['Cannot attach a deactivated customer.'],
+                'customer_id' => ['لا يمكن ربط عميل معطّل.'],
             ]);
         }
 
@@ -460,7 +460,7 @@ class ProjectService
 
         if ($manager === null || $manager->role !== UserRole::AccountManager) {
             throw ValidationException::withMessages([
-                'account_manager_id' => ['Selected account manager is not valid.'],
+                'account_manager_id' => ['مدير الحساب المحدد غير صالح.'],
             ]);
         }
 

@@ -108,7 +108,7 @@ class CommercialQuotationService
 
         if ($source->usesPrintingQuotation()) {
             throw ValidationException::withMessages([
-                'quote_request' => ['Printing quote requests must use printing quotations.'],
+                'quote_request' => ['طلبات عروض الطباعة يجب أن تستخدم عروض الطباعة.'],
             ]);
         }
 
@@ -250,7 +250,7 @@ class CommercialQuotationService
         $status = $this->statusOf($quotation);
         if (! in_array($status, [CommercialQuotationStatus::Draft, CommercialQuotationStatus::Sent], true)) {
             throw ValidationException::withMessages([
-                'quotation' => ['Only draft quotations can be sent.'],
+                'quotation' => ['يمكن إرسال عروض الأسعار المسودة فقط.'],
             ]);
         }
 
@@ -258,7 +258,7 @@ class CommercialQuotationService
 
         if ($quotation->customer === null) {
             throw ValidationException::withMessages([
-                'customer' => ['Customer is required before sending.'],
+                'customer' => ['يجب تحديد العميل قبل الإرسال.'],
             ]);
         }
 
@@ -269,19 +269,19 @@ class CommercialQuotationService
 
         if ($usableItems->isEmpty()) {
             throw ValidationException::withMessages([
-                'items' => ['At least one line item with quantity > 0 and unit price >= 0 is required.'],
+                'items' => ['يجب إضافة بند واحد على الأقل بكمية أكبر من صفر وسعر وحدة صالح.'],
             ]);
         }
 
         if (blank($quotation->currency)) {
             throw ValidationException::withMessages([
-                'currency' => ['Currency is required.'],
+                'currency' => ['العملة مطلوبة.'],
             ]);
         }
 
         if ($quotation->valid_until === null) {
             throw ValidationException::withMessages([
-                'valid_until' => ['Valid until date is required.'],
+                'valid_until' => ['تاريخ الصلاحية مطلوب.'],
             ]);
         }
 
@@ -290,7 +290,7 @@ class CommercialQuotationService
             $deposit = $this->money((string) ($quotation->deposit_required ?? '0'));
             if (bccomp($deposit, '0', 2) < 1) {
                 throw ValidationException::withMessages([
-                    'deposit_required' => ['Deposit is required for deposit payment policy.'],
+                    'deposit_required' => ['الدفعة المقدمة مطلوبة لسياسة الدفع بالمقدم.'],
                 ]);
             }
         }
@@ -314,13 +314,13 @@ class CommercialQuotationService
 
         if (bccomp($totals['total'], '0', 2) < 0) {
             throw ValidationException::withMessages([
-                'total' => ['Quotation total is invalid.'],
+                'total' => ['إجمالي عرض السعر غير صالح.'],
             ]);
         }
 
         if ($policy !== PrintingPaymentPolicy::None && bccomp($totals['total'], '0', 2) < 1) {
             throw ValidationException::withMessages([
-                'total' => ['Quotation total must be greater than zero.'],
+                'total' => ['يجب أن يكون إجمالي عرض السعر أكبر من صفر.'],
             ]);
         }
 
@@ -388,7 +388,7 @@ class CommercialQuotationService
 
             if ($requestStatus !== QuoteRequestStatus::RevisionRequested) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['Only sent, viewed, or revision-requested quotations can be revised.'],
+                    'quotation' => ['يمكن تعديل عروض الأسعار المرسلة أو المعروضة أو التي طُلب لها تعديل فقط.'],
                 ]);
             }
         }
@@ -473,27 +473,27 @@ class CommercialQuotationService
 
         if ($quotation === null) {
             throw ValidationException::withMessages([
-                'token' => ['Quotation not found.'],
+                'token' => ['عرض السعر غير موجود.'],
             ]);
         }
 
         if ($quotation->isTokenRevoked()) {
             throw ValidationException::withMessages([
-                'token' => ['This quotation link is no longer valid.'],
+                'token' => ['رابط عرض السعر لم يعد صالحًا.'],
             ]);
         }
 
         $status = $this->statusOf($quotation);
         if (in_array($status, [CommercialQuotationStatus::Expired, CommercialQuotationStatus::Cancelled], true)) {
             throw ValidationException::withMessages([
-                'token' => ['This quotation is no longer available.'],
+                'token' => ['عرض السعر لم يعد متاحًا.'],
             ]);
         }
 
         if ($quotation->isExpiredByDate() && $status->isPubliclyActionable()) {
             $this->markExpired($quotation);
             throw ValidationException::withMessages([
-                'token' => ['This quotation has expired.'],
+                'token' => ['انتهت صلاحية عرض السعر.'],
             ]);
         }
 
@@ -726,7 +726,7 @@ class CommercialQuotationService
             $found = CommercialQuotation::findByRawToken($token);
             if ($found === null || $found->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['Quotation not found.'],
+                    'token' => ['عرض السعر غير موجود.'],
                 ]);
             }
 
@@ -735,7 +735,7 @@ class CommercialQuotationService
 
             if ($quotation->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation link is no longer valid.'],
+                    'token' => ['رابط عرض السعر لم يعد صالحًا.'],
                 ]);
             }
 
@@ -748,13 +748,13 @@ class CommercialQuotationService
             if ($quotation->isExpiredByDate() || $status === CommercialQuotationStatus::Expired) {
                 $this->markExpired($quotation);
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation has expired.'],
+                    'token' => ['انتهت صلاحية عرض السعر.'],
                 ]);
             }
 
             if (! $status->isPubliclyActionable()) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['This quotation cannot be accepted.'],
+                    'quotation' => ['لا يمكن قبول عرض السعر هذا.'],
                 ]);
             }
 
@@ -806,7 +806,7 @@ class CommercialQuotationService
             $found = CommercialQuotation::findByRawToken($token);
             if ($found === null || $found->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['Quotation not found.'],
+                    'token' => ['عرض السعر غير موجود.'],
                 ]);
             }
 
@@ -822,13 +822,13 @@ class CommercialQuotationService
             if ($quotation->isExpiredByDate() || $status === CommercialQuotationStatus::Expired) {
                 $this->markExpired($quotation);
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation has expired.'],
+                    'token' => ['انتهت صلاحية عرض السعر.'],
                 ]);
             }
 
             if (! $status->isPubliclyActionable()) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['This quotation cannot be rejected.'],
+                    'quotation' => ['لا يمكن رفض عرض السعر هذا.'],
                 ]);
             }
 
@@ -870,7 +870,7 @@ class CommercialQuotationService
             $found = CommercialQuotation::findByRawToken($token);
             if ($found === null || $found->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['Quotation not found.'],
+                    'token' => ['عرض السعر غير موجود.'],
                 ]);
             }
 
@@ -882,13 +882,13 @@ class CommercialQuotationService
             if ($quotation->isExpiredByDate() || $status === CommercialQuotationStatus::Expired) {
                 $this->markExpired($quotation);
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation has expired.'],
+                    'token' => ['انتهت صلاحية عرض السعر.'],
                 ]);
             }
 
             if (! $status->isPubliclyActionable()) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['This quotation cannot request a revision.'],
+                    'quotation' => ['لا يمكن طلب تعديل على عرض السعر هذا.'],
                 ]);
             }
 
@@ -1013,7 +1013,7 @@ class CommercialQuotationService
     {
         if (! ($actor->role instanceof UserRole) || ! $actor->role->canManageQuoteRequests()) {
             throw ValidationException::withMessages([
-                'quotation' => ['You cannot manage commercial quotations.'],
+                'quotation' => ['لا يمكنك إدارة عروض الأسعار التجارية.'],
             ]);
         }
     }
@@ -1022,7 +1022,7 @@ class CommercialQuotationService
     {
         if (! ($actor->role instanceof UserRole) || ! $actor->role->canCreateQuotations()) {
             throw ValidationException::withMessages([
-                'quotation' => ['You cannot create commercial quotations.'],
+                'quotation' => ['لا يمكنك إنشاء عروض أسعار تجارية.'],
             ]);
         }
     }
@@ -1383,7 +1383,7 @@ class CommercialQuotationService
             $deposit = $this->money((string) $data['deposit_required']);
             if (bccomp($deposit, '0', 2) < 1 || bccomp($deposit, $total, 2) === 1) {
                 throw ValidationException::withMessages([
-                    'deposit_required' => ['Deposit must be greater than zero and not exceed the total.'],
+                    'deposit_required' => ['يجب أن يكون المقدم أكبر من صفر ولا يتجاوز الإجمالي.'],
                 ]);
             }
 
@@ -1444,7 +1444,7 @@ class CommercialQuotationService
 
         if ((int) $latestId !== (int) $quotation->id) {
             throw ValidationException::withMessages([
-                'quotation' => ['Only the latest quotation revision can be actioned.'],
+                'quotation' => ['يمكن التعامل مع أحدث نسخة من عرض السعر فقط.'],
             ]);
         }
     }
@@ -1453,7 +1453,7 @@ class CommercialQuotationService
     {
         if ($this->statusOf($quotation) !== CommercialQuotationStatus::Draft) {
             throw ValidationException::withMessages([
-                'quotation' => ['Only draft quotations can be updated.'],
+                'quotation' => ['يمكن تحديث عروض الأسعار المسودة فقط.'],
             ]);
         }
     }

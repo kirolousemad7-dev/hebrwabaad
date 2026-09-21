@@ -114,7 +114,7 @@ class CustomerOtpService
 
         if ($user === null || $user->is_active === false) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
+                'email' => [__('messages.invalid_credentials')],
             ]);
         }
 

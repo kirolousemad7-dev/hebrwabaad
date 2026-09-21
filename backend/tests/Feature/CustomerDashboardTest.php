@@ -193,7 +193,7 @@ class CustomerDashboardTest extends TestCase
         $this->withToken($this->tokenFor($customer))
             ->getJson('/api/customer/dashboard')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_empty_dashboard_does_not_invent_orders_or_messages(): void

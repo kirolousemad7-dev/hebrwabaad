@@ -60,7 +60,7 @@ class PrintingRequestController extends Controller
         $file = $request->file('file');
 
         if (! $file instanceof UploadedFile) {
-            return ApiResponse::error('Validation failed.', 422, [
+            return ApiResponse::error(__('messages.validation_failed'), 422, [
                 'file' => ['A design file is required.'],
             ]);
         }

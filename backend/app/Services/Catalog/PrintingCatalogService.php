@@ -87,7 +87,7 @@ class PrintingCatalogService
 
         $nameAr = trim(strip_tags((string) ($data['name_ar'] ?? '')));
         if ($nameAr === '') {
-            throw ValidationException::withMessages(['name_ar' => ['Required.']]);
+            throw ValidationException::withMessages(['name_ar' => ['مطلوب.']]);
         }
 
         $slug = trim((string) ($data['slug'] ?? '')) ?: Str::slug($nameAr);
@@ -143,7 +143,7 @@ class PrintingCatalogService
         $this->assertCanManage($actor);
         $nameAr = trim(strip_tags((string) ($data['name_ar'] ?? '')));
         if ($nameAr === '') {
-            throw ValidationException::withMessages(['name_ar' => ['Required.']]);
+            throw ValidationException::withMessages(['name_ar' => ['مطلوب.']]);
         }
         $slug = trim((string) ($data['slug'] ?? '')) ?: Str::slug($nameAr);
         $attributes = [
@@ -178,11 +178,11 @@ class PrintingCatalogService
         $this->assertCanManage($actor);
         $type = strtolower((string) ($data['type'] ?? ''));
         if (! in_array($type, ['material', 'size', 'finishing', 'method', 'color', 'quantity'], true)) {
-            throw ValidationException::withMessages(['type' => ['Invalid option type.']]);
+            throw ValidationException::withMessages(['type' => ['نوع الخيار غير صالح.']]);
         }
         $nameAr = trim(strip_tags((string) ($data['name_ar'] ?? '')));
         if ($nameAr === '') {
-            throw ValidationException::withMessages(['name_ar' => ['Required.']]);
+            throw ValidationException::withMessages(['name_ar' => ['مطلوب.']]);
         }
         $slug = trim((string) ($data['slug'] ?? '')) ?: Str::slug($type.'-'.$nameAr);
         $attributes = [

@@ -142,7 +142,7 @@ class OrderTrackingTest extends TestCase
         $this->withToken($token)
             ->patchJson('/api/orders/'.$order->id.'/status', ['status' => OrderStatus::Delivered->value])
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Validation failed.');
+            ->assertJsonPath('message', 'فشل التحقق من البيانات.');
 
         $flow = [
             OrderStatus::Confirmed,
@@ -290,7 +290,7 @@ class OrderTrackingTest extends TestCase
         $this->asUser($customer)
             ->getJson('/api/customer/orders')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_sensitive_fields_are_not_returned(): void

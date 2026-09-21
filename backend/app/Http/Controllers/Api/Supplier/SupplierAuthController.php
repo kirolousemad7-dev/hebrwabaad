@@ -25,7 +25,7 @@ class SupplierAuthController extends Controller
                 $request->validated('password'),
             );
         } catch (ValidationException $exception) {
-            return ApiResponse::error($exception->getMessage() ?: 'Invalid credentials.', 401, $exception->errors());
+            return ApiResponse::error($exception->getMessage() ?: __('messages.invalid_credentials'), 401, $exception->errors());
         }
 
         return ApiResponse::success([

@@ -335,7 +335,7 @@ class WorkSubmissionService
     private function assertContributor(User $user): void
     {
         if (! $user->canSubmitEmployeeWork()) {
-            throw new ContentWorkflowException('Forbidden.', 403);
+            throw new ContentWorkflowException(__('messages.forbidden'), 403);
         }
     }
 
@@ -344,14 +344,14 @@ class WorkSubmissionService
         $this->assertContributor($user);
 
         if ((int) $work->user_id !== (int) $user->id) {
-            throw new ContentWorkflowException('Forbidden.', 403);
+            throw new ContentWorkflowException(__('messages.forbidden'), 403);
         }
     }
 
     private function assertReviewer(User $user): void
     {
         if (! $user->canReviewContent()) {
-            throw new ContentWorkflowException('Forbidden.', 403);
+            throw new ContentWorkflowException(__('messages.forbidden'), 403);
         }
     }
 

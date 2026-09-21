@@ -67,7 +67,7 @@ class PublicSupplierTest extends TestCase
         $this->getJson('/api/suppliers/non-existing-supplier')
             ->assertNotFound()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Not found.');
+            ->assertJsonPath('message', 'غير موجود.');
     }
 
     public function test_portfolio_belongs_to_the_requested_supplier_only(): void

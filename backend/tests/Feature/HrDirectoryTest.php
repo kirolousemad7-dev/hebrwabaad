@@ -108,6 +108,6 @@ class HrDirectoryTest extends TestCase
         $this->withToken($this->tokenFor($hr))
             ->getJson('/api/workspace/hr/employees')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 }

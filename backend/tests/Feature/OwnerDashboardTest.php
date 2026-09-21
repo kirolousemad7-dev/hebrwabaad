@@ -29,7 +29,7 @@ class OwnerDashboardTest extends TestCase
     {
         $this->getJson('/api/admin/dashboard')
             ->assertUnauthorized()
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
     }
 
     public function test_customer_cannot_access_owner_dashboard(): void
@@ -39,7 +39,7 @@ class OwnerDashboardTest extends TestCase
         $this->withToken($this->tokenFor($user))
             ->getJson('/api/admin/dashboard')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
     }
 
     public function test_employee_roles_cannot_access_owner_dashboard(): void
@@ -50,7 +50,7 @@ class OwnerDashboardTest extends TestCase
             $this->withToken($this->tokenFor($user))
                 ->getJson('/api/admin/dashboard')
                 ->assertForbidden()
-                ->assertJsonPath('message', 'Forbidden.');
+                ->assertJsonPath('message', 'غير مصرح بالوصول.');
         }
     }
 

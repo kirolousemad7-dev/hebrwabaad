@@ -263,8 +263,8 @@ class PlatformNotifier
 
         $assignee->notify(new CrmNotification([
             'type' => 'crm_lead_assigned',
-            'title' => 'Lead assigned to you',
-            'message' => 'Lead '.$lead->reference.' ('.$lead->full_name.') was assigned to you.',
+            'title' => 'تم تعيين عميل محتمل لك',
+            'message' => 'تم تعيين العميل المحتمل '.$lead->reference.' ('.$lead->full_name.') لك.',
             'href' => '/crm/leads/'.$lead->id,
             'lead_id' => $lead->id,
         ]));
@@ -296,8 +296,8 @@ class PlatformNotifier
 
         $assignee->notify(new CrmNotification([
             'type' => 'crm_follow_up_overdue',
-            'title' => 'Follow-up overdue',
-            'message' => 'Follow-up for '.($followUp->lead?->full_name ?? 'lead').' is overdue.',
+            'title' => 'متابعة متأخرة',
+            'message' => 'المتابعة الخاصة بـ '.($followUp->lead?->full_name ?? 'عميل محتمل').' متأخرة.',
             'href' => '/crm/leads/'.$followUp->lead_id,
             'follow_up_id' => $followUp->id,
             'lead_id' => $followUp->lead_id,
@@ -314,8 +314,8 @@ class PlatformNotifier
 
         Notification::send($managers, new CrmNotification([
             'type' => 'crm_quotation_approval_needed',
-            'title' => 'Quotation needs approval',
-            'message' => 'Quotation '.$quotation->number.' exceeds the discount threshold.',
+            'title' => 'عرض سعر يحتاج موافقة',
+            'message' => 'عرض السعر '.$quotation->number.' تجاوز حد الخصم ويتطلب موافقة.',
             'href' => '/crm/quotations/'.$quotation->id,
             'quotation_id' => $quotation->id,
         ]));
@@ -329,8 +329,8 @@ class PlatformNotifier
 
         $mentioned->notify(new CrmNotification([
             'type' => 'crm_mention',
-            'title' => 'You were mentioned in CRM',
-            'message' => $actor->name.' mentioned you on lead '.$lead->reference.': '.$snippet,
+            'title' => 'تم ذكرك في إدارة العملاء',
+            'message' => $actor->name.' ذكرك في العميل المحتمل '.$lead->reference.': '.$snippet,
             'href' => '/crm/leads/'.$lead->id,
             'lead_id' => $lead->id,
         ]));
@@ -350,8 +350,8 @@ class PlatformNotifier
 
         Notification::send($recipients, new CrmNotification([
             'type' => 'crm_deal_won',
-            'title' => 'Deal won',
-            'message' => 'Lead '.$lead->reference.' ('.$lead->full_name.') was converted.',
+            'title' => 'تم كسب الصفقة',
+            'message' => 'تم تحويل العميل المحتمل '.$lead->reference.' ('.$lead->full_name.').',
             'href' => '/crm/leads/'.$lead->id,
             'lead_id' => $lead->id,
         ]));
@@ -367,8 +367,8 @@ class PlatformNotifier
 
         $assignee->notify(new CrmNotification([
             'type' => 'crm_stale_lead',
-            'title' => 'Stale lead needs attention',
-            'message' => 'Lead '.$lead->reference.' ('.$lead->full_name.') has gone stale.',
+            'title' => 'عميل محتمل قديم يحتاج متابعة',
+            'message' => 'العميل المحتمل '.$lead->reference.' ('.$lead->full_name.') أصبح قديمًا ويحتاج متابعة.',
             'href' => '/crm/leads/'.$lead->id,
             'lead_id' => $lead->id,
         ]));

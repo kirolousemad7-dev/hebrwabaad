@@ -68,20 +68,20 @@ class CrmBulkLeadService
     private function bulkAssign(User $actor, CrmLead $lead, int $assignedTo): CrmLead
     {
         if ($assignedTo <= 0) {
-            throw ValidationException::withMessages(['assigned_to' => ['Assignee is required.']]);
+            throw ValidationException::withMessages(['assigned_to' => ['المكلَّف مطلوب.']]);
         }
 
         if ($actor->role instanceof UserRole && $actor->role->canManageCrmTeam()) {
             return $this->leads->assign($actor, $lead, $assignedTo);
         }
 
-        throw ValidationException::withMessages(['assigned_to' => ['You cannot bulk assign leads.']]);
+        throw ValidationException::withMessages(['assigned_to' => ['لا يمكنك تعيين العملاء المحتملين بشكل جماعي.']]);
     }
 
     private function updatePriority(User $actor, CrmLead $lead, string $priority): CrmLead
     {
         if (! in_array($priority, CrmLeadPriority::values(), true)) {
-            throw ValidationException::withMessages(['priority' => ['Invalid priority.']]);
+            throw ValidationException::withMessages(['priority' => ['الأولوية غير صالحة.']]);
         }
 
         return $this->leads->updateLead($actor, $lead, ['priority' => $priority]);
@@ -114,7 +114,7 @@ class CrmBulkLeadService
     private function scheduleFollowUp(User $actor, CrmLead $lead, array $payload): CrmLead
     {
         if (empty($payload['scheduled_at'])) {
-            throw ValidationException::withMessages(['scheduled_at' => ['Follow-up time is required.']]);
+            throw ValidationException::withMessages(['scheduled_at' => ['وقت المتابعة مطلوب.']]);
         }
 
         $this->followUps->schedule($actor, $lead, [

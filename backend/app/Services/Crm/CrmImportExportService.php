@@ -34,7 +34,7 @@ class CrmImportExportService
     {
         $rows = $this->readRows($file);
         if ($rows === []) {
-            throw ValidationException::withMessages(['file' => ['Import file is empty.']]);
+            throw ValidationException::withMessages(['file' => ['ملف الاستيراد فارغ.']]);
         }
 
         $mapping = $options['mapping'] ?? [
@@ -108,7 +108,7 @@ class CrmImportExportService
             'companies' => $this->exportCompanies($actor, $filters),
             'contacts' => $this->exportContacts($actor, $filters),
             'quotations' => $this->exportQuotations($actor, $filters),
-            default => throw ValidationException::withMessages(['entity' => ['Unsupported export entity.']]),
+            default => throw ValidationException::withMessages(['entity' => ['كيان التصدير غير مدعوم.']]),
         };
 
         $spreadsheet = new Spreadsheet;
@@ -255,7 +255,7 @@ class CrmImportExportService
     {
         $path = $file->getRealPath();
         if ($path === false) {
-            throw ValidationException::withMessages(['file' => ['Unable to read upload.']]);
+            throw ValidationException::withMessages(['file' => ['تعذر قراءة الملف المرفوع.']]);
         }
 
         $extension = strtolower($file->getClientOriginalExtension());
@@ -287,7 +287,7 @@ class CrmImportExportService
 
         $handle = fopen($path, 'r');
         if ($handle === false) {
-            throw ValidationException::withMessages(['file' => ['Unable to open CSV.']]);
+            throw ValidationException::withMessages(['file' => ['تعذر فتح ملف CSV.']]);
         }
 
         $headers = fgetcsv($handle);

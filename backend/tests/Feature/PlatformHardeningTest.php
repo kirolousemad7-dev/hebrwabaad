@@ -77,7 +77,7 @@ class PlatformHardeningTest extends TestCase
         ])
             ->assertStatus(429)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Too many attempts. Please try again later.');
+            ->assertJsonPath('message', 'محاولات كثيرة. يرجى المحاولة لاحقًا.');
     }
 
     public function test_forgot_password_is_rate_limited_after_repeated_requests(): void
@@ -93,7 +93,7 @@ class PlatformHardeningTest extends TestCase
         $this->postJson('/api/auth/forgot-password', $payload)
             ->assertStatus(429)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Too many attempts. Please try again later.');
+            ->assertJsonPath('message', 'محاولات كثيرة. يرجى المحاولة لاحقًا.');
     }
 
     public function test_private_local_disk_is_not_publicly_served(): void
@@ -209,7 +209,7 @@ class PlatformHardeningTest extends TestCase
 
         $response->assertStatus(500)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Server error.');
+            ->assertJsonPath('message', 'حدث خطأ في الخادم.');
 
         $this->assertStringNotContainsString('SQLSTATE', $body);
         $this->assertStringNotContainsString('secret.php', $body);

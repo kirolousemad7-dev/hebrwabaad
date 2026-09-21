@@ -29,7 +29,7 @@ class SeoPageController extends Controller
     public function show(string $page): JsonResponse
     {
         if (! SeoPages::isValid($page)) {
-            return ApiResponse::error('Not found.', 404);
+            return ApiResponse::error(__('messages.not_found'), 404);
         }
 
         $record = SeoPage::query()->where('page_key', $page)->first()
@@ -41,7 +41,7 @@ class SeoPageController extends Controller
     public function update(UpdateSeoPageRequest $request, string $page): JsonResponse
     {
         if (! SeoPages::isValid($page)) {
-            return ApiResponse::error('Not found.', 404);
+            return ApiResponse::error(__('messages.not_found'), 404);
         }
 
         $record = SeoPage::query()->firstOrNew(['page_key' => $page]);

@@ -30,7 +30,7 @@ export const NOTIFICATION_CATEGORIES: Array<{ value: NotificationCategory; label
   { value: 'printing', label: 'الطباعة' },
   { value: 'approvals', label: 'الموافقات' },
   { value: 'automation', label: 'الأتمتة' },
-  { value: 'crm', label: 'CRM' },
+  { value: 'crm', label: 'إدارة العملاء' },
   { value: 'alerts', label: 'تنبيهات' },
 ]
 

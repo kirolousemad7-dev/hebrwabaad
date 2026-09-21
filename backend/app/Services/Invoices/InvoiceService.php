@@ -129,7 +129,7 @@ class InvoiceService
 
         if (! $invoice->statusEnum()->isEditable()) {
             throw ValidationException::withMessages([
-                'invoice' => ['Only draft invoices can be updated.'],
+                'invoice' => ['يمكن تحديث الفواتير المسودة فقط.'],
             ]);
         }
 
@@ -165,13 +165,13 @@ class InvoiceService
 
         if ($invoice->statusEnum() !== InvoiceStatus::Draft) {
             throw ValidationException::withMessages([
-                'invoice' => ['Only draft invoices can be issued.'],
+                'invoice' => ['يمكن إصدار الفواتير المسودة فقط.'],
             ]);
         }
 
         if ($invoice->items()->count() === 0) {
             throw ValidationException::withMessages([
-                'items' => ['Add at least one line item before issuing.'],
+                'items' => ['أضف بندًا واحدًا على الأقل قبل الإصدار.'],
             ]);
         }
 
@@ -197,7 +197,7 @@ class InvoiceService
         $status = $invoice->statusEnum();
         if (! in_array($status, [InvoiceStatus::Issued, InvoiceStatus::Sent, InvoiceStatus::Overdue, InvoiceStatus::PartiallyPaid], true)) {
             throw ValidationException::withMessages([
-                'invoice' => ['Issue the invoice before sending it.'],
+                'invoice' => ['أصدر الفاتورة قبل إرسالها.'],
             ]);
         }
 
@@ -229,13 +229,13 @@ class InvoiceService
 
         if ($invoice->statusEnum()->isTerminal() && $invoice->statusEnum() !== InvoiceStatus::Paid) {
             throw ValidationException::withMessages([
-                'invoice' => ['This invoice cannot be cancelled.'],
+                'invoice' => ['لا يمكن إلغاء هذه الفاتورة.'],
             ]);
         }
 
         if ($invoice->statusEnum() === InvoiceStatus::Paid) {
             throw ValidationException::withMessages([
-                'invoice' => ['Paid invoices cannot be cancelled; void instead if needed.'],
+                'invoice' => ['لا يمكن إلغاء فاتورة مدفوعة؛ يمكن إبطالها عند الحاجة.'],
             ]);
         }
 
@@ -278,21 +278,21 @@ class InvoiceService
 
         if (! $invoice->statusEnum()->isPayable()) {
             throw ValidationException::withMessages([
-                'invoice' => ['Payments can only be recorded on issued invoices.'],
+                'invoice' => ['يمكن تسجيل المدفوعات على الفواتير المُصدرة فقط.'],
             ]);
         }
 
         $amount = round((float) $data['amount'], 2);
         if ($amount <= 0) {
             throw ValidationException::withMessages([
-                'amount' => ['Payment amount must be greater than zero.'],
+                'amount' => ['يجب أن يكون مبلغ الدفع أكبر من صفر.'],
             ]);
         }
 
         $due = round((float) $invoice->amount_due, 2);
         if ($amount > $due + 0.009) {
             throw ValidationException::withMessages([
-                'amount' => ['Payment exceeds amount due.'],
+                'amount' => ['مبلغ الدفع يتجاوز المبلغ المستحق.'],
             ]);
         }
 

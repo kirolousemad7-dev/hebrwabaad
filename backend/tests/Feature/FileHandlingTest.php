@@ -51,7 +51,7 @@ class FileHandlingTest extends TestCase
         $this->asUser($customer)
             ->getJson('/api/customer/files')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_customer_can_upload_valid_project_file_and_download_it(): void

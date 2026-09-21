@@ -89,7 +89,7 @@ class EmployeeService
         $employee = $this->employeeQuery()->find($user->id);
 
         if ($employee === null) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
 
         return $employee;
@@ -141,7 +141,7 @@ class EmployeeService
     private function assertManageable(User $user): void
     {
         if ($user->isOwner() || ! $user->isEmployee()) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
     }
 

@@ -49,7 +49,7 @@ export function ResetPasswordPage() {
       if (caught instanceof ApiRequestError) {
         const details = caught.body?.errors
           ? Object.values(caught.body.errors).flat().join(' ')
-          : caught.message === 'Unable to reset password.'
+          : caught.message === 'Unable to reset password.' || caught.message === 'تعذر إعادة تعيين كلمة المرور.'
             ? 'تعذر إعادة تعيين كلمة المرور. قد يكون الرابط منتهيًا أو مستخدمًا مسبقًا.'
             : caught.message
         setError(details)

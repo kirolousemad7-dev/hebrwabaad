@@ -190,14 +190,14 @@ class PrintingQuotationService
         $status = $this->statusOf($quotation);
         if (! in_array($status, [PrintingQuotationStatus::Draft, PrintingQuotationStatus::Sent], true)) {
             throw ValidationException::withMessages([
-                'quotation' => ['Only draft quotations can be sent.'],
+                'quotation' => ['يمكن إرسال عروض الأسعار المسودة فقط.'],
             ]);
         }
 
         if ($this->policyOf($quotation) !== PrintingPaymentPolicy::None
             && bccomp((string) $quotation->total, '0', 2) < 1) {
             throw ValidationException::withMessages([
-                'total' => ['Quotation total must be greater than zero.'],
+                'total' => ['يجب أن يكون إجمالي عرض السعر أكبر من صفر.'],
             ]);
         }
 
@@ -286,27 +286,27 @@ class PrintingQuotationService
 
         if ($quotation === null) {
             throw ValidationException::withMessages([
-                'token' => ['Quotation not found.'],
+                'token' => ['عرض السعر غير موجود.'],
             ]);
         }
 
         if ($quotation->isTokenRevoked()) {
             throw ValidationException::withMessages([
-                'token' => ['This quotation link is no longer valid.'],
+                'token' => ['رابط عرض السعر لم يعد صالحًا.'],
             ]);
         }
 
         $status = $this->statusOf($quotation);
         if (in_array($status, [PrintingQuotationStatus::Expired, PrintingQuotationStatus::Cancelled], true)) {
             throw ValidationException::withMessages([
-                'token' => ['This quotation is no longer available.'],
+                'token' => ['عرض السعر لم يعد متاحًا.'],
             ]);
         }
 
         if ($quotation->isExpiredByDate() && $status->isPubliclyActionable()) {
             $this->markExpired($quotation);
             throw ValidationException::withMessages([
-                'token' => ['This quotation has expired.'],
+                'token' => ['انتهت صلاحية عرض السعر.'],
             ]);
         }
 
@@ -550,7 +550,7 @@ class PrintingQuotationService
             $found = PrintingQuotation::findByRawToken($rawToken);
             if ($found === null || $found->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['Quotation not found.'],
+                    'token' => ['عرض السعر غير موجود.'],
                 ]);
             }
 
@@ -559,7 +559,7 @@ class PrintingQuotationService
 
             if ($quotation->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation link is no longer valid.'],
+                    'token' => ['رابط عرض السعر لم يعد صالحًا.'],
                 ]);
             }
 
@@ -572,13 +572,13 @@ class PrintingQuotationService
             if ($quotation->isExpiredByDate() || $status === PrintingQuotationStatus::Expired) {
                 $this->markExpired($quotation);
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation has expired.'],
+                    'token' => ['انتهت صلاحية عرض السعر.'],
                 ]);
             }
 
             if (! $status->isPubliclyActionable()) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['This quotation cannot be accepted.'],
+                    'quotation' => ['لا يمكن قبول عرض السعر هذا.'],
                 ]);
             }
 
@@ -608,7 +608,7 @@ class PrintingQuotationService
             $found = PrintingQuotation::findByRawToken($rawToken);
             if ($found === null || $found->isTokenRevoked()) {
                 throw ValidationException::withMessages([
-                    'token' => ['Quotation not found.'],
+                    'token' => ['عرض السعر غير موجود.'],
                 ]);
             }
 
@@ -624,13 +624,13 @@ class PrintingQuotationService
             if ($quotation->isExpiredByDate() || $status === PrintingQuotationStatus::Expired) {
                 $this->markExpired($quotation);
                 throw ValidationException::withMessages([
-                    'token' => ['This quotation has expired.'],
+                    'token' => ['انتهت صلاحية عرض السعر.'],
                 ]);
             }
 
             if (! $status->isPubliclyActionable()) {
                 throw ValidationException::withMessages([
-                    'quotation' => ['This quotation cannot be rejected.'],
+                    'quotation' => ['لا يمكن رفض عرض السعر هذا.'],
                 ]);
             }
 
@@ -934,7 +934,7 @@ class PrintingQuotationService
             $deposit = $this->money((string) $data['deposit_required']);
             if (bccomp($deposit, '0', 2) < 1 || bccomp($deposit, $total, 2) === 1) {
                 throw ValidationException::withMessages([
-                    'deposit_required' => ['Deposit must be greater than zero and not exceed the total.'],
+                    'deposit_required' => ['يجب أن يكون المقدم أكبر من صفر ولا يتجاوز الإجمالي.'],
                 ]);
             }
 
@@ -1045,7 +1045,7 @@ class PrintingQuotationService
     {
         if ($this->statusOf($quotation) !== PrintingQuotationStatus::Draft) {
             throw ValidationException::withMessages([
-                'quotation' => ['Only draft quotations can be updated.'],
+                'quotation' => ['يمكن تحديث عروض الأسعار المسودة فقط.'],
             ]);
         }
     }

@@ -36,7 +36,7 @@ class NotificationController extends Controller
         $owned = $this->notifications->owned($request->user(), $notification);
 
         if ($owned === null) {
-            return ApiResponse::error('Not found.', 404);
+            return ApiResponse::error(__('messages.not_found'), 404);
         }
 
         return ApiResponse::success(

@@ -100,7 +100,7 @@ class QuotationSupplierSourcingService
             $status = $this->statusOf($existing);
             if (in_array($status, [SupplierQuoteStatus::Selected, SupplierQuoteStatus::Requested, SupplierQuoteStatus::Received, SupplierQuoteStatus::UnderReview], true)) {
                 throw ValidationException::withMessages([
-                    'supplier_id' => ['A sourcing request already exists for this supplier on this item.'],
+                    'supplier_id' => ['يوجد طلب تسعير لهذا المورد على هذا البند مسبقًا.'],
                 ]);
             }
 
@@ -166,14 +166,14 @@ class QuotationSupplierSourcingService
         $status = $this->statusOf($quote);
         if (! in_array($status, [SupplierQuoteStatus::Requested, SupplierQuoteStatus::Received, SupplierQuoteStatus::UnderReview], true)) {
             throw ValidationException::withMessages([
-                'quote' => ['This sourcing request cannot be updated.'],
+                'quote' => ['لا يمكن تحديث طلب التسعير هذا.'],
             ]);
         }
 
         if ($quote->isExpiredByDate()) {
             $quote->update(['status' => SupplierQuoteStatus::Expired]);
             throw ValidationException::withMessages([
-                'quote' => ['This sourcing request has expired.'],
+                'quote' => ['انتهت صلاحية طلب التسعير هذا.'],
             ]);
         }
 
@@ -226,7 +226,7 @@ class QuotationSupplierSourcingService
 
         if ($status !== SupplierQuoteStatus::Received) {
             throw ValidationException::withMessages([
-                'quote' => ['Only received quotes can move to under review.'],
+                'quote' => ['يمكن نقل العروض المستلمة فقط إلى قيد المراجعة.'],
             ]);
         }
 
@@ -249,13 +249,13 @@ class QuotationSupplierSourcingService
 
             if (! $status->isSelectable() && $status !== SupplierQuoteStatus::UnderReview) {
                 throw ValidationException::withMessages([
-                    'quote' => ['This supplier quote cannot be selected.'],
+                    'quote' => ['لا يمكن اختيار عرض المورد هذا.'],
                 ]);
             }
 
             if ($locked->cost === null) {
                 throw ValidationException::withMessages([
-                    'cost' => ['Supplier cost is required before selection.'],
+                    'cost' => ['تكلفة المورد مطلوبة قبل الاختيار.'],
                 ]);
             }
 
@@ -333,7 +333,7 @@ class QuotationSupplierSourcingService
         $this->assertOwnerCanManage($actor);
 
         return DB::transaction(function () use ($actor, $quote, $data): QuotationSupplierQuote {
-            $this->reject($actor, $quote, $data['rejection_reason'] ?? 'Replaced with another supplier');
+            $this->reject($actor, $quote, $data['rejection_reason'] ?? 'تم الاستبدال بمورد آخر');
 
             $quotation = CommercialQuotation::query()->findOrFail($quote->commercial_quotation_id);
             $item = CommercialQuotationItem::query()->findOrFail($quote->commercial_quotation_item_id);
@@ -601,7 +601,7 @@ class QuotationSupplierSourcingService
     {
         if ((int) $item->commercial_quotation_id !== (int) $quotation->id) {
             throw ValidationException::withMessages([
-                'item' => ['Item does not belong to this quotation.'],
+                'item' => ['البند لا ينتمي إلى عرض السعر هذا.'],
             ]);
         }
     }

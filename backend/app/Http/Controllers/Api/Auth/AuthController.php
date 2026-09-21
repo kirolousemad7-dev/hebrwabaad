@@ -45,11 +45,11 @@ class AuthController extends Controller
         $user = User::query()->where('email', $request->validated('email'))->first();
 
         if ($user === null || ! Hash::check($request->validated('password'), $user->password)) {
-            return ApiResponse::error('Invalid credentials.', 401);
+            return ApiResponse::error(__('messages.invalid_credentials'), 401);
         }
 
         if ($user->is_active === false) {
-            return ApiResponse::error('Account deactivated.', 403);
+            return ApiResponse::error('الحساب معطّل.', 403);
         }
 
         $token = $user->createToken('auth')->plainTextToken;
@@ -80,7 +80,7 @@ class AuthController extends Controller
         $user = User::query()->where('email', $payload['email'])->first();
 
         if ($user === null || $user->is_active === false) {
-            return ApiResponse::error('Unable to reset password.', 422);
+            return ApiResponse::error(__('messages.unable_to_reset_password'), 422);
         }
 
         $status = Password::reset($payload, function (User $resetUser, string $password): void {
@@ -95,7 +95,7 @@ class AuthController extends Controller
         });
 
         if ($status !== Password::PASSWORD_RESET) {
-            return ApiResponse::error('Unable to reset password.', 422);
+            return ApiResponse::error(__('messages.unable_to_reset_password'), 422);
         }
 
         return ApiResponse::success([

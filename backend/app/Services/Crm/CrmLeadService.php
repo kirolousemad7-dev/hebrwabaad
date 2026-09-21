@@ -710,7 +710,7 @@ class CrmLeadService
             $customer = User::query()->find((int) $options['customer_id']);
             if ($customer === null || $customer->role !== UserRole::Customer) {
                 throw ValidationException::withMessages([
-                    'customer_id' => ['Selected customer is not valid.'],
+                    'customer_id' => ['العميل المحدد غير صالح.'],
                 ]);
             }
 

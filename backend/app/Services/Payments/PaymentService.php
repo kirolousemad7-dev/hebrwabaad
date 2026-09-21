@@ -916,7 +916,7 @@ class PaymentService
 
         if (bccomp($amount, '0', 2) < 1) {
             throw ValidationException::withMessages([
-                'amount' => ['Payment amount must be greater than zero.'],
+                'amount' => ['يجب أن يكون مبلغ الدفع أكبر من صفر.'],
             ]);
         }
 

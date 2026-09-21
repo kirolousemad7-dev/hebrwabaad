@@ -59,7 +59,7 @@ export function OwnerSupplierCategoriesPage() {
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
       <form onSubmit={(event) => void save(event)} className="grid gap-2 rounded-2xl border bg-white p-4 sm:grid-cols-2">
         <input name="name" required defaultValue={editing?.name ?? ''} placeholder="الاسم *" className="rounded-md border px-3 py-2 text-sm" />
-        <input name="slug" defaultValue={editing?.slug ?? ''} placeholder="SEO slug" className="rounded-md border px-3 py-2 text-sm" />
+        <input name="slug" defaultValue={editing?.slug ?? ''} placeholder="مسار تحسين البحث" className="rounded-md border px-3 py-2 text-sm" />
         <select name="parent_id" defaultValue={editing?.parent_id ?? ''} className="rounded-md border px-3 py-2 text-sm">
           <option value="">بدون أب (رئيسي)</option>
           {items.filter((item) => !item.parent_id && item.id !== editing?.id).map((item) => (

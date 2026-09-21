@@ -90,7 +90,7 @@ class AuthTest extends TestCase
             'password' => 'wrong-password',
         ])->assertUnauthorized()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Invalid credentials.');
+            ->assertJsonPath('message', 'بيانات الدخول غير صحيحة.');
     }
 
     public function test_login_requires_email_and_password_fields(): void
@@ -98,7 +98,7 @@ class AuthTest extends TestCase
         $this->postJson('/api/auth/login', [])
             ->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Validation failed.')
+            ->assertJsonPath('message', 'فشل التحقق من البيانات.')
             ->assertJsonPath('errors.email.0', 'البريد الإلكتروني مطلوب.')
             ->assertJsonPath('errors.password.0', 'كلمة المرور مطلوبة.');
 
@@ -122,7 +122,7 @@ class AuthTest extends TestCase
             'password' => 'password123',
         ])->assertForbidden()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Account deactivated.')
+            ->assertJsonPath('message', 'الحساب معطّل.')
             ->assertJsonMissingPath('data.token');
     }
 
@@ -131,7 +131,7 @@ class AuthTest extends TestCase
         $this->getJson('/api/auth/me')
             ->assertUnauthorized()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
     }
 
     public function test_authenticated_user_can_view_me(): void
@@ -169,7 +169,7 @@ class AuthTest extends TestCase
     {
         $this->getJson('/api/admin/test')
             ->assertUnauthorized()
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
     }
 
     public function test_customer_cannot_access_owner_endpoint(): void
@@ -181,7 +181,7 @@ class AuthTest extends TestCase
             ->getJson('/api/admin/test')
             ->assertForbidden()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
     }
 
     public function test_owner_can_access_owner_endpoint(): void

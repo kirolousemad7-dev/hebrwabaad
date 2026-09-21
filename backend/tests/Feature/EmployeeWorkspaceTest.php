@@ -57,7 +57,7 @@ class EmployeeWorkspaceTest extends TestCase
         $this->withToken($this->tokenFor($user))
             ->getJson('/api/workspace')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_employee_receives_role_specific_workspace(): void

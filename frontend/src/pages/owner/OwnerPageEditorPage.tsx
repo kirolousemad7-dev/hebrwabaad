@@ -242,7 +242,7 @@ export function OwnerPageEditorPage() {
           </label>
 
           <label className="block space-y-1 text-sm">
-            <span>Slug</span>
+            <span>المسار (Slug)</span>
             <input
               className={fieldClass}
               dir="ltr"
@@ -273,12 +273,12 @@ export function OwnerPageEditorPage() {
             <span className="text-sm">المحتوى</span>
             <div className="flex flex-wrap gap-2">
               {[
-                { label: 'H2', open: '<h2>', close: '</h2>' },
-                { label: 'H3', open: '<h3>', close: '</h3>' },
-                { label: 'P', open: '<p>', close: '</p>' },
-                { label: 'Bold', open: '<strong>', close: '</strong>' },
-                { label: 'UL', open: '<ul>\n<li>', close: '</li>\n</ul>' },
-                { label: 'OL', open: '<ol>\n<li>', close: '</li>\n</ol>' },
+                { label: 'عنوان ٢', open: '<h2>', close: '</h2>' },
+                { label: 'عنوان ٣', open: '<h3>', close: '</h3>' },
+                { label: 'فقرة', open: '<p>', close: '</p>' },
+                { label: 'عريض', open: '<strong>', close: '</strong>' },
+                { label: 'قائمة', open: '<ul>\n<li>', close: '</li>\n</ul>' },
+                { label: 'ترقيم', open: '<ol>\n<li>', close: '</li>\n</ol>' },
               ].map((tool) => (
                 <button
                   key={tool.label}

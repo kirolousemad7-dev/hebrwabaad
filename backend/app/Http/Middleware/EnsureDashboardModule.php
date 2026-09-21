@@ -21,7 +21,7 @@ class EnsureDashboardModule
     {
         $user = $request->user();
         if ($user === null) {
-            return ApiResponse::error('Unauthenticated.', 401);
+            return ApiResponse::error(__('messages.unauthenticated'), 401);
         }
 
         if ($modules === []) {
@@ -37,6 +37,6 @@ class EnsureDashboardModule
             }
         }
 
-        return ApiResponse::error('Forbidden.', 403);
+        return ApiResponse::error(__('messages.forbidden'), 403);
     }
 }

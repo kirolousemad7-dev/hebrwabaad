@@ -23,7 +23,7 @@ class WorkspaceTaskController extends Controller
         $role = $user?->role;
 
         if (! $role instanceof UserRole || ! $role->usesEmployeeWorkspace()) {
-            return ApiResponse::error('Forbidden.', 403);
+            return ApiResponse::error(__('messages.forbidden'), 403);
         }
 
         $page = $this->tasks->paginateAssignedTo($user, $request->query());

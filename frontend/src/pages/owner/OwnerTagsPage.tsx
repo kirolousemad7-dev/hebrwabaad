@@ -66,7 +66,7 @@ export function OwnerTagsPage() {
 
       <form onSubmit={(event) => void save(event)} className="grid gap-2 rounded-2xl border bg-white p-4 sm:grid-cols-2">
         <input name="name" required defaultValue={editing?.name ?? ''} placeholder="الاسم *" className="rounded-md border px-3 py-2 text-sm" />
-        <input name="slug" defaultValue={editing?.slug ?? ''} placeholder="slug" className="rounded-md border px-3 py-2 text-sm" />
+        <input name="slug" defaultValue={editing?.slug ?? ''} placeholder="المسار" className="rounded-md border px-3 py-2 text-sm" />
         <select name="scope" defaultValue={editing?.scope ?? 'shared'} className="rounded-md border px-3 py-2 text-sm">
           {SCOPES.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>

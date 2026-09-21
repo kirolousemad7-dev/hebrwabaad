@@ -278,11 +278,11 @@ class ProjectManagementTest extends TestCase
         $this->withToken($this->tokenFor($inactive))
             ->getJson('/api/workspace/projects')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
         $this->withToken($this->tokenFor($inactive))
             ->getJson('/api/workspace/tasks')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_owner_can_view_projects_and_create_with_account_manager(): void

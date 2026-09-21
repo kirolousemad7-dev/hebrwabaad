@@ -24,7 +24,7 @@ class SupplierEmailVerificationController extends Controller
         try {
             $status = $this->emails->send($request->user());
         } catch (ValidationException $exception) {
-            return ApiResponse::error('Unable to resend.', 429, $exception->errors());
+            return ApiResponse::error(__('messages.unable_to_resend'), 429, $exception->errors());
         }
 
         return ApiResponse::success($status);

@@ -34,7 +34,7 @@ class SupplierAuthService
 
         if ($user === null || $user->role !== UserRole::Supplier || ! Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
+                'email' => [__('messages.invalid_credentials')],
             ]);
         }
 
@@ -130,7 +130,7 @@ class SupplierAuthService
         $user = User::query()->where('email', $email)->where('role', UserRole::Supplier)->first();
         if ($user === null) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
+                'email' => [__('messages.invalid_credentials')],
             ]);
         }
 
@@ -154,7 +154,7 @@ class SupplierAuthService
     {
         if ($user->is_active === false) {
             throw ValidationException::withMessages([
-                'email' => ['Account deactivated.'],
+                'email' => ['الحساب معطّل.'],
             ]);
         }
 

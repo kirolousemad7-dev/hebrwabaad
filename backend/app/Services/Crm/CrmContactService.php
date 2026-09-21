@@ -85,7 +85,7 @@ class CrmContactService
     {
         $contact->loadMissing('company');
         if ($contact->company === null) {
-            throw ValidationException::withMessages(['contact' => ['Contact company is missing.']]);
+            throw ValidationException::withMessages(['contact' => ['شركة جهة الاتصال مفقودة.']]);
         }
         $this->companies->assertVisible($actor, $contact->company);
 

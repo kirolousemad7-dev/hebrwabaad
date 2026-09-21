@@ -56,7 +56,7 @@ class PrintingRequestTest extends TestCase
         ])
             ->assertUnauthorized()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
 
         $this->assertDatabaseCount('printing_requests', 0);
     }
@@ -146,14 +146,14 @@ class PrintingRequestTest extends TestCase
         $this->withToken($other->createToken('auth')->plainTextToken)
             ->getJson('/api/printing-requests/'.$request->id)
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
     }
 
     public function test_guest_cannot_list_printing_requests(): void
     {
         $this->getJson('/api/printing-requests')
             ->assertUnauthorized()
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
     }
 
     public function test_customer_cannot_access_internal_printing_request_list(): void
@@ -161,7 +161,7 @@ class PrintingRequestTest extends TestCase
         $this->withToken($this->tokenFor())
             ->getJson('/api/admin/printing-requests')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
     }
 
     public function test_customer_cannot_mutate_pricing(): void
@@ -346,7 +346,7 @@ class PrintingRequestTest extends TestCase
                 'Accept' => 'application/json',
             ])
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
 
         $this->assertDatabaseCount('printing_requests', 0);
     }

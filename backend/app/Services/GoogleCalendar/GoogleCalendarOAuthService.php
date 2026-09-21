@@ -70,7 +70,7 @@ class GoogleCalendarOAuthService
         $payload = Cache::pull($this->stateKey($state));
         if (! is_array($payload) || ! isset($payload['user_id'])) {
             throw ValidationException::withMessages([
-                'state' => ['Invalid or expired OAuth state.'],
+                'state' => ['حالة التحقق من Google غير صالحة أو منتهية.'],
             ]);
         }
 
@@ -231,7 +231,7 @@ class GoogleCalendarOAuthService
 
         if (! $response->successful()) {
             throw ValidationException::withMessages([
-                'google' => ['Failed to exchange Google authorization code.'],
+                'google' => ['تعذر تبادل رمز تفويض Google.'],
             ]);
         }
 

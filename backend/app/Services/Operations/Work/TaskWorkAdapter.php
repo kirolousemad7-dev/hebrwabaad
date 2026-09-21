@@ -119,7 +119,7 @@ class TaskWorkAdapter
         $mapped = TaskPriority::tryFrom(strtoupper($priority));
         if ($mapped === null) {
             throw ValidationException::withMessages([
-                'priority' => ['Invalid priority.'],
+                'priority' => ['الأولوية غير صالحة.'],
             ]);
         }
 

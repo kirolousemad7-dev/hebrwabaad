@@ -494,7 +494,7 @@ class PlatformSettingService
     {
         $role = $actor->role instanceof UserRole ? $actor->role : UserRole::tryFrom((string) $actor->role);
         if ($role === null || ! $role->canManagePlatformSettings()) {
-            abort(403, 'Unauthorized.');
+            abort(403, __('messages.unauthorized'));
         }
     }
 
@@ -554,7 +554,7 @@ class PlatformSettingService
                 if ($raw === null || $raw === '') {
                     $out[$field] = null;
                 } elseif (! filter_var((string) $raw, FILTER_VALIDATE_EMAIL)) {
-                    throw ValidationException::withMessages([$field => ['Invalid email.']]);
+                    throw ValidationException::withMessages([$field => ['البريد الإلكتروني غير صالح.']]);
                 } else {
                     $out[$field] = (string) $raw;
                 }
@@ -670,10 +670,10 @@ class PlatformSettingService
             if (array_key_exists($field, $payload)) {
                 $path = (string) $payload[$field];
                 if (! in_array($path, self::ALLOWED_CTA_PATHS, true) && ! str_starts_with($path, '/')) {
-                    throw ValidationException::withMessages([$field => ['Invalid CTA path.']]);
+                    throw ValidationException::withMessages([$field => ['مسار زر الدعوة غير صالح.']]);
                 }
                 if (! in_array($path, self::ALLOWED_CTA_PATHS, true) && ! preg_match('#^/[a-z0-9\\-/]*$#i', $path)) {
-                    throw ValidationException::withMessages([$field => ['Invalid CTA path.']]);
+                    throw ValidationException::withMessages([$field => ['مسار زر الدعوة غير صالح.']]);
                 }
                 $out[$field] = $path;
             }

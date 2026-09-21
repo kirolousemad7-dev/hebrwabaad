@@ -52,7 +52,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
   },
   {
     id: 'crm',
-    label: 'CRM',
+    label: 'إدارة العملاء',
     items: [
       { to: '/crm', label: 'لوحة المبيعات', end: true, icon: 'crm', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/crm/companies', label: 'الشركات', icon: 'suppliers', roles: ['OWNER', 'ADMIN_MANAGER'] },
@@ -107,7 +107,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
     items: [
       { to: '/owner/blog', label: 'المدونة', icon: 'files', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/pages', label: 'الصفحات', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
-      { to: '/owner/seo', label: 'الصفحات / SEO', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
+      { to: '/owner/seo', label: 'تحسين محركات البحث', icon: 'seo', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/marketing', label: 'المعرض التسويقي', icon: 'files', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/work-reviews', label: 'مراجعة الأعمال', icon: 'work', roles: ['OWNER', 'ADMIN_MANAGER'] },
     ],

@@ -361,7 +361,7 @@ export function OwnerBlogPage() {
           <DashboardSection title={postForm.id ? 'تعديل مقال' : 'مقال جديد'}>
             <form className="space-y-3" onSubmit={savePost}>
               <input required value={postForm.title} onChange={(e) => setPostForm((p) => ({ ...p, title: e.target.value }))} placeholder="العنوان" className={fieldClass} />
-              <input value={postForm.slug} onChange={(e) => setPostForm((p) => ({ ...p, slug: e.target.value }))} placeholder="Slug (اختياري)" className={fieldClass} dir="ltr" />
+              <input value={postForm.slug} onChange={(e) => setPostForm((p) => ({ ...p, slug: e.target.value }))} placeholder="المسار (اختياري)" className={fieldClass} dir="ltr" />
               <textarea value={postForm.excerpt} onChange={(e) => setPostForm((p) => ({ ...p, excerpt: e.target.value }))} placeholder="المقتطف" rows={2} className={fieldClass} />
               <textarea
                 required
@@ -425,10 +425,10 @@ export function OwnerBlogPage() {
                   className={fieldClass}
                 />
               </div>
-              <input value={postForm.seo_title} onChange={(e) => setPostForm((p) => ({ ...p, seo_title: e.target.value }))} placeholder="SEO title" className={fieldClass} />
-              <textarea value={postForm.meta_description} onChange={(e) => setPostForm((p) => ({ ...p, meta_description: e.target.value }))} placeholder="Meta description" rows={2} className={fieldClass} />
-              <input value={postForm.og_image} onChange={(e) => setPostForm((p) => ({ ...p, og_image: e.target.value }))} placeholder="OG image URL" className={fieldClass} dir="ltr" />
-              <input value={postForm.canonical_url} onChange={(e) => setPostForm((p) => ({ ...p, canonical_url: e.target.value }))} placeholder="Canonical URL" className={fieldClass} dir="ltr" />
+              <input value={postForm.seo_title} onChange={(e) => setPostForm((p) => ({ ...p, seo_title: e.target.value }))} placeholder="عنوان تحسين البحث" className={fieldClass} />
+              <textarea value={postForm.meta_description} onChange={(e) => setPostForm((p) => ({ ...p, meta_description: e.target.value }))} placeholder="وصف تحسين البحث" rows={2} className={fieldClass} />
+              <input value={postForm.og_image} onChange={(e) => setPostForm((p) => ({ ...p, og_image: e.target.value }))} placeholder="رابط صورة المشاركة" className={fieldClass} dir="ltr" />
+              <input value={postForm.canonical_url} onChange={(e) => setPostForm((p) => ({ ...p, canonical_url: e.target.value }))} placeholder="الرابط الأساسي" className={fieldClass} dir="ltr" />
               <div className="flex gap-2">
                 <button type="submit" disabled={saving} className="rounded-lg bg-[#315CFF] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
                   {saving ? 'جارٍ الحفظ…' : 'حفظ المقال'}
@@ -484,7 +484,7 @@ export function OwnerBlogPage() {
           <DashboardSection title={categoryForm.id ? 'تعديل تصنيف' : 'تصنيف جديد'}>
             <form className="space-y-3" onSubmit={saveCategory}>
               <input required value={categoryForm.name} onChange={(e) => setCategoryForm((p) => ({ ...p, name: e.target.value }))} placeholder="الاسم" className={fieldClass} />
-              <input value={categoryForm.slug} onChange={(e) => setCategoryForm((p) => ({ ...p, slug: e.target.value }))} placeholder="Slug" className={fieldClass} dir="ltr" />
+              <input value={categoryForm.slug} onChange={(e) => setCategoryForm((p) => ({ ...p, slug: e.target.value }))} placeholder="المسار" className={fieldClass} dir="ltr" />
               <textarea value={categoryForm.description} onChange={(e) => setCategoryForm((p) => ({ ...p, description: e.target.value }))} placeholder="الوصف" rows={3} className={fieldClass} />
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={categoryForm.is_active} onChange={(e) => setCategoryForm((p) => ({ ...p, is_active: e.target.checked }))} />
@@ -522,7 +522,7 @@ export function OwnerBlogPage() {
           <DashboardSection title={tagForm.id ? 'تعديل وسم' : 'وسم جديد'}>
             <form className="space-y-3" onSubmit={saveTag}>
               <input required value={tagForm.name} onChange={(e) => setTagForm((p) => ({ ...p, name: e.target.value }))} placeholder="الاسم" className={fieldClass} />
-              <input value={tagForm.slug} onChange={(e) => setTagForm((p) => ({ ...p, slug: e.target.value }))} placeholder="Slug" className={fieldClass} dir="ltr" />
+              <input value={tagForm.slug} onChange={(e) => setTagForm((p) => ({ ...p, slug: e.target.value }))} placeholder="المسار" className={fieldClass} dir="ltr" />
               <button type="submit" disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white">
                 حفظ
               </button>
@@ -569,10 +569,10 @@ export function OwnerBlogPage() {
           <DashboardSection title={authorForm.id ? 'تعديل كاتب' : 'كاتب جديد'}>
             <form className="space-y-3" onSubmit={saveAuthor}>
               <input required value={authorForm.name} onChange={(e) => setAuthorForm((p) => ({ ...p, name: e.target.value }))} placeholder="الاسم" className={fieldClass} />
-              <input value={authorForm.slug} onChange={(e) => setAuthorForm((p) => ({ ...p, slug: e.target.value }))} placeholder="Slug" className={fieldClass} dir="ltr" />
+              <input value={authorForm.slug} onChange={(e) => setAuthorForm((p) => ({ ...p, slug: e.target.value }))} placeholder="المسار" className={fieldClass} dir="ltr" />
               <textarea value={authorForm.bio} onChange={(e) => setAuthorForm((p) => ({ ...p, bio: e.target.value }))} placeholder="نبذة" rows={3} className={fieldClass} />
-              <input value={authorForm.avatar_url} onChange={(e) => setAuthorForm((p) => ({ ...p, avatar_url: e.target.value }))} placeholder="Avatar URL" className={fieldClass} dir="ltr" />
-              <input value={authorForm.email} onChange={(e) => setAuthorForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" className={fieldClass} dir="ltr" />
+              <input value={authorForm.avatar_url} onChange={(e) => setAuthorForm((p) => ({ ...p, avatar_url: e.target.value }))} placeholder="رابط الصورة" className={fieldClass} dir="ltr" />
+              <input value={authorForm.email} onChange={(e) => setAuthorForm((p) => ({ ...p, email: e.target.value }))} placeholder="البريد الإلكتروني" className={fieldClass} dir="ltr" />
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={authorForm.is_active} onChange={(e) => setAuthorForm((p) => ({ ...p, is_active: e.target.checked }))} />
                 نشط

@@ -51,7 +51,7 @@ class GoogleAuthService
     {
         if (! $this->isConfigured()) {
             throw ValidationException::withMessages([
-                'google' => ['Google sign-in is not configured.'],
+                'google' => ['تسجيل الدخول عبر Google غير مُعد.'],
             ]);
         }
     }
@@ -112,7 +112,7 @@ class GoogleAuthService
         $payload = Cache::pull($this->stateKey($state));
         if (! is_array($payload) || ! isset($payload['intent'])) {
             throw ValidationException::withMessages([
-                'state' => ['Invalid or expired OAuth state.'],
+                'state' => ['حالة التحقق من Google غير صالحة أو منتهية.'],
             ]);
         }
 
@@ -130,13 +130,13 @@ class GoogleAuthService
 
         if ($providerUserId === '' || $email === '') {
             throw ValidationException::withMessages([
-                'google' => ['Google did not return a usable identity.'],
+                'google' => ['لم يُرجع Google هوية صالحة.'],
             ]);
         }
 
         if (! $emailVerified) {
             throw ValidationException::withMessages([
-                'google' => ['Google email is not verified.'],
+                'google' => ['بريد Google غير موثّق.'],
             ]);
         }
 
@@ -144,7 +144,7 @@ class GoogleAuthService
 
         if ($user->is_active === false) {
             throw ValidationException::withMessages([
-                'account' => ['Account deactivated.'],
+                'account' => ['الحساب معطّل.'],
             ]);
         }
 
@@ -156,7 +156,7 @@ class GoogleAuthService
                 SupplierStatus::Suspended,
             ], true)) {
                 throw ValidationException::withMessages([
-                    'account' => ['Supplier account is not allowed to sign in.'],
+                    'account' => ['حساب المورد غير مسموح له بتسجيل الدخول من هنا.'],
                 ]);
             }
         }
@@ -184,14 +184,14 @@ class GoogleAuthService
         $payload = Cache::pull($this->exchangeKey($code));
         if (! is_array($payload) || empty($payload['token']) || empty($payload['user_id'])) {
             throw ValidationException::withMessages([
-                'code' => ['Invalid or expired Google sign-in code.'],
+                'code' => ['رمز تسجيل الدخول عبر Google غير صالح أو منتهٍ.'],
             ]);
         }
 
         $user = User::query()->find((int) $payload['user_id']);
         if ($user === null || $user->is_active === false) {
             throw ValidationException::withMessages([
-                'account' => ['Account deactivated.'],
+                'account' => ['الحساب معطّل.'],
             ]);
         }
 
@@ -360,7 +360,7 @@ class GoogleAuthService
 
         if (! $response->successful()) {
             throw ValidationException::withMessages([
-                'google' => ['Failed to exchange Google authorization code.'],
+                'google' => ['تعذر تبادل رمز تفويض Google.'],
             ]);
         }
 
@@ -386,7 +386,7 @@ class GoogleAuthService
 
         if (! $response->successful()) {
             throw ValidationException::withMessages([
-                'google' => ['Failed to load Google profile.'],
+                'google' => ['تعذر تحميل ملف Google الشخصي.'],
             ]);
         }
 
@@ -414,7 +414,7 @@ class GoogleAuthService
         if ($intent === self::INTENT_SUPPLIER) {
             if ($user->role !== UserRole::Supplier) {
                 throw ValidationException::withMessages([
-                    'privilege' => ['This Google account is not registered as a supplier. Use the matching portal for your role.'],
+                    'privilege' => ['حساب Google هذا غير مسجّل كمورد. استخدم البوابة المناسبة لدورك.'],
                 ]);
             }
 
@@ -424,7 +424,7 @@ class GoogleAuthService
         // login / register — customers only
         if ($user->role !== UserRole::Customer) {
             throw ValidationException::withMessages([
-                'privilege' => ['This Google account belongs to a staff or supplier user. Use the appropriate portal instead of customer Google sign-in.'],
+                'privilege' => ['حساب Google هذا يخص موظفًا أو موردًا. استخدم البوابة المناسبة بدل تسجيل دخول العملاء.'],
             ]);
         }
     }

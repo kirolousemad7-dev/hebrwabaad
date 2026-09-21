@@ -60,7 +60,7 @@ class AdminPrintingRequestTest extends TestCase
         $this->withToken($this->tokenFor(UserRole::MarketingSpecialist))
             ->getJson('/api/admin/printing-requests')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
     }
 
     public function test_guest_cannot_access_internal_printing_requests(): void

@@ -235,7 +235,7 @@ class CrmQuotationService
         $quotation = CrmQuotation::query()->where('public_token', $token)->first();
         if ($quotation === null) {
             throw ValidationException::withMessages([
-                'token' => ['Quotation not found.'],
+                'token' => ['عرض السعر غير موجود.'],
             ]);
         }
 
@@ -279,7 +279,7 @@ class CrmQuotationService
 
         if (! in_array($current, [CrmQuotationStatus::Sent, CrmQuotationStatus::Viewed], true)) {
             throw ValidationException::withMessages([
-                'quotation' => ['This quotation cannot be accepted.'],
+                'quotation' => ['لا يمكن قبول عرض السعر هذا.'],
             ]);
         }
 
@@ -300,7 +300,7 @@ class CrmQuotationService
 
         if (! in_array($current, [CrmQuotationStatus::Sent, CrmQuotationStatus::Viewed], true)) {
             throw ValidationException::withMessages([
-                'quotation' => ['This quotation cannot be rejected.'],
+                'quotation' => ['لا يمكن رفض عرض السعر هذا.'],
             ]);
         }
 

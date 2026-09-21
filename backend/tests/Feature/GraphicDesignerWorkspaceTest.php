@@ -109,12 +109,12 @@ class GraphicDesignerWorkspaceTest extends TestCase
         $this->withToken($token)
             ->getJson('/api/workspace')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
 
         $this->withToken($token)
             ->getJson('/api/workspace/designer')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_inactive_graphic_designer_cannot_login(): void
@@ -128,7 +128,7 @@ class GraphicDesignerWorkspaceTest extends TestCase
             'password' => 'password',
         ])
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_role_change_away_from_graphic_designer_revokes_designer_endpoint(): void

@@ -60,7 +60,7 @@ class ContentMediaController extends Controller
         $disk = Storage::disk($media->disk);
 
         if (! $disk->exists($path)) {
-            return ApiResponse::error('Not found.', 404);
+            return ApiResponse::error(__('messages.not_found'), 404);
         }
 
         return $disk->response($path, $media->original_name, [

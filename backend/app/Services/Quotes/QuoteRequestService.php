@@ -162,7 +162,7 @@ class QuoteRequestService
     {
         if ($customer->role !== UserRole::Customer) {
             throw ValidationException::withMessages([
-                'customer' => ['Only customers can submit quote requests.'],
+                'customer' => ['يمكن للعملاء فقط تقديم طلبات عروض الأسعار.'],
             ]);
         }
 
@@ -232,7 +232,7 @@ class QuoteRequestService
         $assignee = User::query()->findOrFail($assigneeId);
         if (! $assignee->role?->isStaff()) {
             throw ValidationException::withMessages([
-                'assigned_to' => ['Assignee must be a staff user.'],
+                'assigned_to' => ['يجب أن يكون المكلَّف من موظفي المنصة.'],
             ]);
         }
 
@@ -327,7 +327,7 @@ class QuoteRequestService
 
         if (! ($request->status instanceof QuoteRequestStatus ? $request->status : QuoteRequestStatus::from((string) $request->status))->isOpen()) {
             throw ValidationException::withMessages([
-                'status' => ['This quote request can no longer be cancelled.'],
+                'status' => ['لم يعد بالإمكان إلغاء طلب عرض السعر هذا.'],
             ]);
         }
 
@@ -585,7 +585,7 @@ class QuoteRequestService
 
         if (! in_array($status, $allowed, true)) {
             throw ValidationException::withMessages([
-                'status' => ['This action is not allowed for the current request status.'],
+                'status' => ['هذا الإجراء غير مسموح لحالة الطلب الحالية.'],
             ]);
         }
     }

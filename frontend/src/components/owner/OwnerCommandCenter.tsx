@@ -299,7 +299,7 @@ export function OwnerCommandCenter() {
                 href: '/owner/automations',
               },
               {
-                label: 'Webhooks فاشلة (24س)',
+                label: 'خطافات ويب فاشلة (24س)',
                 value: Number(data.system_health.failed_webhooks_24h ?? 0),
                 href: '/owner/integrations/webhooks',
               },

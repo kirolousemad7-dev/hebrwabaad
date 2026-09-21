@@ -24,7 +24,7 @@ class AdminCatalogTest extends TestCase
     {
         $this->getJson('/api/admin/services')
             ->assertUnauthorized()
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertJsonPath('message', 'غير مصادق.');
 
         $this->getJson('/api/admin/packages')
             ->assertUnauthorized();
@@ -36,7 +36,7 @@ class AdminCatalogTest extends TestCase
 
         $this->withToken($token)->getJson('/api/admin/services')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Forbidden.');
+            ->assertJsonPath('message', 'غير مصرح بالوصول.');
 
         $this->withToken($token)->postJson('/api/admin/packages', [])
             ->assertForbidden();
@@ -245,7 +245,7 @@ class AdminCatalogTest extends TestCase
             ])
             ->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Validation failed.')
+            ->assertJsonPath('message', 'فشل التحقق من البيانات.')
             ->assertJsonValidationErrors(['name', 'category', 'base_price']);
     }
 
@@ -303,6 +303,6 @@ class AdminCatalogTest extends TestCase
             ->getJson('/api/admin/services/9999')
             ->assertNotFound()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Not found.');
+            ->assertJsonPath('message', 'غير موجود.');
     }
 }

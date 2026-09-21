@@ -209,7 +209,7 @@ class TaskManagementTest extends TestCase
                 'priority' => TaskPriority::Low->value,
             ])
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_overdue_summary_uses_real_deadlines(): void

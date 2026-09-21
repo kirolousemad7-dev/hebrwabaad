@@ -141,7 +141,7 @@ class FileService
     public function preview(ManagedFile $file): StreamedResponse
     {
         if (! $file->isPreviewable()) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
 
         $this->assertStored($file);
@@ -379,7 +379,7 @@ class FileService
     private function assertStored(ManagedFile $file): void
     {
         if (! Storage::disk($file->disk)->exists($file->path)) {
-            abort(404, 'Not found.');
+            abort(404, __('messages.not_found'));
         }
     }
 

@@ -126,7 +126,7 @@ class PaymentTest extends TestCase
             $this->asUser($user)
                 ->getJson('/api/admin/payments')
                 ->assertForbidden()
-                ->assertJsonPath('message', 'Forbidden.');
+                ->assertJsonPath('message', 'غير مصرح بالوصول.');
 
             $this->asUser($user)
                 ->getJson('/api/admin/payments/revenue')

@@ -25,7 +25,7 @@ class SupplierPhoneVerificationController extends Controller
         } catch (ValidationException $exception) {
             $status = str_contains(implode(' ', $exception->errors()['phone'] ?? []), 'الانتظار') ? 429 : 422;
 
-            return ApiResponse::error('Unable to send phone OTP.', $status, $exception->errors());
+            return ApiResponse::error(__('messages.unable_to_send_phone_otp'), $status, $exception->errors());
         }
 
         return ApiResponse::success($result);

@@ -125,16 +125,16 @@ class InboundWebhookManager
             $result = match ($event) {
                 'ping' => ['pong' => true],
                 'payment.confirm' => $this->confirmPayment($payload),
-                default => throw ValidationException::withMessages(['event' => ['Unsupported event.']]),
+                default => throw ValidationException::withMessages(['event' => ['الحدث غير مدعوم.']]),
             };
         } catch (ValidationException $e) {
-            $message = collect($e->errors())->flatten()->first() ?: 'Validation failed.';
+            $message = collect($e->errors())->flatten()->first() ?: __('messages.validation_failed');
 
             return $this->storeRejected(
                 $integration,
                 $deliveryId,
                 $event,
-                is_string($message) ? $message : 'Validation failed.',
+                is_string($message) ? $message : __('messages.validation_failed'),
                 422,
                 $this->payloadMeta($payload),
             );

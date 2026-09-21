@@ -160,7 +160,7 @@ class SupportChatTest extends TestCase
                 'order_id' => $orderB->id,
             ])
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Validation failed.');
+            ->assertJsonPath('message', 'فشل التحقق من البيانات.');
     }
 
     public function test_customer_can_link_own_project_and_cannot_link_another_customers_project(): void
@@ -481,12 +481,12 @@ class SupportChatTest extends TestCase
         $this->asUser($customer)
             ->getJson('/api/customer/conversations')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
 
         $this->asUser($manager)
             ->getJson('/api/support/conversations')
             ->assertForbidden()
-            ->assertJsonPath('message', 'Account deactivated.');
+            ->assertJsonPath('message', 'الحساب معطّل.');
     }
 
     public function test_support_payloads_never_expose_secrets(): void

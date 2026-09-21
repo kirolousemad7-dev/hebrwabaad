@@ -388,7 +388,7 @@ function OwnerRequirementDetailPage({ id }: { id: number }) {
               <input
                 value={assignedTo}
                 onChange={(event) => setAssignedTo(event.target.value)}
-                placeholder="User ID"
+                placeholder="معرّف المستخدم"
                 className={fieldClass}
                 inputMode="numeric"
               />

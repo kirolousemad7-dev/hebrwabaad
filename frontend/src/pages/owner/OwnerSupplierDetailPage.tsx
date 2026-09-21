@@ -370,7 +370,7 @@ export function OwnerSupplierDetailPage() {
           </div>
           <form onSubmit={(event) => void addProduct(event)} className="grid gap-2 rounded-2xl border bg-white p-4 md:grid-cols-3">
             <input required name="name" placeholder="اسم المنتج *" className="rounded-md border px-3 py-2 text-sm" />
-            <input name="sku" placeholder="SKU" className="rounded-md border px-3 py-2 text-sm" />
+            <input name="sku" placeholder="رمز المنتج" className="rounded-md border px-3 py-2 text-sm" />
             <input name="category" placeholder="التصنيف" className="rounded-md border px-3 py-2 text-sm" />
             <input name="unit" placeholder="الوحدة" className="rounded-md border px-3 py-2 text-sm" />
             <input name="price" type="number" placeholder="السعر" className="rounded-md border px-3 py-2 text-sm" />

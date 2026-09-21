@@ -14,11 +14,11 @@ class EnsureAccountIsActive
         $user = $request->user();
 
         if ($user === null) {
-            return ApiResponse::error('Unauthenticated.', 401);
+            return ApiResponse::error(__('messages.unauthenticated'), 401);
         }
 
         if ($user->is_active === false) {
-            return ApiResponse::error('Account deactivated.', 403);
+            return ApiResponse::error('الحساب معطّل.', 403);
         }
 
         return $next($request);
