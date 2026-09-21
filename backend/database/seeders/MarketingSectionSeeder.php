@@ -66,7 +66,13 @@ class MarketingSectionSeeder extends Seeder
                 ['content_key' => 'eyebrow', 'value_text' => 'SERVICES', 'sort_order' => 1],
                 ['content_key' => 'title', 'value_text' => 'خدمات تبني حضور علامتك', 'sort_order' => 2],
                 ['content_key' => 'description', 'value_text' => 'اختر محورًا واستكشف كيف ننفّذه — من التشخيص والهوية إلى الطباعة والفعاليات.', 'sort_order' => 3],
-                ['content_key' => 'note', 'value_text' => 'Landing service cards remain hardcoded in Phase 1; catalog Services API is the domain source of truth.', 'sort_order' => 4, 'metadata' => ['reuse' => 'Service model /api/services']],
+                ['content_key' => 'visual_strategy', 'value_text' => null, 'sort_order' => 10, 'metadata' => ['visual_key' => 'services.strategy', 'local_public_path' => '/marketing/storefront.jpg']],
+                ['content_key' => 'visual_branding', 'value_text' => null, 'sort_order' => 11, 'metadata' => ['visual_key' => 'services.branding']],
+                ['content_key' => 'visual_digital', 'value_text' => null, 'sort_order' => 12, 'metadata' => ['visual_key' => 'services.digital']],
+                ['content_key' => 'visual_ecommerce', 'value_text' => null, 'sort_order' => 13, 'metadata' => ['visual_key' => 'services.ecommerce']],
+                ['content_key' => 'visual_printing', 'value_text' => null, 'sort_order' => 14, 'metadata' => ['visual_key' => 'services.printing']],
+                ['content_key' => 'visual_events', 'value_text' => null, 'sort_order' => 15, 'metadata' => ['visual_key' => 'services.events']],
+                ['content_key' => 'note', 'value_text' => 'Landing service cards remain hardcoded; catalog Services API is the domain source of truth. Presentation images only via visual_* keys.', 'sort_order' => 90, 'metadata' => ['reuse' => 'Service model /api/services']],
             ],
             'why-us' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'لماذا نحن', 'sort_order' => 1],
@@ -84,11 +90,15 @@ class MarketingSectionSeeder extends Seeder
                 ['content_key' => 'eyebrow', 'value_text' => 'PACKAGES', 'sort_order' => 1],
                 ['content_key' => 'title', 'value_text' => 'باقات تناسب مرحلة مشروعك', 'sort_order' => 2],
                 ['content_key' => 'description', 'value_text' => 'معاينة لمفهوم الباقات. التفاصيل والأسعار داخل المنصة بعد تسجيل الدخول.', 'sort_order' => 3],
-                ['content_key' => 'note', 'value_text' => 'Landing package previews are hardcoded; Package model /api/packages is the domain source of truth.', 'sort_order' => 4, 'metadata' => ['reuse' => 'Package model']],
+                ['content_key' => 'visual_basic', 'value_text' => null, 'sort_order' => 10, 'metadata' => ['visual_key' => 'packages.basic']],
+                ['content_key' => 'visual_professional', 'value_text' => null, 'sort_order' => 11, 'metadata' => ['visual_key' => 'packages.professional']],
+                ['content_key' => 'visual_integrated', 'value_text' => null, 'sort_order' => 12, 'metadata' => ['visual_key' => 'packages.integrated']],
+                ['content_key' => 'note', 'value_text' => 'Landing package previews remain hardcoded; Package model /api/packages is the domain source of truth. Presentation images only via visual_* keys.', 'sort_order' => 90, 'metadata' => ['reuse' => 'Package model']],
             ],
             'build-package' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'صمّم باقتك', 'sort_order' => 1],
                 ['content_key' => 'title', 'value_text' => 'اختر ما تحتاجه — وابنِ الحل المناسب لك', 'sort_order' => 2],
+                ['content_key' => 'description', 'value_text' => 'اختار الخدمات اللي تناسب مشروعك من عدة فئات، حدد الكميات والإضافات، وشوف ملخص طلبك في مكان واحد.', 'sort_order' => 3],
             ],
             'process' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'مسار العمل', 'sort_order' => 1],
@@ -109,14 +119,17 @@ class MarketingSectionSeeder extends Seeder
             'suppliers' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'شبكة الموردين', 'sort_order' => 1],
                 ['content_key' => 'title', 'value_text' => 'موردونا وشركاؤنا', 'sort_order' => 2],
-                ['content_key' => 'note', 'value_text' => 'Featured suppliers come from Supplier public API.', 'sort_order' => 3, 'metadata' => ['reuse' => 'Supplier']],
+                ['content_key' => 'description', 'value_text' => 'نعمل مع شبكة من الموردين والمتخصصين لتوفير حلول الطباعة، التغليف، التجهيزات والفعاليات حسب احتياج المشروع.', 'sort_order' => 3],
+                ['content_key' => 'note', 'value_text' => 'Featured suppliers come from Supplier public API.', 'sort_order' => 4, 'metadata' => ['reuse' => 'Supplier']],
             ],
             'about' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'من نحن', 'sort_order' => 1],
-                ['content_key' => 'body', 'value_text' => 'حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، وتطوير حضورهم من خلال شبكة متخصصين وموردين.', 'sort_order' => 2],
-                ['content_key' => 'tagline', 'value_text' => 'نمنح أعمالك أبعادًا للنمو', 'sort_order' => 3],
-                ['content_key' => 'visual_image', 'value_text' => null, 'sort_order' => 4, 'metadata' => ['visual_key' => 'about', 'local_public_path' => '/marketing/storefront.jpg']],
-                ['content_key' => 'note', 'value_text' => 'Full About page body remains CmsPage slug=about.', 'sort_order' => 5, 'metadata' => ['reuse' => 'CmsPage']],
+                ['content_key' => 'quote', 'value_text' => 'نحوّل احتياجات الأعمال إلى حلول واضحة قابلة للتنفيذ.', 'sort_order' => 2],
+                ['content_key' => 'body', 'value_text' => 'حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، وتطوير حضورهم من خلال شبكة متخصصين وموردين.', 'sort_order' => 3],
+                ['content_key' => 'tagline', 'value_text' => 'نمنح أعمالك أبعادًا للنمو', 'sort_order' => 4],
+                ['content_key' => 'cta_label', 'value_text' => 'اقرأ القصة كاملة', 'sort_order' => 5],
+                ['content_key' => 'visual_image', 'value_text' => null, 'sort_order' => 6, 'metadata' => ['visual_key' => 'about', 'local_public_path' => '/marketing/storefront.jpg']],
+                ['content_key' => 'note', 'value_text' => 'Full About page body remains CmsPage slug=about. Overlay process strip stays UI chrome.', 'sort_order' => 7, 'metadata' => ['reuse' => 'CmsPage']],
             ],
             'final-cta' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'جاهز نبدأ؟', 'sort_order' => 1],
@@ -273,6 +286,14 @@ class MarketingSectionSeeder extends Seeder
                     MarketingContent::query()
                         ->where('marketing_section_id', $section->id)
                         ->where('content_key', 'visual_image')
+                        ->update(['media_id' => $media->id]);
+                }
+
+                $services = MarketingSection::query()->where('key', 'services')->first();
+                if ($services !== null) {
+                    MarketingContent::query()
+                        ->where('marketing_section_id', $services->id)
+                        ->where('content_key', 'visual_strategy')
                         ->update(['media_id' => $media->id]);
                 }
             }

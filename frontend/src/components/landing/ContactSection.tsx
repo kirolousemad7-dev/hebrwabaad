@@ -4,12 +4,21 @@ import { FeedbackBanner } from '../ui/FeedbackBanner'
 import { ApiRequestError } from '../../services/api'
 import { submitContactInquiry } from '../../services/marketing'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { fadeUp, motionOrReduced, slideLeft, slideRight, staggerContainer } from '../../utils/marketingMotion'
 import { LandingCta } from './LandingCta'
 
 export function ContactSection() {
   const reduceMotion = useReducedMotion()
   const { settings } = usePlatformSettings()
+  const { resolveContent } = usePublicMarketing()
+  const eyebrow = resolveContent('contact', 'eyebrow', 'تواصل معنا')
+  const title = resolveContent('contact', 'title', 'خلينا نتكلم عن مشروعك')
+  const description = resolveContent(
+    'contact',
+    'description',
+    'أرسل فكرتك عبر النموذج، أو أنشئ حساباً للدخول إلى المنصة ومتابعة مشروعك مباشرة.',
+  )
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -49,13 +58,11 @@ export function ContactSection() {
           viewport={{ once: true, amount: 0.25 }}
         >
           <motion.div variants={motionOrReduced(reduceMotion, slideRight)} className="space-y-4">
-            <p className="brand-label text-brand-ink-500">تواصل معنا</p>
+            <p className="brand-label text-brand-ink-500">{eyebrow}</p>
             <h2 className="text-[clamp(1.85rem,1.3rem+1.6vw,3rem)] font-bold leading-tight text-brand-ink-900">
-              خلينا نتكلم عن مشروعك
+              {title}
             </h2>
-            <p className="max-w-md text-base leading-9 text-brand-ink-500">
-              أرسل فكرتك عبر النموذج، أو أنشئ حساباً للدخول إلى المنصة ومتابعة مشروعك مباشرة.
-            </p>
+            <p className="max-w-md text-base leading-9 text-brand-ink-500">{description}</p>
           </motion.div>
 
           {hasContactInfo ? (

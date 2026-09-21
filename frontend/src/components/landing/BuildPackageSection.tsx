@@ -1,12 +1,21 @@
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { BrandCornerAccent } from '../brand/BrandCornerAccent'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { fadeUp, motionOrReduced, slideLeft, slideRight, staggerContainer } from '../../utils/marketingMotion'
 
 const EXAMPLE_CHIPS = ['استراتيجية', 'تصميم', 'تصوير', 'ريلز', 'محتوى'] as const
 
 export function BuildPackageSection() {
   const reduceMotion = useReducedMotion()
+  const { resolveContent } = usePublicMarketing()
+  const eyebrow = resolveContent('build-package', 'eyebrow', 'صمّم باقتك')
+  const title = resolveContent('build-package', 'title', 'اختر ما تحتاجه — وابنِ الحل المناسب لك')
+  const description = resolveContent(
+    'build-package',
+    'description',
+    'اختار الخدمات اللي تناسب مشروعك من عدة فئات، حدد الكميات والإضافات، وشوف ملخص طلبك في مكان واحد.',
+  )
 
   return (
     <section id="build-package" className="relative overflow-hidden bg-brand-ink-900 marketing-section text-white">
@@ -21,16 +30,16 @@ export function BuildPackageSection() {
           viewport={{ once: true, amount: 0.25 }}
         >
           <motion.p variants={motionOrReduced(reduceMotion, fadeUp)} className="brand-label text-brand-cobalt-300">
-            صمّم باقتك
+            {eyebrow}
           </motion.p>
           <motion.h2
             variants={motionOrReduced(reduceMotion, slideRight)}
             className="max-w-xl text-[clamp(1.85rem,1.3rem+1.8vw,3rem)] font-bold leading-tight"
           >
-            اختر ما تحتاجه — وابنِ الحل المناسب لك
+            {title}
           </motion.h2>
           <motion.p variants={motionOrReduced(reduceMotion, fadeUp)} className="max-w-xl text-base leading-8 text-white/70">
-            اختار الخدمات اللي تناسب مشروعك من عدة فئات، حدد الكميات والإضافات، وشوف ملخص طلبك في مكان واحد.
+            {description}
           </motion.p>
           <motion.ul variants={motionOrReduced(reduceMotion, fadeUp)} className="flex flex-wrap gap-2" aria-hidden="true">
             {EXAMPLE_CHIPS.map((label) => (

@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { LandingCta } from './LandingCta'
 import { fadeUp, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
 
@@ -8,6 +9,17 @@ function scrollToId(id: string) {
 
 export function FinalCta() {
   const reduceMotion = useReducedMotion()
+  const { resolveContent } = usePublicMarketing()
+
+  const eyebrow = resolveContent('final-cta', 'eyebrow', 'جاهز نبدأ؟')
+  const title = resolveContent('final-cta', 'title', 'لنبنِ شيئًا يستحق التذكّر.')
+  const body = resolveContent(
+    'final-cta',
+    'description',
+    'احكِ لنا عن فكرتك، ودع فريق حبر وأبعاد يحوّلها إلى تجربة متكاملة من الفكرة حتى التسليم.',
+  )
+  const primaryLabel = resolveContent('final-cta', 'cta_primary_label', 'ابدأ مشروعك')
+  const secondaryLabel = resolveContent('final-cta', 'cta_secondary_label', 'تواصل معنا')
 
   return (
     <section id="final-cta" className="relative overflow-hidden bg-brand-ink-900 py-24 text-white sm:py-28">
@@ -26,16 +38,16 @@ export function FinalCta() {
         viewport={{ once: true, amount: 0.35 }}
       >
         <motion.p variants={motionOrReduced(reduceMotion, fadeUp)} className="brand-label text-brand-cobalt-300">
-          جاهز نبدأ؟
+          {eyebrow}
         </motion.p>
         <motion.h2
           variants={motionOrReduced(reduceMotion, fadeUp)}
           className="mt-4 text-[clamp(2rem,1.4rem+2.2vw,3.5rem)] font-bold leading-tight"
         >
-          لنبنِ شيئًا يستحق التذكّر.
+          {title}
         </motion.h2>
         <motion.p variants={motionOrReduced(reduceMotion, fadeUp)} className="mx-auto mt-5 max-w-xl leading-8 text-white/70">
-          احكِ لنا عن فكرتك، ودع فريق حبر وأبعاد يحوّلها إلى تجربة متكاملة من الفكرة حتى التسليم.
+          {body}
         </motion.p>
         <motion.div
           variants={motionOrReduced(reduceMotion, fadeUp)}
@@ -48,7 +60,7 @@ export function FinalCta() {
               scrollToId('contact')
             }}
           >
-            ابدأ مشروعك
+            {primaryLabel}
           </LandingCta>
           <LandingCta
             href="#contact"
@@ -58,7 +70,7 @@ export function FinalCta() {
               scrollToId('contact')
             }}
           >
-            تواصل معنا
+            {secondaryLabel}
           </LandingCta>
         </motion.div>
       </motion.div>

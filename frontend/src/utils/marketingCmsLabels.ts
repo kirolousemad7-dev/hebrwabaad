@@ -23,7 +23,9 @@ const GLOBAL_KEY_LABELS: Record<string, ContentFieldMeta> = {
   heading: { label: 'العنوان الرئيسي', kind: 'text' },
   description: { label: 'الوصف', kind: 'textarea' },
   body: { label: 'النص', kind: 'textarea' },
+  quote: { label: 'الاقتباس', kind: 'textarea' },
   tagline: { label: 'الشعار النصي', kind: 'text' },
+  cta_label: { label: 'نص زر الدعوة', kind: 'text' },
   visual_image: { label: 'الصورة الرئيسية', kind: 'media' },
   note: { label: 'ملاحظة داخلية', kind: 'readonly_note', help: 'للمرجعية الإدارية فقط — لا تظهر للجمهور عادةً.' },
   cta_primary: { label: 'نص الزر الرئيسي', kind: 'text' },
@@ -39,41 +41,90 @@ const GLOBAL_KEY_LABELS: Record<string, ContentFieldMeta> = {
   },
 }
 
+const SERVICE_VISUAL_LABELS: Record<string, string> = {
+  visual_strategy: 'صورة خدمة الاستراتيجية',
+  visual_branding: 'صورة خدمة الهوية والتصميم',
+  visual_digital: 'صورة خدمة المحتوى',
+  visual_ecommerce: 'صورة خدمة المتاجر',
+  visual_printing: 'صورة خدمة الطباعة',
+  visual_events: 'صورة خدمة الفعاليات',
+}
+
+const PACKAGE_VISUAL_LABELS: Record<string, string> = {
+  visual_basic: 'صورة الباقة الأساسية',
+  visual_professional: 'صورة الباقة الاحترافية',
+  visual_integrated: 'صورة الباقة المتكاملة',
+}
+
 const SECTION_OVERRIDES: Record<string, Record<string, ContentFieldMeta>> = {
   hero: {
     heading: {
       label: 'العنوان الرئيسي (محتوى الموقع)',
       kind: 'text',
-      help: 'نسخة Marketing CMS. الموقع العام حاليًا يعرض عنوان Hero من إعدادات المنصة حتى Phase 3.',
+      help: 'نسخة Marketing CMS. الموقع العام يعرض عنوان Hero من إعدادات المنصة حتى Phase 4.',
       group: 'marketing',
     },
     description: {
       label: 'الوصف (محتوى الموقع)',
       kind: 'textarea',
-      help: 'نسخة Marketing CMS. الموقع العام يستخدم حاليًا الوصف من إعدادات المنصة.',
+      help: 'نسخة Marketing CMS. الموقع العام يستخدم الوصف من إعدادات المنصة حتى Phase 4.',
       group: 'marketing',
     },
     cta_primary: {
       label: 'نص الزر الرئيسي (محتوى الموقع)',
       kind: 'text',
+      help: 'غير مربوط بالواجهة العامة بعد — مصدر الزر الحالي إعدادات المنصة.',
       group: 'marketing',
     },
     cta_secondary: {
       label: 'نص الزر الثانوي (محتوى الموقع)',
       kind: 'text',
+      help: 'غير مربوط بالواجهة العامة بعد — مصدر الزر الحالي إعدادات المنصة.',
       group: 'marketing',
     },
     visual_image: {
       label: 'صورة الـHero',
       kind: 'media',
-      help: 'ستُربط بالواجهة العامة في Phase 3. حاليًا الواجهة تستخدم /marketing/storefront.jpg.',
+      help: 'تظهر في الصفحة الرئيسية. عند غيابها يُستخدم /marketing/storefront.jpg.',
       group: 'marketing',
     },
   },
   about: {
     eyebrow: { label: 'التسمية', kind: 'text', help: 'محتوى مختصر يظهر في الصفحة الرئيسية.' },
+    quote: { label: 'الاقتباس البارز', kind: 'textarea', help: 'السطر العريض في مقطع من نحن على الرئيسية.' },
     body: { label: 'الوصف المختصر', kind: 'textarea', help: 'محتوى مختصر يظهر في الصفحة الرئيسية — ليس صفحة من نحن الكاملة.' },
+    tagline: { label: 'الشعار على الصورة', kind: 'text' },
+    cta_label: { label: 'نص زر «اقرأ القصة»', kind: 'text', help: 'الرابط يبقى /about (صفحة CmsPage).' },
     visual_image: { label: 'صورة المقطع', kind: 'media' },
+  },
+  services: Object.fromEntries(
+    Object.entries(SERVICE_VISUAL_LABELS).map(([key, label]) => [
+      key,
+      {
+        label,
+        kind: 'media' as const,
+        help: 'صورة العرض التقديمي فقط — بيانات الخدمة تُدار من كتالوج الخدمات.',
+        group: 'visuals',
+      },
+    ]),
+  ),
+  packages: Object.fromEntries(
+    Object.entries(PACKAGE_VISUAL_LABELS).map(([key, label]) => [
+      key,
+      {
+        label,
+        kind: 'media' as const,
+        help: 'صورة العرض التقديمي فقط — أسماء وأسعار الباقات من كتالوج الباقات.',
+        group: 'visuals',
+      },
+    ]),
+  ),
+  'build-package': {
+    description: {
+      label: 'الوصف',
+      kind: 'textarea',
+      help: 'النص التعريفي فقط. الشرائح واللوحة التوضيحية تبقى جزءًا من واجهة المكوّن.',
+    },
   },
 }
 
@@ -170,6 +221,15 @@ export function labelForContentKey(sectionKey: string, contentKey: string): Cont
       label: `الخطوة ${n} — ${partLabel}`,
       kind: part === 'image' || part === 'icon' ? 'media' : part === 'description' ? 'textarea' : 'text',
       group: `step_${n}`,
+    }
+  }
+
+  const visualMatch = /^visual_(.+)$/.exec(contentKey)
+  if (visualMatch) {
+    return {
+      label: `صورة العرض — ${visualMatch[1]}`,
+      kind: 'media',
+      group: 'visuals',
     }
   }
 

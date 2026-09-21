@@ -1,27 +1,35 @@
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useAsyncData } from '../../hooks/useAsyncData'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { getPublicSuppliers } from '../../services/suppliers'
 import { supplierPath } from '../../utils/suppliers'
 import { fadeUp, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
 
 export function SuppliersNetworkSection() {
   const reduceMotion = useReducedMotion()
+  const { resolveContent } = usePublicMarketing()
   const { state } = useAsyncData(() => getPublicSuppliers({ featured: true }))
   const suppliers = state.status === 'ready' ? state.data.slice(0, 6) : []
+
+  const eyebrow = resolveContent('suppliers', 'eyebrow', 'شبكة الموردين')
+  const title = resolveContent('suppliers', 'title', 'موردونا وشركاؤنا')
+  const description = resolveContent(
+    'suppliers',
+    'description',
+    'نعمل مع شبكة من الموردين والمتخصصين لتوفير حلول الطباعة، التغليف، التجهيزات والفعاليات حسب احتياج المشروع.',
+  )
 
   return (
     <section id="suppliers" className="marketing-section scroll-mt-24 bg-brand-paper">
       <div className="marketing-container">
         <header className="mb-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl space-y-3">
-            <p className="brand-label text-brand-ink-500">شبكة الموردين</p>
+            <p className="brand-label text-brand-ink-500">{eyebrow}</p>
             <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight text-brand-ink-900">
-              موردونا وشركاؤنا
+              {title}
             </h2>
-            <p className="leading-8 text-brand-ink-500">
-              نعمل مع شبكة من الموردين والمتخصصين لتوفير حلول الطباعة، التغليف، التجهيزات والفعاليات حسب احتياج المشروع.
-            </p>
+            <p className="leading-8 text-brand-ink-500">{description}</p>
           </div>
           <Link to="/suppliers" className="brand-btn-dark shrink-0">
             استكشف الموردين

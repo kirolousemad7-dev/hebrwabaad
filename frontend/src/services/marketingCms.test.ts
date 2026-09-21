@@ -34,6 +34,10 @@ describe('marketingCmsLabels', () => {
     expect(labelForContentKey('why-us', 'item_1_title').label).toContain('عنصر 1')
     expect(labelForContentKey('process', 'step_2_title').label).toContain('الخطوة 2')
     expect(labelForContentKey('final-cta', 'cta_primary_url').kind).toBe('url')
+    expect(labelForContentKey('about', 'quote').label).toContain('اقتباس')
+    expect(labelForContentKey('about', 'cta_label').kind).toBe('text')
+    expect(labelForContentKey('services', 'visual_strategy').kind).toBe('media')
+    expect(labelForContentKey('packages', 'visual_basic').kind).toBe('media')
   })
 
   it('prefers admin title for section display name', () => {

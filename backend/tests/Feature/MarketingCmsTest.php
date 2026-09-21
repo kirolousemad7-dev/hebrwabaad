@@ -260,6 +260,21 @@ class MarketingCmsTest extends TestCase
         $keys = collect($this->getJson('/api/public/marketing')->json('data.sections'))->pluck('key')->all();
         $this->assertContains('hero', $keys);
         $this->assertContains('about', $keys);
+
+        $about = collect($this->getJson('/api/public/marketing')->json('data.sections'))->firstWhere('key', 'about');
+        $aboutKeys = collect($about['contents'] ?? [])->pluck('key')->all();
+        $this->assertContains('quote', $aboutKeys);
+        $this->assertContains('cta_label', $aboutKeys);
+
+        $services = collect($this->getJson('/api/public/marketing')->json('data.sections'))->firstWhere('key', 'services');
+        $serviceKeys = collect($services['contents'] ?? [])->pluck('key')->all();
+        $this->assertContains('visual_strategy', $serviceKeys);
+        $this->assertContains('visual_branding', $serviceKeys);
+
+        $packages = collect($this->getJson('/api/public/marketing')->json('data.sections'))->firstWhere('key', 'packages');
+        $packageKeys = collect($packages['contents'] ?? [])->pluck('key')->all();
+        $this->assertContains('visual_basic', $packageKeys);
+        $this->assertContains('visual_professional', $packageKeys);
     }
 
     public function test_existing_cms_pages_public_endpoint_still_works(): void

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BrandSectionAccent } from '../brand/BrandSectionAccent'
 import { BrandVisual } from '../marketing/BrandVisual'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { marketingVisuals, type LandingServiceId } from '../../utils/marketingVisuals'
 import { CATALOG_SECTIONS } from '../../utils/catalogRoutes'
 import { fadeUp, imageReveal, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
@@ -67,10 +68,34 @@ const SERVICES: ServiceItem[] = [
   },
 ]
 
+const SERVICE_VISUAL_KEYS: Record<LandingServiceId, string> = {
+  strategy: 'visual_strategy',
+  branding: 'visual_branding',
+  digital: 'visual_digital',
+  ecommerce: 'visual_ecommerce',
+  printing: 'visual_printing',
+  events: 'visual_events',
+}
+
 export function ServicesSection() {
   const reduceMotion = useReducedMotion()
+  const { resolveContent, resolveVisual } = usePublicMarketing()
   const [active, setActive] = useState(0)
   const current = SERVICES[active] ?? SERVICES[0]
+
+  const eyebrow = resolveContent('services', 'eyebrow', 'SERVICES')
+  const title = resolveContent('services', 'title', 'خدمات تبني حضور علامتك')
+  const description = resolveContent(
+    'services',
+    'description',
+    'اختر محورًا واستكشف كيف ننفّذه — من التشخيص والهوية إلى الطباعة والفعاليات.',
+  )
+
+  const serviceVisual = resolveVisual(
+    'services',
+    SERVICE_VISUAL_KEYS[current.key],
+    marketingVisuals.services[current.key],
+  )
 
   function go(delta: number) {
     setActive((index) => (index + delta + SERVICES.length) % SERVICES.length)
@@ -81,9 +106,9 @@ export function ServicesSection() {
       <div className="marketing-container">
         <BrandSectionAccent
           className="mb-12 max-w-2xl"
-          english="SERVICES"
-          title="خدمات تبني حضور علامتك"
-          description="اختر محورًا واستكشف كيف ننفّذه — من التشخيص والهوية إلى الطباعة والفعاليات."
+          english={eyebrow}
+          title={title}
+          description={description}
         />
 
         <div className="grid items-stretch gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-14">
@@ -98,7 +123,7 @@ export function ServicesSection() {
                 exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
               >
                 <div className="aspect-[16/11] sm:aspect-[16/10]">
-                  <BrandVisual visual={marketingVisuals.services[current.key]} zoomable />
+                  <BrandVisual visual={serviceVisual} zoomable />
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-ink-900/85 via-brand-ink-900/35 to-transparent p-6 sm:p-8">
                   <p className="text-xs font-medium tracking-wide text-white/70">

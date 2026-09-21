@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useAsyncData } from '../../hooks/useAsyncData'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { getPublicPortfolio, type PortfolioCategory, type PortfolioItem } from '../../services/marketing'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
@@ -33,6 +34,7 @@ function detailPath(item: PortfolioItem) {
 
 export function PortfolioSection({ compact = true }: { compact?: boolean }) {
   const { state } = useAsyncData(getPublicPortfolio)
+  const { resolveContent } = usePublicMarketing()
   const [filter, setFilter] = useState<PortfolioCategory | 'all'>('all')
   const items = state.status === 'ready' ? state.data : EMPTY_ITEMS
   const visible = useMemo(
@@ -42,13 +44,21 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
   const shown = compact ? visible.slice(0, 6) : visible
   const hasMore = compact && visible.length > 6
 
+  const eyebrow = resolveContent('portfolio', 'eyebrow', 'أعمالنا')
+  const title = resolveContent('portfolio', 'title', 'أعمال تتحدث عنّا')
+  const description = resolveContent(
+    'portfolio',
+    'description',
+    'نماذج مختارة من المعرض المنشور عبر المنصة.',
+  )
+
   return (
     <section id="portfolio" className="marketing-section scroll-mt-24 bg-brand-ink-900 text-white">
       <div className="marketing-container">
         <header className="mb-10 max-w-2xl space-y-3">
-          <p className="brand-label text-brand-cobalt-300">أعمالنا</p>
-          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight">أعمال تتحدث عنّا</h2>
-          <p className="leading-8 text-white/65">نماذج مختارة من المعرض المنشور عبر المنصة.</p>
+          <p className="brand-label text-brand-cobalt-300">{eyebrow}</p>
+          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight">{title}</h2>
+          <p className="leading-8 text-white/65">{description}</p>
         </header>
 
         {items.length > 0 ? (

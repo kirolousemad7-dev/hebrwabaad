@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { BrandLogo } from '../brand/BrandLogo'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
+import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { marketingVisuals } from '../../utils/marketingVisuals'
 import {
   fadeUp,
@@ -18,6 +19,7 @@ function scrollToId(id: string) {
 export function HeroSection() {
   const reduceMotion = useReducedMotion()
   const { settings } = usePlatformSettings()
+  const { resolveVisual } = usePublicMarketing()
   const heading = settings.homepage.hero_heading || 'نمنح أعمالك أبعادًا للنمو'
   const [headingMain, headingAccent] = heading.includes('من الفكرة')
     ? [heading.replace(/\s*من الفكرة حتى التسليم\s*$/, ''), 'من الفكرة حتى التسليم']
@@ -37,6 +39,7 @@ export function HeroSection() {
       heading.includes(rawTagline) ||
       rawTagline.includes(headingMain))
   const eyebrow = taglineDuplicatesHeading ? `${brandName} للطباعة والتصميم` : rawTagline || null
+  const heroVisual = resolveVisual('hero', 'visual_image', marketingVisuals.hero)
 
   return (
     <section id="home" className="relative overflow-hidden bg-brand-paper text-brand-ink-900">
@@ -93,7 +96,7 @@ export function HeroSection() {
         >
           <div className="group relative">
             <div className="relative aspect-[16/11] overflow-hidden rounded-[1.5rem] border border-brand-ink-100 shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)] sm:aspect-[5/4] lg:aspect-[4/5]">
-              <BrandVisual visual={marketingVisuals.hero} priority zoomable />
+              <BrandVisual visual={heroVisual} priority zoomable />
             </div>
             {!reduceMotion ? (
               <motion.div
