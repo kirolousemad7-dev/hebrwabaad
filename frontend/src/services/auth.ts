@@ -1,4 +1,4 @@
-import { apiGet, apiPost, clearStoredToken, storeToken } from './api'
+import { apiGet, apiPost, apiPut, clearStoredToken, storeToken } from './api'
 import type { AuthPayload, AuthUser } from '../types/api'
 
 export function register(payload: {
@@ -41,6 +41,18 @@ export function verifyCustomerOtp(payload: { email: string; code: string }) {
 
 export function me() {
   return apiGet<AuthUser>('/api/auth/me')
+}
+
+export function updateAccount(payload: { email: string; name?: string }) {
+  return apiPut<AuthUser>('/api/auth/account', payload)
+}
+
+export function changePassword(payload: {
+  current_password: string
+  password: string
+  password_confirmation: string
+}) {
+  return apiPut<{ status: string }>('/api/auth/password', payload)
 }
 
 export function persistSession(payload: AuthPayload): void {

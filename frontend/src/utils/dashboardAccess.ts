@@ -11,6 +11,7 @@ const PATH_MODULE_MAP: Array<[string, string]> = [
   ['/owner/operations-insights', 'reports'],
   ['/crm/reports', 'reports'],
   ['/owner/employees', 'employees'],
+  ['/owner/account', 'settings'],
   ['/owner/integrations', 'integrations'],
   ['/owner/operations-settings', 'settings'],
   ['/owner/notification-preferences', 'notifications'],

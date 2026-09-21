@@ -181,6 +181,8 @@ Route::prefix('auth')->group(function (): void {
 
         Route::middleware('account.active')->group(function (): void {
             Route::get('/me', [AuthController::class, 'me']);
+            Route::put('/account', [AuthController::class, 'updateAccount']);
+            Route::put('/password', [AuthController::class, 'changePassword']);
         });
     });
 });

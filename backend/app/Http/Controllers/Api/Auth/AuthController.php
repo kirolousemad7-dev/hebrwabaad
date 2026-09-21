@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\UpdateAccountRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Support\ApiResponse;
@@ -117,5 +119,45 @@ class AuthController extends Controller
         return ApiResponse::success(
             UserResource::make($request->user())->resolve()
         );
+    }
+
+    public function updateAccount(UpdateAccountRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $payload = $request->validated();
+
+        $updates = [
+            'email' => $payload['email'],
+        ];
+
+        if (array_key_exists('name', $payload)) {
+            $updates['name'] = $payload['name'];
+        }
+
+        $user->fill($updates)->save();
+
+        return ApiResponse::success(
+            UserResource::make($user->fresh())->resolve()
+        );
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $user->forceFill([
+            'password' => $request->validated('password'),
+        ])->save();
+
+        // Keep the current Sanctum token so the Owner stays signed in;
+        // revoke every other token (stolen sessions / other devices).
+        $currentToken = $user->currentAccessToken();
+        if ($currentToken !== null) {
+            $user->tokens()->where('id', '!=', $currentToken->id)->delete();
+        }
+
+        return ApiResponse::success([
+            'status' => 'updated',
+        ]);
     }
 }

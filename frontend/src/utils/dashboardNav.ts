@@ -128,6 +128,12 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
     items: [
       { to: '/owner/employees', label: 'المستخدمون', icon: 'employees', roles: ['OWNER'] },
       {
+        to: '/owner/account',
+        label: 'حسابي',
+        icon: 'profile',
+        roles: ['OWNER'],
+      },
+      {
         to: '/owner/role-dashboard-access',
         label: 'صلاحيات لوحة التحكم',
         icon: 'employees',

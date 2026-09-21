@@ -44,6 +44,7 @@ import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '../pages/ResetPasswordPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { OwnerEmployeesPage } from '../pages/owner/OwnerEmployeesPage'
+import { OwnerAccountPage } from '../pages/owner/OwnerAccountPage'
 import { OwnerRoleDashboardAccessPage } from '../pages/owner/OwnerRoleDashboardAccessPage'
 import { OwnerFilesPage } from '../pages/owner/OwnerFilesPage'
 import { OwnerCalendarPage } from '../pages/owner/OwnerCalendarPage'
@@ -325,6 +326,7 @@ export function AppRoutes() {
         <Route element={<OwnerLayout />}>
           <Route path="/owner" element={<OwnerHomePage />} />
           <Route path="/owner/calendar" element={<OwnerCalendarPage />} />
+          <Route path="/owner/account" element={<OwnerAccountPage />} />
           <Route path="/owner/employees" element={<OwnerEmployeesPage />} />
           <Route path="/owner/role-dashboard-access" element={<OwnerRoleDashboardAccessPage />} />
           <Route path="/owner/orders" element={<OwnerOrdersPage />} />
