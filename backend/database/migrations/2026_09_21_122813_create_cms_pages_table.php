@@ -26,7 +26,10 @@ return new class extends Migration
             $table->unsignedInteger('footer_order')->default(0);
             $table->timestamps();
 
-            $table->index(['is_published', 'show_in_footer', 'footer_group', 'footer_order']);
+            $table->index(
+                ['is_published', 'show_in_footer', 'footer_group', 'footer_order'],
+                'cms_pages_footer_visibility_index'
+            );
             $table->index(['page_type']);
         });
     }
