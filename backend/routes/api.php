@@ -219,6 +219,7 @@ Route::get('/blog/{slug}', [PublicBlogController::class, 'show']);
 Route::get('/testimonials', [PublicTestimonialController::class, 'index']);
 Route::get('/sitemap.xml', [PublicSitemapController::class, 'show']);
 Route::get('/content-media/{uuid}', [ContentMediaController::class, 'show']);
+Route::get('/media/{media}/file', [MediaController::class, 'publicFile'])->middleware('throttle:60,1');
 Route::get('/platform-settings', [PublicPlatformSettingController::class, 'show']);
 Route::get('/printing-catalog', [PublicPrintingCatalogController::class, 'index']);
 Route::post('/contact', [ContactInquiryController::class, 'store'])->middleware('throttle:hebr-contact');

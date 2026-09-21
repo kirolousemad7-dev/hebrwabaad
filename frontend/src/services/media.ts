@@ -28,6 +28,8 @@ export type MediaItem = {
   size: number
   checksum: string | null
   visibility: MediaVisibility
+  /** Absolute public URL when visibility is PUBLIC; otherwise null. */
+  url?: string | null
   can_preview: boolean
   is_image: boolean
   is_pdf: boolean

@@ -35,6 +35,9 @@ class PackageResource extends JsonResource
             'revision_rounds' => $this->revision_rounds,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
+            'image_url' => $this->relationLoaded('primaryMedia')
+                ? $this->primaryMedia?->url()
+                : null,
             'items' => PackageItemResource::collection($this->whenLoaded('items')),
             'tiers' => PackageTierResource::collection($this->whenLoaded('tiers')),
             ...CatalogVisibility::managementFields($request, fn () => [

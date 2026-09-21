@@ -25,6 +25,7 @@ class PackageController extends Controller
             ->with([
                 'items' => fn ($query) => $query->whereHas('service', fn ($service) => $service->active())->with('service'),
                 'tiers' => fn ($query) => $query->active(),
+                'primaryMedia',
             ])
             ->orderBy('sort_order')
             ->orderByDesc('is_featured')
@@ -48,6 +49,7 @@ class PackageController extends Controller
             ->with([
                 'items' => fn ($query) => $query->whereHas('service', fn ($service) => $service->active())->with('service'),
                 'tiers' => fn ($query) => $query->active(),
+                'primaryMedia',
             ])
             ->firstOrFail();
 

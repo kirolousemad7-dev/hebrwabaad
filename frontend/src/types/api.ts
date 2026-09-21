@@ -194,6 +194,8 @@ export type Package = {
   revision_rounds: number | null
   is_featured: boolean
   sort_order: number
+  /** Primary PUBLIC package image (absolute API/storage URL when present). */
+  image_url?: string | null
   items: PackageItem[]
   tiers: PackageTier[]
   /** Only present for OWNER / ADMIN_MANAGER responses. */

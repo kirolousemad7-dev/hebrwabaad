@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MediaVisibility;
 use App\Enums\PackageCategory;
 use App\Enums\ServiceCategory;
+use App\Models\Media;
 use App\Models\Package;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PublicCatalogTest extends TestCase
@@ -130,7 +133,33 @@ class PublicCatalogTest extends TestCase
             ->assertJsonPath('data.items.0.quantity', 2)
             ->assertJsonPath('data.items.0.notes', 'شهرياً')
             ->assertJsonPath('data.items.0.service.slug', 'campaign-management')
+            ->assertJsonPath('data.image_url', null)
             ->assertJsonMissingPath('data.is_active');
+    }
+
+    public function test_public_package_includes_primary_image_url(): void
+    {
+        Storage::fake('public');
+        config(['app.url' => 'https://api.example.test']);
+
+        $package = Package::factory()->create(['slug' => 'imaged-package']);
+        $media = Media::factory()->create([
+            'disk' => 'public',
+            'path' => 'media/package/cover.png',
+            'mime_type' => 'image/png',
+            'extension' => 'png',
+            'original_name' => 'cover.png',
+            'visibility' => MediaVisibility::Public,
+            'owner_type' => 'package',
+            'owner_id' => $package->id,
+            'is_primary' => true,
+            'collection' => 'default',
+        ]);
+        Storage::disk('public')->put($media->path, 'fake-image');
+
+        $this->getJson('/api/packages/imaged-package')
+            ->assertOk()
+            ->assertJsonPath('data.image_url', 'https://api.example.test/storage/media/package/cover.png');
     }
 
     public function test_public_package_excludes_inactive_services_from_items(): void

@@ -22,7 +22,8 @@ export function resolveMediaUrl(url: string | null | undefined): string {
   if (
     trimmed.startsWith('/storage/') ||
     trimmed.startsWith('/uploads/') ||
-    trimmed.startsWith('/media/')
+    trimmed.startsWith('/media/') ||
+    trimmed.startsWith('/api/media/')
   ) {
     const configured = import.meta.env.VITE_API_URL
     const apiBase = configured

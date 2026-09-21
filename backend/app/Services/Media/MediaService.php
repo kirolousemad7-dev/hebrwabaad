@@ -78,6 +78,15 @@ class MediaService
     }
 
     /**
+     * PUBLIC catalog media must live on the publicly linked disk so the SPA can
+     * render absolute /storage URLs. All other visibility levels stay private.
+     */
+    public function diskForVisibility(MediaVisibility $visibility): string
+    {
+        return $visibility === MediaVisibility::Public ? 'public' : $this->disk();
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, Media>
      */
@@ -115,10 +124,11 @@ class MediaService
         $visibility = $this->resolveVisibility($attributes['visibility'] ?? null, $entityType);
         $this->assertUpload($upload);
 
+        $disk = $this->diskForVisibility($visibility);
         $extension = strtolower((string) ($upload->getClientOriginalExtension() ?: $upload->guessExtension() ?: 'bin'));
         $storedName = Str::uuid()->toString().'.'.$extension;
         $directory = 'media/'.$entityType;
-        $path = $upload->storeAs($directory, $storedName, $this->disk());
+        $path = $upload->storeAs($directory, $storedName, $disk);
 
         if (! is_string($path) || $path === '') {
             throw ValidationException::withMessages([
@@ -126,7 +136,7 @@ class MediaService
             ]);
         }
 
-        $absolute = Storage::disk($this->disk())->path($path);
+        $absolute = Storage::disk($disk)->path($path);
         $checksum = is_file($absolute) ? hash_file('sha256', $absolute) : null;
 
         $collection = is_string($attributes['collection'] ?? null) && $attributes['collection'] !== ''
@@ -152,6 +162,7 @@ class MediaService
             $attributes,
             $checksum,
             $collection,
+            $disk,
             $entityType,
             $extension,
             $makePrimary,
@@ -170,7 +181,7 @@ class MediaService
             }
 
             return Media::query()->create([
-                'disk' => $this->disk(),
+                'disk' => $disk,
                 'path' => $path,
                 'original_name' => $this->safeOriginalName($upload),
                 'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
@@ -202,7 +213,14 @@ class MediaService
         $storedName = Str::uuid()->toString().'.'.$extension;
         $entityType = $this->registry->entityTypeFor($media->owner) ?? 'misc';
         $directory = 'media/'.$entityType;
-        $path = $upload->storeAs($directory, $storedName, $media->disk ?: $this->disk());
+
+        $visibility = $media->visibilityEnum() ?? MediaVisibility::Internal;
+        if (isset($attributes['visibility']) && $attributes['visibility'] !== null && $attributes['visibility'] !== '') {
+            $visibility = MediaVisibility::from((string) $attributes['visibility']);
+        }
+
+        $disk = $this->diskForVisibility($visibility);
+        $path = $upload->storeAs($directory, $storedName, $disk);
 
         if (! is_string($path) || $path === '') {
             throw ValidationException::withMessages([
@@ -213,22 +231,20 @@ class MediaService
         $oldDisk = $media->disk;
         $oldPath = $media->path;
 
-        $absolute = Storage::disk($media->disk ?: $this->disk())->path($path);
+        $absolute = Storage::disk($disk)->path($path);
         $checksum = is_file($absolute) ? hash_file('sha256', $absolute) : null;
 
         $media->fill([
+            'disk' => $disk,
             'path' => $path,
             'original_name' => $this->safeOriginalName($upload),
             'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
             'extension' => $extension,
             'size' => (int) ($upload->getSize() ?: 0),
             'checksum' => $checksum,
+            'visibility' => $visibility,
             'metadata' => array_merge($media->metadata ?? [], $this->buildMetadata($upload, $attributes['metadata'] ?? null)),
         ]);
-
-        if (isset($attributes['visibility']) && $attributes['visibility'] !== null && $attributes['visibility'] !== '') {
-            $media->visibility = MediaVisibility::from((string) $attributes['visibility']);
-        }
 
         $media->save();
 
@@ -244,8 +260,12 @@ class MediaService
      */
     public function updateMeta(Media $media, array $attributes): Media
     {
+        $visibilityChanged = false;
+
         if (isset($attributes['visibility']) && $attributes['visibility'] !== null && $attributes['visibility'] !== '') {
-            $media->visibility = MediaVisibility::from((string) $attributes['visibility']);
+            $nextVisibility = MediaVisibility::from((string) $attributes['visibility']);
+            $visibilityChanged = $media->visibilityEnum() !== $nextVisibility;
+            $media->visibility = $nextVisibility;
         }
 
         if (array_key_exists('metadata', $attributes) && is_array($attributes['metadata'])) {
@@ -260,6 +280,10 @@ class MediaService
             $media->sort_order = (int) $attributes['sort_order'];
         }
 
+        if ($visibilityChanged && $media->visibilityEnum() !== null) {
+            $this->relocateForVisibility($media, $media->visibilityEnum());
+        }
+
         $media->save();
 
         if (array_key_exists('is_primary', $attributes) && (bool) $attributes['is_primary'] === true) {
@@ -267,6 +291,31 @@ class MediaService
         }
 
         return $media->fresh($this->eagerLoad()) ?? $media->load($this->eagerLoad());
+    }
+
+    /**
+     * Keep disk aligned with visibility so demoting PUBLIC never leaves a
+     * readable object under the public storage symlink.
+     */
+    private function relocateForVisibility(Media $media, MediaVisibility $visibility): void
+    {
+        $targetDisk = $this->diskForVisibility($visibility);
+        $currentDisk = (string) ($media->disk ?: $this->disk());
+        $path = (string) $media->path;
+
+        if ($targetDisk === $currentDisk || $path === '') {
+            return;
+        }
+
+        if (! Storage::disk($currentDisk)->exists($path)) {
+            $media->disk = $targetDisk;
+
+            return;
+        }
+
+        Storage::disk($targetDisk)->put($path, Storage::disk($currentDisk)->get($path));
+        Storage::disk($currentDisk)->delete($path);
+        $media->disk = $targetDisk;
     }
 
     public function setPrimary(Media $media): Media
@@ -407,6 +456,28 @@ class MediaService
             $filename,
             ['Content-Disposition' => 'inline; filename="'.$filename.'"'],
         );
+    }
+
+    /**
+     * Stream PUBLIC media without authentication (legacy private-disk rows and
+     * any PUBLIC file that is not yet reachable via /storage).
+     */
+    public function publicFile(Media $media): StreamedResponse
+    {
+        if ($media->visibilityEnum() !== MediaVisibility::Public) {
+            abort(404, 'Not found.');
+        }
+
+        $this->assertStored($media);
+
+        $filename = str_replace(['"', "\r", "\n", '\\'], '', $media->original_name);
+        $headers = [
+            'Content-Type' => (string) ($media->mime_type ?: 'application/octet-stream'),
+            'Cache-Control' => 'public, max-age=86400',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ];
+
+        return Storage::disk($media->disk)->response($media->path, $filename, $headers);
     }
 
     public function assertCanAttach(User $actor, Model $owner, bool $viewOnly = false): void

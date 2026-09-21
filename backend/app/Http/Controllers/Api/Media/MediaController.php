@@ -153,4 +153,12 @@ class MediaController extends Controller
 
         return $this->mediaService->preview($media);
     }
+
+    /**
+     * Unauthenticated file stream for PUBLIC media only (legacy private-disk rows).
+     */
+    public function publicFile(Media $media): StreamedResponse
+    {
+        return $this->mediaService->publicFile($media);
+    }
 }

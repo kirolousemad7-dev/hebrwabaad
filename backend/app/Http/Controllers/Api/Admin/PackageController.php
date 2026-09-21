@@ -17,7 +17,7 @@ class PackageController extends Controller
     public function index(Request $request): JsonResponse
     {
         $packages = Package::query()
-            ->with(['items.service', 'tiers'])
+            ->with(['items.service', 'tiers', 'primaryMedia'])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
@@ -49,7 +49,7 @@ class PackageController extends Controller
         });
 
         return ApiResponse::success(
-            PackageResource::make($package->load(['items.service', 'tiers']))->resolve($request),
+            PackageResource::make($package->load(['items.service', 'tiers', 'primaryMedia']))->resolve($request),
             201
         );
     }
@@ -57,7 +57,7 @@ class PackageController extends Controller
     public function show(Request $request, Package $package): JsonResponse
     {
         return ApiResponse::success(
-            PackageResource::make($package->load(['items.service', 'tiers']))->resolve($request)
+            PackageResource::make($package->load(['items.service', 'tiers', 'primaryMedia']))->resolve($request)
         );
     }
 
@@ -81,7 +81,7 @@ class PackageController extends Controller
         });
 
         return ApiResponse::success(
-            PackageResource::make($package->fresh()->load(['items.service', 'tiers']))->resolve($request)
+            PackageResource::make($package->fresh()->load(['items.service', 'tiers', 'primaryMedia']))->resolve($request)
         );
     }
 

@@ -14,6 +14,7 @@ describe('resolveMediaUrl', () => {
   it('prefixes backend storage paths with the API origin in development', () => {
     expect(resolveMediaUrl('/storage/portfolio/work.jpg')).toBe('http://127.0.0.1:8000/storage/portfolio/work.jpg')
     expect(resolveMediaUrl('/uploads/portfolio/work.jpg')).toBe('http://127.0.0.1:8000/uploads/portfolio/work.jpg')
+    expect(resolveMediaUrl('/api/media/12/file')).toBe('http://127.0.0.1:8000/api/media/12/file')
   })
 
   it('returns empty string for blank values', () => {

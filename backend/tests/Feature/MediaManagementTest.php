@@ -26,6 +26,7 @@ class MediaManagementTest extends TestCase
     {
         parent::setUp();
         Storage::fake('local');
+        Storage::fake('public');
         config(['filesystems.default' => 'local']);
     }
 
@@ -326,7 +327,7 @@ class MediaManagementTest extends TestCase
             'supplier_id' => $supplier->id,
         ]);
 
-        $this->asUser($owner)
+        $created = $this->asUser($owner)
             ->post('/api/media', [
                 'file' => UploadedFile::fake()->image('pkg.png', 20, 20),
                 'entity_type' => 'package',
@@ -334,7 +335,15 @@ class MediaManagementTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.entity_type', 'package')
-            ->assertJsonPath('data.is_primary', true);
+            ->assertJsonPath('data.is_primary', true)
+            ->assertJsonPath('data.visibility', MediaVisibility::Public->value)
+            ->json('data');
+
+        $media = Media::query()->findOrFail($created['id']);
+        $this->assertSame('public', $media->disk);
+        Storage::disk('public')->assertExists($media->path);
+        $this->assertNotNull($created['url']);
+        $this->assertStringContainsString('/storage/', (string) $created['url']);
 
         $this->asUser($owner)
             ->post('/api/media', [
@@ -344,7 +353,91 @@ class MediaManagementTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.entity_type', 'supplier_portfolio_item')
-            ->assertJsonPath('data.visibility', MediaVisibility::Supplier->value);
+            ->assertJsonPath('data.visibility', MediaVisibility::Supplier->value)
+            ->assertJsonPath('data.url', null);
+    }
+
+    public function test_public_media_file_endpoint_serves_only_public_visibility(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $package = Package::factory()->create();
+
+        $publicId = $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('public-pkg.png', 12, 12),
+                'entity_type' => 'package',
+                'entity_id' => $package->id,
+                'visibility' => MediaVisibility::Public->value,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->get('/api/media/'.$publicId.'/file')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+
+        ['manager' => $manager, 'task' => $task] = $this->seededTask();
+        $internalId = $this->asUser($manager)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->create('secret.pdf', 10, 'application/pdf'),
+                'entity_type' => 'task',
+                'entity_id' => $task->id,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->get('/api/media/'.$internalId.'/file')->assertNotFound();
+
+        $private = Media::factory()->create([
+            'disk' => 'local',
+            'path' => 'media/task/private-secret.pdf',
+            'visibility' => MediaVisibility::Private,
+            'owner_type' => 'task',
+            'owner_id' => $task->id,
+            'uploaded_by' => $manager->id,
+            'mime_type' => 'application/pdf',
+            'extension' => 'pdf',
+            'original_name' => 'private-secret.pdf',
+        ]);
+        Storage::disk('local')->put($private->path, 'secret');
+
+        $this->get('/api/media/'.$private->id.'/file')->assertNotFound();
+        $this->get('/api/media/999999/file')->assertNotFound();
+        $this->get('/api/media/not-an-id/file')->assertNotFound();
+    }
+
+    public function test_demoting_public_media_moves_file_off_public_disk(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $package = Package::factory()->create();
+
+        $id = $this->asUser($owner)
+            ->post('/api/media', [
+                'file' => UploadedFile::fake()->image('demote.png', 10, 10),
+                'entity_type' => 'package',
+                'entity_id' => $package->id,
+                'visibility' => MediaVisibility::Public->value,
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $media = Media::query()->findOrFail($id);
+        $this->assertSame('public', $media->disk);
+        Storage::disk('public')->assertExists($media->path);
+
+        $this->asUser($owner)
+            ->patchJson('/api/media/'.$id, [
+                'visibility' => MediaVisibility::Private->value,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.visibility', MediaVisibility::Private->value)
+            ->assertJsonPath('data.url', null);
+
+        $media->refresh();
+        $this->assertSame('local', $media->disk);
+        Storage::disk('local')->assertExists($media->path);
+        Storage::disk('public')->assertMissing($media->path);
+        $this->get('/api/media/'.$id.'/file')->assertNotFound();
     }
 
     public function test_set_primary_and_reorder_media(): void

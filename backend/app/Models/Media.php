@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'disk',
@@ -84,5 +85,43 @@ class Media extends Model
     public function isVideo(): bool
     {
         return str_starts_with((string) $this->mime_type, 'video/');
+    }
+
+    public function visibilityEnum(): ?MediaVisibility
+    {
+        if ($this->visibility instanceof MediaVisibility) {
+            return $this->visibility;
+        }
+
+        return MediaVisibility::tryFrom((string) $this->visibility);
+    }
+
+    /**
+     * Absolute public URL for PUBLIC media only. Non-public rows return null.
+     *
+     * Prefer the public disk (/storage/...) when available; fall back to the
+     * authenticated-free file endpoint for legacy PUBLIC rows still on a private disk.
+     */
+    public function url(): ?string
+    {
+        if ($this->visibilityEnum() !== MediaVisibility::Public) {
+            return null;
+        }
+
+        if (($this->disk ?: '') === 'public' && filled($this->path)) {
+            $url = Storage::disk('public')->url($this->path);
+
+            if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+                return $url;
+            }
+
+            return rtrim((string) config('app.url'), '/').'/'.ltrim($url, '/');
+        }
+
+        if (! filled($this->id)) {
+            return null;
+        }
+
+        return rtrim((string) config('app.url'), '/').'/api/media/'.$this->id.'/file';
     }
 }

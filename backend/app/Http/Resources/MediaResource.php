@@ -33,6 +33,7 @@ class MediaResource extends JsonResource
             'visibility' => $this->visibility instanceof \BackedEnum
                 ? $this->visibility->value
                 : $this->visibility,
+            'url' => $this->url(),
             'can_preview' => $this->isPreviewable(),
             'is_image' => $this->isImage(),
             'is_pdf' => $this->isPdf(),

@@ -15,6 +15,7 @@ import {
   type MediaVisibility,
 } from '../../services/media'
 import { describeApiError } from '../../utils/errors'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 type UploadRow = {
   key: string
@@ -341,20 +342,30 @@ export function MediaUploader({
         ) : (
           items.map((item) => (
             <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm">
-              <div className="min-w-0">
-                <p className="truncate font-medium text-slate-900">
-                  {item.original_name}
-                  {item.is_primary ? (
-                    <span className="ms-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800">
-                      أساسي
-                    </span>
-                  ) : null}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {formatMediaSize(item.size)} · {item.visibility}
-                  {item.is_image && item.metadata?.width ? ` · ${String(item.metadata.width)}×${String(item.metadata.height)}` : ''}
-                  {item.is_video ? ' · فيديو' : ''}
-                </p>
+              <div className="flex min-w-0 items-start gap-3">
+                {item.is_image && item.url ? (
+                  <img
+                    src={resolveMediaUrl(item.url)}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-900">
+                    {item.original_name}
+                    {item.is_primary ? (
+                      <span className="ms-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800">
+                        أساسي
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {formatMediaSize(item.size)} · {item.visibility}
+                    {item.is_image && item.metadata?.width ? ` · ${String(item.metadata.width)}×${String(item.metadata.height)}` : ''}
+                    {item.is_video ? ' · فيديو' : ''}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {item.can_preview ? (

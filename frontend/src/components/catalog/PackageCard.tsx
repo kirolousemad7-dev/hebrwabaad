@@ -7,6 +7,7 @@ import {
   packagePriceLabel,
   SERVICE_CATEGORY_LABELS,
 } from '../../utils/catalog'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 import { PACKAGE_ORDER_COPY } from '../../utils/orderIntent'
 import type { CatalogTone } from './CatalogHero'
 import { PackageDetails } from './PackageDetails'
@@ -29,6 +30,7 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
   const detailsId = useId()
   const discounted = packageHasDiscount(pkg)
   const duration = formatDuration(pkg.duration_days)
+  const imageSrc = resolveMediaUrl(pkg.image_url)
 
   return (
     <article
@@ -37,6 +39,17 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
         pkg.is_featured ? featuredRing[tone] : 'border-slate-200',
       ].join(' ')}
     >
+      {imageSrc ? (
+        <div className="-mx-5 -mt-5 overflow-hidden rounded-t-2xl sm:-mx-6 sm:-mt-6">
+          <img
+            src={imageSrc}
+            alt=""
+            className="aspect-[16/9] w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-lg font-semibold">{pkg.name}</h3>
         <div className="flex flex-wrap gap-2">
