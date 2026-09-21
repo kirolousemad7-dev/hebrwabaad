@@ -35,8 +35,9 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
   return (
     <article
       className={[
-        'flex h-full flex-col gap-4 rounded-2xl border bg-white p-5 shadow-sm sm:p-6',
-        pkg.is_featured ? featuredRing[tone] : 'border-slate-200',
+        'group flex h-full flex-col gap-4 rounded-2xl border bg-white p-5 shadow-sm transition duration-300 sm:p-6',
+        'hover:-translate-y-1 hover:shadow-card focus-within:-translate-y-1',
+        pkg.is_featured ? featuredRing[tone] : 'border-slate-200 hover:border-brand-cobalt-300',
       ].join(' ')}
     >
       {imageSrc ? (
@@ -44,7 +45,7 @@ export function PackageCard({ pkg, tone = 'marketing' }: PackageCardProps) {
           <img
             src={imageSrc}
             alt=""
-            className="aspect-[16/9] w-full object-cover"
+            className="aspect-[16/9] w-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
             loading="lazy"
           />
         </div>

@@ -1,39 +1,37 @@
-import { motion, useReducedMotion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { BrandLogo } from '../brand/BrandLogo'
+import { AnimatedSection } from '../marketing/AnimatedSection'
+import { BrandVisual } from '../marketing/BrandVisual'
+import { marketingVisuals } from '../../utils/marketingVisuals'
 
 export function AboutSection() {
-  const reduceMotion = useReducedMotion()
-
   return (
     <section id="about" className="scroll-mt-24 bg-brand-paper py-16 sm:py-20">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="space-y-4"
-        >
-          <p className="text-sm font-medium text-brand-primary">من نحن</p>
-          <h2 className="text-3xl font-semibold text-brand-ink-900">منصة حبر وأبعاد لخدمات الأعمال والنمو</h2>
-          <p className="leading-8 text-slate-600">
-            حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص احتياجاتهم، بناء علاماتهم، تطوير حضورهم الرقمي وتنفيذ مشاريعهم من خلال شبكة من المتخصصين والموردين في التسويق، المحتوى، التصوير، المتاجر الإلكترونية، الطباعة، التغليف، المعارض، الحفلات والافتتاحات.
+        <AnimatedSection className="space-y-4">
+          <p className="brand-label text-brand-cobalt-700">من نحن</p>
+          <h2 className="brand-heading-lg">منصة حبر وأبعاد لخدمات الأعمال والنمو</h2>
+          <p className="leading-8 text-brand-ink-500">
+            حبر وأبعاد منصة سعودية متكاملة لخدمات الأعمال والنمو. نساعد الشركات والمنشآت ورواد الأعمال على تشخيص
+            احتياجاتهم، بناء علاماتهم، تطوير حضورهم الرقمي وتنفيذ مشاريعهم من خلال شبكة من المتخصصين والموردين.
           </p>
-        </motion.div>
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-brand-ink-900 p-10 text-white"
-        >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(201,162,39,0.25),transparent_40%),radial-gradient(circle_at_10%_90%,rgba(42,154,163,0.2),transparent_45%)]" />
-          <div className="relative space-y-6">
-            <BrandLogo size="mark" to="/" className="brightness-110" />
-            <p className="max-w-sm text-lg font-medium leading-8 text-white/90">
-              نمنح أعمالك أبعادًا للنمو
-            </p>
-            <p className="text-sm leading-7 text-white/65">تشخيص النشاط ← تحديد الأولويات ← اختيار الخدمة أو الباقة ← استلام العرض ← التنفيذ وإدارة المشروع ← قياس النتائج والمتابعة.</p>
+          <Link to="/about" className="brand-btn-secondary">
+            اقرأ المزيد
+          </Link>
+        </AnimatedSection>
+        <AnimatedSection delay={0.08} className="relative overflow-hidden rounded-[2rem] border border-brand-ink-100">
+          <div className="aspect-[4/3]">
+            <BrandVisual visual={marketingVisuals.about} />
           </div>
-        </motion.div>
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-ink-900 via-brand-ink-900/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 space-y-3 p-8 text-white">
+            <BrandLogo size="mark" to="/" className="brightness-110" />
+            <p className="max-w-sm text-lg font-medium leading-8 text-white/90">نمنح أعمالك أبعادًا للنمو</p>
+            <p className="text-sm leading-7 text-white/65">
+              تشخيص ← أولويات ← خدمة أو باقة ← عرض ← تنفيذ ← قياس ومتابعة
+            </p>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   )

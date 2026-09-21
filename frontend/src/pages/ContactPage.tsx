@@ -30,10 +30,10 @@ function ContactInquiryForm() {
   }
 
   return (
-    <section className="mx-auto grid max-w-3xl gap-10 lg:grid-cols-2">
+    <section className="mx-auto grid max-w-4xl gap-10 lg:grid-cols-2">
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">أرسل رسالة</h2>
-        <p className="leading-8 text-slate-600">أرسل استفسارك، أو ابدأ مباشرة بإنشاء حساب للدخول إلى المنصة.</p>
+        <h2 className="text-2xl font-semibold text-brand-ink-900">أرسل رسالة</h2>
+        <p className="leading-8 text-brand-ink-500">أرسل استفسارك، أو ابدأ مباشرة بإنشاء حساب للدخول إلى المنصة.</p>
         <div className="flex flex-wrap gap-3">
           <LandingCta to="/register" variant="navy">
             ابدأ مشروعك
@@ -46,7 +46,10 @@ function ContactInquiryForm() {
       {done ? (
         <FeedbackBanner kind="success">وصلنا رسالتك. سنعود إليك عبر البريد.</FeedbackBanner>
       ) : (
-        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6">
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-4 rounded-3xl border border-brand-ink-100 bg-white p-6 shadow-sm transition hover:border-brand-cobalt-300"
+        >
           {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
           <label className="block space-y-1 text-sm">
             <span>الاسم</span>
@@ -67,7 +70,7 @@ function ContactInquiryForm() {
           <button
             type="submit"
             disabled={loading}
-            className="min-h-11 rounded-xl bg-slate-900 px-5 text-sm text-white disabled:opacity-60"
+            className="brand-btn-primary w-full disabled:opacity-60"
           >
             {loading ? 'جاري الإرسال...' : 'إرسال'}
           </button>

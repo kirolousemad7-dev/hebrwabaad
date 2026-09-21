@@ -38,8 +38,8 @@ export function PublicFooter() {
   const cmsGroups = cmsFooterState.status === 'ready' ? groupFooterPages(cmsFooterState.data) : []
 
   return (
-    <footer className="mt-auto border-t border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
+    <footer className="mt-auto border-t border-brand-ink-100 bg-white">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <BrandLogo size="nav" />

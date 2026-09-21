@@ -36,10 +36,20 @@ export function PublicNav() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
+  const [scrolled, setScrolled] = useState(false)
   const menuId = useId()
 
   /** Guests on "/" see marketing section anchors. Everyone else gets the real platform catalog. */
   const useLandingSections = location.pathname === '/' && !isAuthenticated
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 12)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const landingItems = useMemo(() => {
     const features = settings.website.features
@@ -178,7 +188,14 @@ export function PublicNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-brand-ink-100/90 bg-brand-paper/95 shadow-sm backdrop-blur">
+      <header
+        className={[
+          'sticky top-0 z-40 border-b backdrop-blur transition-[background-color,box-shadow,border-color] duration-300',
+          scrolled
+            ? 'border-brand-ink-100 bg-brand-paper/98 shadow-card'
+            : 'border-brand-ink-100/70 bg-brand-paper/90 shadow-sm',
+        ].join(' ')}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <BrandLogo size="nav" />
 

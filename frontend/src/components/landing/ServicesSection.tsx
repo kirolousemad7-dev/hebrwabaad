@@ -1,37 +1,55 @@
 import { Link } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
 import { BrandSectionAccent } from '../brand/BrandSectionAccent'
+import { InteractiveServiceCard } from '../marketing/InteractiveServiceCard'
+import { marketingVisuals } from '../../utils/marketingVisuals'
+import { CATALOG_SECTIONS } from '../../utils/catalogRoutes'
 
 const SERVICES = [
   {
-    title: 'البرمجة وتطوير المواقع',
-    body: 'تصميم وتطوير مواقع ومنصات رقمية تجمع بين الأداء، السرعة وتجربة المستخدم.',
+    key: 'strategy' as const,
+    title: CATALOG_SECTIONS['business-diagnosis-strategy'].title,
+    body: CATALOG_SECTIONS['business-diagnosis-strategy'].description,
+    href: CATALOG_SECTIONS['business-diagnosis-strategy'].path,
+    features: ['تحليل النشاط والسوق', 'تحديد الأولويات', 'خطة قابلة للقياس'],
   },
   {
-    title: 'التسويق الرقمي',
-    body: 'استراتيجيات ومحتوى وحملات إعلانية تساعد علامتك على الوصول للجمهور المناسب.',
+    key: 'branding' as const,
+    title: CATALOG_SECTIONS['branding-design'].title,
+    body: CATALOG_SECTIONS['branding-design'].description,
+    href: CATALOG_SECTIONS['branding-design'].path,
+    features: ['شعار وهوية', 'دليل استخدام', 'تطبيقات بصرية'],
   },
   {
-    title: 'التصميم والهوية البصرية',
-    body: 'بناء هوية بصرية متكاملة تعكس شخصية علامتك وتثبت حضورها في السوق.',
+    key: 'digital' as const,
+    title: CATALOG_SECTIONS['content-writing'].title,
+    body: CATALOG_SECTIONS['content-writing'].description,
+    href: CATALOG_SECTIONS['content-writing'].path,
+    features: ['محتوى مقنع', 'نصوص حملات', 'رسائل العلامة'],
   },
   {
-    title: 'الطباعة',
-    body: 'حلول طباعة احترافية لمختلف احتياجات الشركات والعلامات التجارية.',
+    key: 'ecommerce' as const,
+    title: CATALOG_SECTIONS['ecommerce-digital-experience'].title,
+    body: CATALOG_SECTIONS['ecommerce-digital-experience'].description,
+    href: CATALOG_SECTIONS['ecommerce-digital-experience'].path,
+    features: ['متاجر ومواقع', 'تجربة شراء', 'صفحات هبوط'],
   },
   {
-    title: 'التغليف والباكدجنج',
-    body: 'تصميم وتنفيذ حلول تغليف تجمع بين الشكل العملي والهوية المميزة.',
+    key: 'printing' as const,
+    title: 'الطباعة والتغليف',
+    body: 'حلول طباعة وتغليف احترافية للمنتجات، الهوية المكتبية، والمواد الدعائية بتشطيبات عالية الجودة.',
+    href: '/printing-packaging',
+    features: ['مطبوعات فاخرة', 'تغليف وباكدجنج', 'مواد دعائية'],
   },
   {
-    title: 'تنظيم الفعاليات',
-    body: 'تخطيط وتنفيذ الفعاليات بداية من الفكرة وحتى اليوم النهائي للحدث.',
+    key: 'events' as const,
+    title: CATALOG_SECTIONS['events-management'].title,
+    body: CATALOG_SECTIONS['events-management'].description,
+    href: CATALOG_SECTIONS['events-management'].path,
+    features: ['افتتاحات ومعارض', 'هوية الفعالية', 'تشغيل وتغطية'],
   },
 ]
 
 export function ServicesSection() {
-  const reduceMotion = useReducedMotion()
-
   return (
     <section id="services" className="scroll-mt-24 bg-brand-paper py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -41,23 +59,24 @@ export function ServicesSection() {
           title="كل ما تحتاجه علامتك في مكان واحد"
           description="حبر وأبعاد تجمع خدمات متعددة تحت مسار واحد: من البناء الرقمي والهوية حتى الإنتاج المادي وتنظيم الفعاليات."
         />
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {SERVICES.map((service, index) => (
-            <motion.li
-              key={service.title}
-              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: reduceMotion ? 0 : index * 0.05 }}
-              className="brand-card group flex min-h-48 flex-col gap-3 rounded-3xl p-6 transition duration-300 hover:-translate-y-1"
-            >
-              <span className="brand-section-marker transition group-hover:w-14" aria-hidden="true" />
-              <h3 className="text-lg font-semibold text-brand-ink-900">{service.title}</h3>
-              <p className="flex-1 text-sm leading-7 text-brand-ink-500">{service.body}</p>
-            </motion.li>
+            <li key={service.key}>
+              <InteractiveServiceCard
+                index={index}
+                title={service.title}
+                body={service.body}
+                href={service.href}
+                visual={marketingVisuals.services[service.key]}
+                features={service.features}
+              />
+            </li>
           ))}
         </ul>
-        <div className="mt-8">
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link to="/services" className="brand-btn-secondary">
+            كل الخدمات
+          </Link>
           <Link to="/build-package" className="brand-btn-primary">
             صمّم باقتك من عدة خدمات
           </Link>

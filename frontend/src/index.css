@@ -393,6 +393,14 @@
   background: rgb(49 92 255 / 0.14);
 }
 
+.hero-orb-a {
+  animation-delay: 0s;
+}
+
+.hero-orb-b {
+  animation-delay: -3.2s;
+}
+
 .hero-orb-teal {
   inset-inline-start: 4%;
   bottom: 10%;
