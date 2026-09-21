@@ -6,7 +6,7 @@ import { PublicNav } from '../components/public/PublicNav'
 
 export function LandingLayout() {
   return (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-slate-50 text-slate-900">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-brand-paper text-brand-ink-900">
       <div className="relative z-10 flex min-h-screen flex-col">
         <a
           href="#main-content"

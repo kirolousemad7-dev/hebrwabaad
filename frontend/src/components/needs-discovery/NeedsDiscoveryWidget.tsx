@@ -242,7 +242,7 @@ export function NeedsDiscoveryWidget() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-start p-4 sm:p-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-start p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
       <div className="pointer-events-auto flex max-w-full flex-col items-start gap-3">
         {open ? (
           <section

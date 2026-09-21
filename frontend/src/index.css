@@ -168,6 +168,41 @@
 }
 
 @layer components {
+  .marketing-container {
+    width: 100%;
+    max-width: 80rem; /* 1280px */
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .marketing-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .marketing-container {
+      max-width: 82.5rem; /* 1320px */
+    }
+  }
+
+  .marketing-section {
+    padding-block: 4.5rem; /* 72px mobile */
+  }
+
+  @media (min-width: 640px) {
+    .marketing-section {
+      padding-block: 6rem; /* 96px */
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .marketing-section {
+      padding-block: 7.5rem; /* 120px */
+    }
+  }
+
   .brand-card {
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-brand-ink-100);

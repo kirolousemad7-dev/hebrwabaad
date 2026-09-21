@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { BrandLogo } from '../brand/BrandLogo'
 import { useAuth } from '../../context/AuthContext'
@@ -6,12 +6,21 @@ import { usePlatformSettings } from '../../context/PlatformSettingsContext'
 import { LANDING_SECTION_NAV } from '../../utils/publicNav'
 import { homePathForRole } from '../../utils/roles'
 
+const PRIMARY_PLATFORM_PATHS = [
+  '/consultant',
+  '/services',
+  '/packages',
+  '/build-package',
+  '/portfolio',
+  '/suppliers',
+]
+
 function navLinkClass(isActive: boolean) {
   return [
     'rounded-lg px-1.5 py-1.5 whitespace-nowrap transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
     isActive
       ? 'font-semibold text-brand-ink-900 shadow-[inset_0_-2px_0_0_var(--color-brand-cobalt-500)]'
-      : 'text-brand-ink-500 hover:text-brand-ink-900',
+      : 'font-medium text-brand-ink-700 hover:text-brand-cobalt-700',
   ].join(' ')
 }
 
@@ -20,7 +29,7 @@ function sectionLinkClass(active: boolean) {
     'rounded-lg px-1.5 py-1.5 whitespace-nowrap transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
     active
       ? 'font-semibold text-brand-ink-900 shadow-[inset_0_-2px_0_0_var(--color-brand-cobalt-500)]'
-      : 'text-brand-ink-500 hover:text-brand-ink-900',
+      : 'font-medium text-brand-ink-700 hover:text-brand-cobalt-700',
   ].join(' ')
 }
 
@@ -35,11 +44,13 @@ export function PublicNav() {
   const { settings, navigation } = usePlatformSettings()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
   const [scrolled, setScrolled] = useState(false)
   const menuId = useId()
+  const moreId = useId()
+  const moreRef = useRef<HTMLDivElement>(null)
 
-  /** Guests on "/" see marketing section anchors. Everyone else gets the real platform catalog. */
   const useLandingSections = location.pathname === '/' && !isAuthenticated
 
   useEffect(() => {
@@ -65,15 +76,16 @@ export function PublicNav() {
 
   useEffect(() => {
     setMenuOpen(false)
+    setMoreOpen(false)
   }, [location.pathname, location.hash])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setMenuOpen(false)
+        setMoreOpen(false)
       }
     }
-
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
@@ -84,6 +96,17 @@ export function PublicNav() {
       document.body.style.overflow = ''
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    if (!moreOpen) return
+    function onPointerDown(event: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', onPointerDown)
+    return () => window.removeEventListener('mousedown', onPointerDown)
+  }, [moreOpen])
 
   useEffect(() => {
     if (!useLandingSections) return
@@ -130,10 +153,26 @@ export function PublicNav() {
     )
   })
 
-  const platformLinks = navigation.map((item) => {
+  const { primaryNav, secondaryNav } = useMemo(() => {
+    const primary: typeof navigation = []
+    const secondary: typeof navigation = []
+    for (const item of navigation) {
+      if (PRIMARY_PLATFORM_PATHS.includes(item.path)) {
+        primary.push(item)
+      } else {
+        secondary.push(item)
+      }
+    }
+    primary.sort(
+      (a, b) => PRIMARY_PLATFORM_PATHS.indexOf(a.path) - PRIMARY_PLATFORM_PATHS.indexOf(b.path),
+    )
+    return { primaryNav: primary, secondaryNav: secondary }
+  }, [navigation])
+
+  function renderPlatformLink(item: (typeof navigation)[number], onNavigate?: () => void) {
     if (item.path === '/' && location.pathname === '/') {
       return (
-        <Link key={item.id} to="/" className={navLinkClass(true)} onClick={() => setMenuOpen(false)}>
+        <Link key={item.id} to="/" className={navLinkClass(true)} onClick={onNavigate}>
           {item.label}
         </Link>
       )
@@ -144,14 +183,77 @@ export function PublicNav() {
         key={item.id}
         to={item.path}
         className={({ isActive }) => navLinkClass(isActive)}
-        onClick={() => setMenuOpen(false)}
+        onClick={onNavigate}
       >
         {item.label}
       </NavLink>
     )
-  })
+  }
 
-  const primaryLinks = useLandingSections ? landingLinks : platformLinks
+  const platformPrimaryLinks = primaryNav.map((item) => renderPlatformLink(item, () => setMenuOpen(false)))
+
+  const moreActive = secondaryNav.some(
+    (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
+  )
+
+  const desktopPlatformLinks = (
+    <>
+      {platformPrimaryLinks}
+      {secondaryNav.length > 0 ? (
+        <div className="relative" ref={moreRef}>
+          <button
+            type="button"
+            id={moreId}
+            aria-expanded={moreOpen}
+            aria-haspopup="menu"
+            onClick={() => setMoreOpen((open) => !open)}
+            className={navLinkClass(moreActive || moreOpen)}
+          >
+            المزيد
+          </button>
+          {moreOpen ? (
+            <div
+              role="menu"
+              aria-labelledby={moreId}
+              className="absolute top-full inset-inline-end-0 z-50 mt-2 min-w-[12rem] rounded-xl border border-brand-ink-100 bg-white p-2 shadow-card"
+            >
+              {secondaryNav.map((item) => (
+                <NavLink
+                  key={item.id}
+                  role="menuitem"
+                  to={item.path}
+                  className={({ isActive }) =>
+                    [
+                      'block rounded-lg px-3 py-2 text-sm transition',
+                      isActive
+                        ? 'bg-brand-paper font-semibold text-brand-ink-900'
+                        : 'font-medium text-brand-ink-700 hover:bg-brand-paper hover:text-brand-cobalt-700',
+                    ].join(' ')
+                  }
+                  onClick={() => {
+                    setMoreOpen(false)
+                    setMenuOpen(false)
+                  }}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  )
+
+  const mobilePlatformLinks = (
+    <>
+      {platformPrimaryLinks}
+      {secondaryNav.map((item) => renderPlatformLink(item, () => setMenuOpen(false)))}
+    </>
+  )
+
+  const desktopPrimaryLinks = useLandingSections ? landingLinks : desktopPlatformLinks
+  const mobilePrimaryLinks = useLandingSections ? landingLinks : mobilePlatformLinks
 
   const authLinks = isAuthenticated ? (
     <>
@@ -164,7 +266,7 @@ export function PublicNav() {
       <button
         type="button"
         onClick={() => void logout()}
-        className="rounded-lg px-2 py-1.5 text-slate-600 underline hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+        className="rounded-lg px-2 py-1.5 font-medium text-brand-ink-700 underline hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink-900"
       >
         خروج
       </button>
@@ -173,7 +275,7 @@ export function PublicNav() {
     <>
       <Link
         to="/login"
-        className="rounded-lg px-2 py-1.5 text-slate-600 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+        className="rounded-lg px-2 py-1.5 font-medium text-brand-ink-700 hover:text-brand-cobalt-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
       >
         تسجيل الدخول
       </Link>
@@ -190,21 +292,21 @@ export function PublicNav() {
     <>
       <header
         className={[
-          'sticky top-0 z-40 border-b backdrop-blur transition-[background-color,box-shadow,border-color] duration-300',
+          'sticky top-0 z-40 border-b transition-[background-color,box-shadow,border-color,backdrop-filter] duration-300',
           scrolled
-            ? 'border-brand-ink-100 bg-brand-paper/98 shadow-card'
-            : 'border-brand-ink-100/70 bg-brand-paper/90 shadow-sm',
+            ? 'border-brand-ink-100/90 bg-brand-paper/95 shadow-sm backdrop-blur-md'
+            : 'border-transparent bg-brand-paper/80 shadow-none backdrop-blur-[2px]',
         ].join(' ')}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <div className="marketing-container flex items-center justify-between gap-4 py-2.5">
           <BrandLogo size="nav" />
 
           <nav
             aria-label="التنقل الرئيسي"
-            className="hidden max-w-full min-w-0 items-center gap-0.5 overflow-x-auto text-sm lg:flex lg:flex-nowrap lg:justify-end"
+            className="hidden min-w-0 flex-1 items-center justify-end gap-0.5 text-sm lg:flex lg:flex-nowrap"
           >
-            {primaryLinks}
-            <span className="mx-1 h-4 w-px bg-brand-ink-100" aria-hidden="true" />
+            {desktopPrimaryLinks}
+            <span className="mx-1.5 h-4 w-px shrink-0 bg-brand-ink-100" aria-hidden="true" />
             {authLinks}
           </nav>
 
@@ -219,7 +321,7 @@ export function PublicNav() {
             ) : (
               <Link
                 to="/login"
-                className="rounded-lg px-2 py-1.5 text-sm text-brand-ink-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
+                className="rounded-lg px-2 py-1.5 text-sm font-medium text-brand-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
               >
                 تسجيل الدخول
               </Link>
@@ -229,7 +331,7 @@ export function PublicNav() {
               aria-expanded={menuOpen}
               aria-controls={menuId}
               onClick={() => setMenuOpen((open) => !open)}
-              className="min-h-11 rounded-xl border border-brand-ink-100 bg-white px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
+              className="min-h-11 rounded-xl border border-brand-ink-100 bg-white px-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
             >
               {menuOpen ? 'إغلاق' : 'القائمة'}
             </button>
@@ -255,8 +357,8 @@ export function PublicNav() {
             <div className="mb-3">
               <BrandLogo size="nav" />
             </div>
-            {primaryLinks}
-            <span className="my-2 h-px bg-slate-100" aria-hidden="true" />
+            {mobilePrimaryLinks}
+            <span className="my-2 h-px bg-brand-ink-100" aria-hidden="true" />
             {authLinks}
             {settings.social.length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-brand-ink-500">

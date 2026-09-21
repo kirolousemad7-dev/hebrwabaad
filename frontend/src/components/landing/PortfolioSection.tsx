@@ -43,16 +43,16 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
   const hasMore = compact && visible.length > 6
 
   return (
-    <section id="portfolio" className="scroll-mt-24 bg-[#111318] py-16 text-white sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <header className="mb-8 max-w-2xl space-y-3">
-          <p className="text-sm font-medium text-[#315CFF]">أعمالنا</p>
-          <h2 className="text-3xl font-semibold">أعمال تتحدث عنّا</h2>
-          <p className="leading-8 text-white/70">نماذج مختارة من المعرض المنشور عبر المنصة.</p>
+    <section id="portfolio" className="marketing-section scroll-mt-24 bg-brand-ink-900 text-white">
+      <div className="marketing-container">
+        <header className="mb-10 max-w-2xl space-y-3">
+          <p className="brand-label text-brand-cobalt-300">أعمالنا</p>
+          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight">أعمال تتحدث عنّا</h2>
+          <p className="leading-8 text-white/65">نماذج مختارة من المعرض المنشور عبر المنصة.</p>
         </header>
 
         {items.length > 0 ? (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-8 flex flex-wrap gap-2">
             {FILTERS.filter((option) => option.value === 'all' || items.some((item) => item.category === option.value)).map(
               (option) => (
                 <button
@@ -60,7 +60,9 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
                   type="button"
                   onClick={() => setFilter(option.value)}
                   className={`min-h-10 rounded-full px-4 text-sm transition ${
-                    filter === option.value ? 'bg-[#315CFF] text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                    filter === option.value
+                      ? 'bg-brand-cobalt-500 text-white'
+                      : 'bg-white/10 text-white/80 hover:bg-white/15'
                   }`}
                 >
                   {option.label}
@@ -166,7 +168,7 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
           <div className="mt-8">
             <Link
               to="/portfolio"
-              className="inline-flex min-h-11 items-center rounded-xl bg-[#315CFF] px-5 text-sm font-medium text-white"
+              className="brand-btn-primary"
             >
               عرض كل الأعمال
             </Link>

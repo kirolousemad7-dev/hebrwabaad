@@ -1,33 +1,47 @@
 import { type ReactNode } from 'react'
 import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion'
+import { fadeUp, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
 
 type AnimatedSectionProps = {
   children: ReactNode
   className?: string
-  delay?: number
-  y?: number
-  once?: boolean
-} & Omit<HTMLMotionProps<'div'>, 'children' | 'initial' | 'whileInView' | 'animate'>
+  as?: 'div' | 'section' | 'header' | 'article'
+  stagger?: boolean
+} & Omit<HTMLMotionProps<'div'>, 'children' | 'initial' | 'whileInView' | 'animate' | 'variants'>
 
 export function AnimatedSection({
   children,
   className,
-  delay = 0,
-  y = 20,
-  once = true,
+  stagger = false,
   ...rest
 }: AnimatedSectionProps) {
   const reduceMotion = useReducedMotion()
+  const variants = motionOrReduced(reduceMotion, stagger ? staggerContainer : fadeUp)
 
   return (
     <motion.div
       className={className}
-      initial={reduceMotion ? false : { opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once, amount: 0.2 }}
-      transition={{ duration: 0.45, delay: reduceMotion ? 0 : delay, ease: [0.22, 1, 0.36, 1] }}
+      variants={variants}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.18 }}
       {...rest}
     >
+      {children}
+    </motion.div>
+  )
+}
+
+export function MotionItem({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <motion.div className={className} variants={motionOrReduced(reduceMotion, fadeUp)}>
       {children}
     </motion.div>
   )

@@ -20,7 +20,7 @@ const className: Record<string, string> = {
   dark: 'brand-btn-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
   navy: 'brand-btn-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
   light:
-    'brand-btn-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
+    'inline-flex min-h-11 items-center justify-center rounded-[0.875rem] border border-white/35 bg-white/10 px-5 text-sm font-medium text-white transition hover:bg-white hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
 }
 
 export function LandingCta({ children, to, href, variant = 'primary', onClick }: LandingCtaProps) {

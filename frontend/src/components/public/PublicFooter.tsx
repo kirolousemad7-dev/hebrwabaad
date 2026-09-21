@@ -39,29 +39,29 @@ export function PublicFooter() {
 
   return (
     <footer className="mt-auto border-t border-brand-ink-100 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:px-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
+      <div className="marketing-container flex flex-col gap-10 py-14">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-sm space-y-3">
             <BrandLogo size="nav" />
             {footerDescription ? (
-              <p className="max-w-sm text-sm leading-7 text-slate-600">{footerDescription}</p>
+              <p className="text-sm leading-7 text-brand-ink-500">{footerDescription}</p>
             ) : null}
             {settings.brand.tagline ? (
-              <p className="text-xs text-slate-500">{settings.brand.tagline}</p>
+              <p className="text-xs text-brand-ink-300">{settings.brand.tagline}</p>
             ) : null}
           </div>
           <nav
             aria-label="روابط تذييل الموقع"
-            className={`grid gap-6 text-sm ${
+            className={`grid gap-8 text-sm ${
               cmsGroups.length > 0 ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'sm:grid-cols-2'
             }`}
           >
             {showQuickLinks ? (
               <div>
-                <p className="mb-2 font-semibold text-slate-900">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">
                   {useLandingSections ? 'الموقع' : 'المنصة'}
                 </p>
-                <ul className="flex flex-col gap-2 text-slate-600">
+                <ul className="flex flex-col gap-2.5 text-brand-ink-500">
                   {useLandingSections
                     ? LANDING_SECTION_NAV.filter((item) => {
                         if (item.id === 'suppliers' && settings.website.features.show_suppliers === false) {
@@ -87,7 +87,7 @@ export function PublicFooter() {
                         <li key={item.id}>
                           <a
                             href={`#${item.id}`}
-                            className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                            className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
                             onClick={(event) => {
                               event.preventDefault()
                               document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
@@ -101,7 +101,7 @@ export function PublicFooter() {
                         <li key={item.id}>
                           <Link
                             to={item.path}
-                            className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                            className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
                           >
                             {item.label}
                           </Link>
@@ -112,13 +112,13 @@ export function PublicFooter() {
             ) : null}
             {cmsGroups.map((group) => (
               <div key={group.group}>
-                <p className="mb-2 font-semibold text-slate-900">{group.group}</p>
-                <ul className="flex flex-col gap-2 text-slate-600">
+                <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">{group.group}</p>
+                <ul className="flex flex-col gap-2.5 text-brand-ink-500">
                   {group.pages.map((page) => (
                     <li key={page.id}>
                       <Link
                         to={page.path || `/${page.slug}`}
-                        className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                        className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
                       >
                         {page.title}
                       </Link>
@@ -128,12 +128,12 @@ export function PublicFooter() {
               </div>
             ))}
             <div>
-              <p className="mb-2 font-semibold text-slate-900">الحساب</p>
-              <ul className="flex flex-col gap-2 text-slate-600">
+              <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">الحساب</p>
+              <ul className="flex flex-col gap-2.5 text-brand-ink-500">
                 <li>
                   <Link
                     to="/login"
-                    className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                    className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
                   >
                     تسجيل الدخول
                   </Link>
@@ -141,15 +141,15 @@ export function PublicFooter() {
                 <li>
                   <Link
                     to="/register"
-                    className="hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                    className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
                   >
                     إنشاء حساب
                   </Link>
                 </li>
               </ul>
               {showContact && (settings.contact.phone || settings.contact.email) ? (
-                <div className="mt-4 space-y-1 text-slate-600">
-                  <p className="font-semibold text-slate-900">تواصل</p>
+                <div className="mt-5 space-y-1.5 text-brand-ink-500">
+                  <p className="text-xs font-semibold tracking-wide text-brand-ink-900">تواصل</p>
                   {settings.contact.phone ? <p>{settings.contact.phone}</p> : null}
                   {settings.contact.email ? <p>{settings.contact.email}</p> : null}
                   {settings.contact.whatsapp_url ? (
@@ -165,15 +165,10 @@ export function PublicFooter() {
                 </div>
               ) : null}
               {showSocial ? (
-                <ul className="mt-4 flex flex-wrap gap-3 text-slate-600">
+                <ul className="mt-5 flex flex-wrap gap-3 text-brand-ink-500">
                   {settings.social.map((item) => (
                     <li key={`${item.platform}-${item.url}`}>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-slate-900"
-                      >
+                      <a href={item.url} target="_blank" rel="noreferrer" className="hover:text-brand-ink-900">
                         {SOCIAL_LABELS[item.platform] || item.platform}
                       </a>
                     </li>
@@ -183,10 +178,13 @@ export function PublicFooter() {
             </div>
           </nav>
         </div>
-        <p className="text-xs text-slate-500">
-          {settings.website.copyright_text ||
-            `© ${new Date().getFullYear()} ${brandName}. جميع الحقوق محفوظة.`}
-        </p>
+        <div className="flex items-center justify-between gap-4 border-t border-brand-ink-100 pt-6">
+          <p className="text-xs text-brand-ink-300">
+            {settings.website.copyright_text ||
+              `© ${new Date().getFullYear()} ${brandName}. جميع الحقوق محفوظة.`}
+          </p>
+          <span aria-hidden="true" className="hidden h-1.5 w-8 rounded-full bg-brand-cobalt-500 sm:block" />
+        </div>
       </div>
     </footer>
   )

@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { fadeUp, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
 
 const STEPS = [
   { n: '01', title: 'تشخيص النشاط' },
@@ -13,27 +14,32 @@ export function ProcessSection() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section id="process" className="scroll-mt-24 bg-white py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <header className="mb-10 max-w-2xl space-y-3">
-          <p className="text-sm font-medium text-brand-primary">مسار العمل</p>
-          <h2 className="text-3xl font-semibold text-brand-ink-900">رحلة العميل</h2>
+    <section id="process" className="marketing-section scroll-mt-24 bg-white">
+      <div className="marketing-container">
+        <header className="mb-12 max-w-2xl space-y-3">
+          <p className="brand-label text-brand-ink-500">مسار العمل</p>
+          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight text-brand-ink-900">
+            رحلة العميل
+          </h2>
         </header>
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {STEPS.map((step, index) => (
+        <motion.ol
+          className="relative grid gap-0 sm:grid-cols-2 lg:grid-cols-3"
+          variants={motionOrReduced(reduceMotion, staggerContainer)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          {STEPS.map((step) => (
             <motion.li
               key={step.n}
-              initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ delay: reduceMotion ? 0 : index * 0.06 }}
-              className="relative rounded-3xl border border-slate-200 bg-brand-paper p-5"
+              variants={motionOrReduced(reduceMotion, fadeUp)}
+              className="relative border-b border-brand-ink-100 px-1 py-7 sm:border-e sm:px-6 sm:odd:ps-0 lg:[&:nth-child(3n)]:border-e-0"
             >
-              <p className="text-2xl font-semibold text-brand-primary">{step.n}</p>
-              <h3 className="mt-3 text-base font-semibold text-brand-ink-900">{step.title}</h3>
+              <p className="text-sm font-semibold tracking-wider text-brand-cobalt-700">{step.n}</p>
+              <h3 className="mt-3 text-lg font-semibold text-brand-ink-900">{step.title}</h3>
             </motion.li>
           ))}
-        </ol>
+        </motion.ol>
       </div>
     </section>
   )

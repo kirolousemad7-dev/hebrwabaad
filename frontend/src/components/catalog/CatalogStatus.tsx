@@ -44,10 +44,10 @@ export function CatalogEmptyState({
   actions = DEFAULT_EMPTY_ACTIONS,
 }: CatalogEmptyStateProps) {
   return (
-    <div className="space-y-3 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+    <div className="space-y-5 rounded-[1.5rem] border border-brand-ink-100 bg-white px-6 py-14 text-center shadow-sm">
       <BrandLogo size="mark" to={null} className="justify-center opacity-90" />
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-slate-600">{description}</p>
+      <h2 className="text-xl font-semibold text-brand-ink-900">{title}</h2>
+      <p className="mx-auto max-w-md text-sm leading-7 text-brand-ink-500">{description}</p>
       {actions.length > 0 ? (
         <div className="flex flex-wrap justify-center gap-3">
           {actions.map((action) => (

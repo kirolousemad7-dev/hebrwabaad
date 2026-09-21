@@ -1,28 +1,28 @@
 /**
  * Marketing visuals — swap `image` to a photo URL when real assets are ready.
- * Leave `image` empty to use the brand composition fallback.
  *
+ * Storefront photo: `/marketing/storefront.jpg` (physical branch reference).
  * Example later:
- *   marketingVisuals.hero.image = '/uploads/marketing/hero.jpg'
+ *   marketingVisuals.services.printing.image = '/marketing/printing.jpg'
  */
 export type MarketingVisual = {
   /** Photo / asset URL. Empty = brand geometric fallback. */
   image: string
   alt: string
-  /** Optional local SVG accent (from /public) */
+  /** Optional local SVG/PNG accent (from /public) */
   accentSvg?: string
 }
 
 export const marketingVisuals = {
   hero: {
-    image: '',
-    alt: 'منصة حبر وأبعاد لخدمات الأعمال والنمو',
+    image: '/marketing/storefront.jpg',
+    alt: 'واجهة فرع حبر وأبعاد',
     accentSvg: '/brand/mark.png',
   } satisfies MarketingVisual,
 
   services: {
     strategy: {
-      image: '',
+      image: '/marketing/storefront.jpg',
       alt: 'تشخيص الأعمال والاستراتيجية',
       accentSvg: '/printing/business-cards.svg',
     },
@@ -72,13 +72,13 @@ export const marketingVisuals = {
   } satisfies Record<string, MarketingVisual>,
 
   about: {
-    image: '',
+    image: '/marketing/storefront.jpg',
     alt: 'من نحن — حبر وأبعاد',
     accentSvg: '/brand/mark.png',
   } satisfies MarketingVisual,
 
   contact: {
-    image: '',
+    image: '/marketing/storefront.jpg',
     alt: 'تواصل معنا',
     accentSvg: '/brand/logo.png',
   } satisfies MarketingVisual,

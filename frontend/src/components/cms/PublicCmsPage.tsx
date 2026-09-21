@@ -1,6 +1,6 @@
-import { type ReactNode, useEffect, useMemo } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../catalog/CatalogStatus'
+import { CatalogEmptyState, CatalogSkeleton } from '../catalog/CatalogStatus'
 import { PageHero } from '../marketing/PageHero'
 import { AnimatedSection } from '../marketing/AnimatedSection'
 import { useAsyncData } from '../../hooks/useAsyncData'
@@ -110,7 +110,7 @@ export function PublicCmsPage({ slug: slugProp, children, softFail = false }: Pu
   const { slug: paramSlug = '' } = useParams()
   const slug = (slugProp || paramSlug).trim()
 
-  const { state, reload } = useAsyncData(async () => {
+  const { state } = useAsyncData(async () => {
     if (!slug) {
       return { data: null as CmsPage | null }
     }
@@ -139,7 +139,16 @@ export function PublicCmsPage({ slug: slugProp, children, softFail = false }: Pu
       return <div className="space-y-8">{children}</div>
     }
 
-    return <CatalogErrorState message={`تعذر تحميل الصفحة. ${state.message}`} onRetry={() => void reload()} />
+    return (
+      <CatalogEmptyState
+        title="المحتوى غير متاح حاليًا"
+        description="تعذر تحميل هذه الصفحة الآن. يمكنك المحاولة لاحقًا أو العودة للرئيسية."
+        actions={[
+          { to: '/', label: 'الرئيسية', variant: 'primary' },
+          { to: '/contact', label: 'تواصل معنا', variant: 'secondary' },
+        ]}
+      />
+    )
   }
 
   const page = state.data
@@ -151,8 +160,11 @@ export function PublicCmsPage({ slug: slugProp, children, softFail = false }: Pu
     return (
       <CatalogEmptyState
         title="الصفحة غير متاحة"
-        description="قد تكون الصفحة مسودة أو غير منشورة بعد."
-        actions={[{ to: '/', label: 'الرئيسية', variant: 'primary' }]}
+        description="المحتوى غير متاح حاليًا. قد تكون الصفحة مسودة أو غير منشورة بعد."
+        actions={[
+          { to: '/', label: 'الرئيسية', variant: 'primary' },
+          { to: '/contact', label: 'تواصل معنا', variant: 'secondary' },
+        ]}
       />
     )
   }
@@ -173,28 +185,52 @@ function CmsPageBody({
   const isContact = page.slug === 'contact'
   const isAbout = page.slug === 'about'
   const showToc = headings.length >= 3 && !isContact
+  const [activeHeading, setActiveHeading] = useState(headings[0]?.id ?? '')
+
+  useEffect(() => {
+    if (!showToc) return
+    const nodes = headings
+      .map((heading) => document.getElementById(heading.id))
+      .filter((node): node is HTMLElement => node !== null)
+    if (nodes.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (visible?.target.id) {
+          setActiveHeading(visible.target.id)
+        }
+      },
+      { rootMargin: '-25% 0px -55% 0px', threshold: [0.2, 0.45, 0.7] },
+    )
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [showToc, headings])
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <CmsPageSeo page={page} />
       <PageHero
         eyebrow={isAbout ? 'من نحن' : isContact ? 'تواصل' : 'صفحات المنصة'}
         title={page.title}
         description={page.meta_description}
         tone={isAbout ? 'ink' : 'paper'}
+        breadcrumbs={[
+          { label: 'الرئيسية', to: '/' },
+          { label: page.title },
+        ]}
       />
 
-      <div className={showToc ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]' : ''}>
+      <div className={showToc ? 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]' : ''}>
         <AnimatedSection>
-          <article
-            className="rounded-3xl border border-brand-ink-100 bg-white px-5 py-8 shadow-sm sm:px-8"
-            dir="rtl"
-          >
+          <article className="max-w-3xl" dir="rtl">
             {contentHasHeading ? null : (
-              <h2 className="mb-6 text-2xl font-semibold text-brand-ink-900">{page.title}</h2>
+              <h2 className="mb-8 text-2xl font-semibold text-brand-ink-900">{page.title}</h2>
             )}
             <div
-              className="cms-content max-w-none text-base leading-8 text-brand-ink-700 [&_a]:font-medium [&_a]:text-brand-cobalt-700 [&_a]:underline-offset-4 hover:[&_a]:underline [&_h1]:mb-4 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-brand-ink-900 [&_h2]:mt-10 [&_h2]:scroll-mt-28 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-brand-ink-900 [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-6 [&_p]:my-3 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-6"
+              className="cms-content max-w-none text-base leading-9 text-brand-ink-700 [&_a]:font-medium [&_a]:text-brand-cobalt-700 [&_a]:underline-offset-4 hover:[&_a]:underline [&_h1]:mb-5 [&_h1]:text-[clamp(1.75rem,1.4rem+1.2vw,2.5rem)] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:text-brand-ink-900 [&_h2]:mt-12 [&_h2]:scroll-mt-28 [&_h2]:border-b [&_h2]:border-brand-ink-100 [&_h2]:pb-3 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-brand-ink-900 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:my-1.5 [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:ps-6 [&_p]:my-4 [&_ul]:my-5 [&_ul]:list-disc [&_ul]:ps-6"
               dangerouslySetInnerHTML={{ __html: contentHtml }}
             />
           </article>
@@ -204,31 +240,41 @@ function CmsPageBody({
           <aside className="hidden lg:block">
             <nav
               aria-label="أقسام الصفحة"
-              className="sticky top-24 space-y-3 rounded-2xl border border-brand-ink-100 bg-white p-4 shadow-sm"
+              className="sticky top-24 space-y-3 border-s border-brand-ink-100 ps-4"
             >
-              <p className="text-xs font-semibold text-brand-ink-500">في هذه الصفحة</p>
-              <ul className="space-y-2 text-sm">
-                {headings.map((heading) => (
-                  <li key={heading.id}>
-                    <a
-                      href={`#${heading.id}`}
-                      className="block rounded-lg px-2 py-1.5 text-brand-ink-500 transition hover:bg-brand-cobalt-100 hover:text-brand-cobalt-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        document.getElementById(heading.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      }}
-                    >
-                      {heading.text}
-                    </a>
-                  </li>
-                ))}
+              <p className="text-xs font-semibold tracking-wide text-brand-ink-500">في هذه الصفحة</p>
+              <ul className="space-y-1 text-sm">
+                {headings.map((heading) => {
+                  const active = activeHeading === heading.id
+                  return (
+                    <li key={heading.id}>
+                      <a
+                        href={`#${heading.id}`}
+                        aria-current={active ? 'true' : undefined}
+                        className={[
+                          'block rounded-lg border-s-2 px-2 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
+                          active
+                            ? 'border-brand-cobalt-500 bg-brand-paper font-medium text-brand-ink-900'
+                            : 'border-transparent text-brand-ink-500 hover:bg-brand-paper hover:text-brand-ink-900',
+                        ].join(' ')}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          document.getElementById(heading.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          setActiveHeading(heading.id)
+                        }}
+                      >
+                        {heading.text}
+                      </a>
+                    </li>
+                  )
+                })}
               </ul>
             </nav>
           </aside>
         ) : null}
       </div>
 
-      {children ? <AnimatedSection delay={0.05}>{children}</AnimatedSection> : null}
+      {children ? <AnimatedSection>{children}</AnimatedSection> : null}
     </div>
   )
 }

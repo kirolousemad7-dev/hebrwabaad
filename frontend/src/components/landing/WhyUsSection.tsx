@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { fadeUp, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
 
 const VALUES = [
   {
@@ -23,27 +24,35 @@ export function WhyUsSection() {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section id="why-us" className="scroll-mt-24 bg-white py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <header className="mb-10 max-w-2xl space-y-3">
-          <p className="text-sm font-medium text-brand-primary">لماذا نحن</p>
-          <h2 className="text-3xl font-semibold text-brand-ink-900">لماذا حبر وأبعاد؟</h2>
+    <section id="why-us" className="marketing-section scroll-mt-24 bg-brand-paper">
+      <div className="marketing-container">
+        <header className="mb-12 max-w-2xl space-y-3">
+          <p className="brand-label text-brand-ink-500">لماذا نحن</p>
+          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight text-brand-ink-900">
+            لماذا حبر وأبعاد؟
+          </h2>
         </header>
-        <ul className="grid gap-4 md:grid-cols-2">
+        <motion.ul
+          className="grid gap-5 md:grid-cols-2"
+          variants={motionOrReduced(reduceMotion, staggerContainer)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {VALUES.map((item, index) => (
             <motion.li
               key={item.title}
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: reduceMotion ? 0 : index * 0.05 }}
-              className="rounded-3xl border border-slate-200 bg-brand-paper p-6 transition hover:border-brand-primary/30"
+              variants={motionOrReduced(reduceMotion, fadeUp)}
+              className="relative overflow-hidden rounded-[1.5rem] border border-brand-ink-100 bg-white p-7"
             >
-              <h3 className="text-lg font-semibold text-brand-ink-900">{item.title}</h3>
-              <p className="mt-2 leading-8 text-slate-600">{item.body}</p>
+              <span className="mb-4 block text-xs font-semibold tracking-wider text-brand-cobalt-700">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h3 className="text-xl font-semibold text-brand-ink-900">{item.title}</h3>
+              <p className="mt-3 leading-8 text-brand-ink-500">{item.body}</p>
             </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       </div>
     </section>
   )
