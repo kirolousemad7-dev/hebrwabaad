@@ -88,7 +88,7 @@ export function OwnerWebsitePage() {
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
 
       <DashboardSection title="أقسام الصفحة الرئيسية" description="فعّل أو عدّل أقسام المحتوى التسويقي.">
-        {state.status === 'loading' ? <DashboardPanelSkeleton /> : null}
+        {state.status === 'loading' ? <DashboardPanelSkeleton label="جاري تحميل أقسام الموقع..." /> : null}
         {state.status === 'error' ? (
           <DashboardErrorState message={state.message} onRetry={reload} />
         ) : null}

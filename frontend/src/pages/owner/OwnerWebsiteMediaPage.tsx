@@ -16,16 +16,36 @@ import {
   updateOwnerMarketingMedia,
   uploadOwnerMarketingMedia,
   type MarketingMedia,
+  type MarketingMediaListResponse,
 } from '../../services/marketingCms'
 import { describeApiError } from '../../utils/errors'
 import { formatBytes } from '../../utils/marketingCmsLabels'
 
 type Tab = 'all' | 'orphans'
 
+function asMediaListResponse(items: MarketingMedia[]): MarketingMediaListResponse {
+  return {
+    items,
+    meta: {
+      current_page: 1,
+      last_page: 1,
+      per_page: items.length,
+      total: items.length,
+    },
+  }
+}
+
 export function OwnerWebsiteMediaPage() {
   const [tab, setTab] = useState<Tab>('all')
   const listLoader = useMemo(
-    () => () => (tab === 'orphans' ? listOwnerMarketingMediaOrphans() : listOwnerMarketingMedia({ per_page: 48 })),
+    () => async (): Promise<{ data: MarketingMediaListResponse }> => {
+      if (tab === 'orphans') {
+        const response = await listOwnerMarketingMediaOrphans()
+        return { data: asMediaListResponse(response.data) }
+      }
+      const response = await listOwnerMarketingMedia({ per_page: 48 })
+      return { data: response.data }
+    },
     [tab],
   )
   const { state, reload } = useAsyncData(listLoader, [tab])
@@ -43,12 +63,7 @@ export function OwnerWebsiteMediaPage() {
   const [replaceFile, setReplaceFile] = useState<File | null>(null)
   const [replacePreview, setReplacePreview] = useState<string | null>(null)
 
-  const items: MarketingMedia[] =
-    state.status === 'ready'
-      ? Array.isArray(state.data)
-        ? state.data
-        : state.data.items
-      : []
+  const items: MarketingMedia[] = state.status === 'ready' ? state.data.items : []
 
   function onPickUpload(file: File | null) {
     setUploadFile(file)
@@ -266,7 +281,11 @@ export function OwnerWebsiteMediaPage() {
         title={tab === 'orphans' ? 'صور غير مستخدمة' : 'مكتبة الصور'}
         description={tab === 'orphans' ? 'يمكن حذفها بأمان إذا لم تكن افتراضية.' : undefined}
       >
-        {state.status === 'loading' ? <DashboardPanelSkeleton /> : null}
+        {state.status === 'loading' ? (
+          <DashboardPanelSkeleton
+            label={tab === 'orphans' ? 'جاري تحميل الصور غير المستخدمة...' : 'جاري تحميل مكتبة الصور...'}
+          />
+        ) : null}
         {state.status === 'error' ? (
           <DashboardErrorState message={state.message} onRetry={reload} />
         ) : null}
