@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { BrandWatermark } from '../components/brand/BrandWatermark'
+import { FloatingWhatsAppButton } from '../components/public/FloatingWhatsAppButton'
 import { NeedsDiscoveryWidget } from '../components/needs-discovery/NeedsDiscoveryWidget'
 import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicNav } from '../components/public/PublicNav'
@@ -22,6 +23,7 @@ export function PublicLayout() {
         <PublicFooter />
       </div>
       <NeedsDiscoveryWidget />
+      <FloatingWhatsAppButton />
     </div>
   )
 }

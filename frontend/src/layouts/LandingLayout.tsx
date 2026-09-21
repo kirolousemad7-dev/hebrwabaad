@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { FloatingWhatsAppButton } from '../components/public/FloatingWhatsAppButton'
 import { NeedsDiscoveryWidget } from '../components/needs-discovery/NeedsDiscoveryWidget'
 import { PublicFooter } from '../components/public/PublicFooter'
 import { PublicNav } from '../components/public/PublicNav'
@@ -20,6 +21,7 @@ export function LandingLayout() {
         <PublicFooter />
       </div>
       <NeedsDiscoveryWidget />
+      <FloatingWhatsAppButton />
     </div>
   )
 }
