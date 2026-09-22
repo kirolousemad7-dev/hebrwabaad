@@ -6,6 +6,7 @@ import {
   DashboardPanelSkeleton,
 } from '../../components/owner/DashboardSection'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { AddCustomerModal } from '../../components/workspace/AddCustomerModal'
 import { useToast } from '../../context/ToastContext'
 import { getOperationsProjects, type OperationsProjectListItem } from '../../services/operations'
 import {
@@ -189,6 +190,7 @@ function OwnerCreateProjectForm({
   const [deadline, setDeadline] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false)
 
   async function loadOptions() {
     setOptionsLoading(true)
@@ -297,24 +299,34 @@ function OwnerCreateProjectForm({
         />
       </label>
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm">
-          العميل
-          <select
-            required
-            aria-label="عميل المشروع"
-            value={customerId}
-            onChange={(event) => setCustomerId(event.target.value)}
-            className={fieldClass}
+        <div className="space-y-2">
+          <label className="block text-sm">
+            العميل
+            <select
+              required
+              aria-label="عميل المشروع"
+              value={customerId}
+              onChange={(event) => setCustomerId(event.target.value)}
+              className={fieldClass}
+              disabled={optionsLoading || Boolean(optionsError)}
+            >
+              <option value="">{customers.length === 0 ? 'لا يوجد عملاء' : 'اختر عميلاً'}</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => setAddCustomerOpen(true)}
             disabled={optionsLoading || Boolean(optionsError)}
+            className="text-sm text-slate-700 underline disabled:opacity-50"
           >
-            <option value="">{customers.length === 0 ? 'لا يوجد عملاء' : 'اختر عميلاً'}</option>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            + إضافة عميل
+          </button>
+        </div>
         <label className="block text-sm">
           مدير الحساب
           <select
@@ -380,6 +392,21 @@ function OwnerCreateProjectForm({
       >
         {saving ? 'جاري الحفظ...' : 'إنشاء المشروع'}
       </button>
+      <AddCustomerModal
+        open={addCustomerOpen}
+        onClose={() => setAddCustomerOpen(false)}
+        onCreated={async (customer) => {
+          setCustomers((current) => {
+            if (current.some((row) => row.id === customer.id)) {
+              return current
+            }
+            return [...current, { id: customer.id, name: customer.name }].sort((a, b) =>
+              a.name.localeCompare(b.name, 'ar'),
+            )
+          })
+          setCustomerId(String(customer.id))
+        }}
+      />
     </form>
   )
 }

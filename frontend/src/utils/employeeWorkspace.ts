@@ -361,6 +361,10 @@ function navigationForRole(role: EmployeeWorkspaceRole, capabilities: EmployeeCa
     items.push({ to: '/workspace/projects', label: 'المشاريع', icon: 'projects' })
   }
 
+  if (role === 'ACCOUNT_MANAGER') {
+    items.push({ to: '/workspace/customers', label: 'العملاء', icon: 'employees' })
+  }
+
   if (capabilities.includes('files.view')) {
     items.push({ to: '/workspace/files', label: 'الملفات', icon: 'files' })
   }

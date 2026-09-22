@@ -150,6 +150,7 @@ use App\Http\Controllers\Api\Supplier\SupplierWorkspaceController;
 use App\Http\Controllers\Api\SupportConversationController;
 use App\Http\Controllers\Api\Webhooks\InboundWebhookController;
 use App\Http\Controllers\Api\Webhooks\PayTabsWebhookController;
+use App\Http\Controllers\Api\Workspace\StaffCustomerController;
 use App\Http\Controllers\Api\WorkspaceController;
 use App\Http\Controllers\Api\WorkspaceFileController;
 use App\Http\Controllers\Api\WorkspaceProjectActivityController;
@@ -724,6 +725,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:OWNER,ACCOUNT_MANAGER
     Route::post('/workspace/projects', [WorkspaceProjectController::class, 'store']);
     Route::put('/workspace/projects/{project}', [WorkspaceProjectController::class, 'update']);
     Route::get('/workspace/account-manager/customers', [WorkspaceProjectController::class, 'customers']);
+    Route::post('/workspace/account-manager/customers', [StaffCustomerController::class, 'store']);
 });
 
 Route::middleware(['auth:sanctum', 'account.active'])->group(function (): void {

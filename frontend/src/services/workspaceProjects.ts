@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPut } from './api'
 import { getManagedOrderLookups } from './orders'
-import type { Employee, WorkspaceProject, WorkspaceProjectListData, WorkspaceTaskListData } from '../types/api'
+import type { WorkspaceProject, WorkspaceProjectListData, WorkspaceTaskListData } from '../types/api'
 
 export type CreateWorkspaceProjectPayload = {
   title: string
@@ -98,7 +98,21 @@ export function updateWorkspaceProject(
 }
 
 export function getProjectCustomers(query = '') {
-  return apiGet<Employee[]>(`/api/workspace/account-manager/customers${query}`)
+  return apiGet<
+    Array<{
+      id: number
+      name: string
+      email: string
+      role?: string
+      workspace?: string | null
+      is_active: boolean
+      has_account?: boolean
+      account_status?: string
+      projects_count?: number
+      created_at: string | null
+      last_seen_at?: string | null
+    }>
+  >(`/api/workspace/account-manager/customers${query}`)
 }
 
 /**

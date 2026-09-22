@@ -58,6 +58,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
       { to: '/crm/companies', label: 'الشركات', icon: 'suppliers', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/crm/contacts', label: 'جهات الاتصال', icon: 'employees', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/crm/leads', label: 'العملاء المحتملون', icon: 'crm', roles: ['OWNER', 'ADMIN_MANAGER'] },
+      { to: '/owner/customers', label: 'العملاء', icon: 'employees', roles: ['OWNER'] },
       { to: '/crm/quotations', label: 'عروض الأسعار', icon: 'orders', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/quote-requests', label: 'طلبات التسعير', icon: 'orders', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/requirements', label: 'اكتشف احتياجك', icon: 'messages', roles: ['OWNER'] },

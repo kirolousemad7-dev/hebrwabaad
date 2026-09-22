@@ -114,6 +114,7 @@ import { WorkspaceSupportPage } from '../pages/employee/WorkspaceSupportPage'
 import { HrDirectoryPage } from '../pages/employee/HrDirectoryPage'
 import { WorkspaceProjectDetailPage } from '../pages/employee/WorkspaceProjectDetailPage'
 import { WorkspaceProjectsPage } from '../pages/employee/WorkspaceProjectsPage'
+import { StaffCustomersPage } from '../pages/workspace/StaffCustomersPage'
 import { WorkspaceTaskDetailPage } from '../pages/employee/WorkspaceTaskDetailPage'
 import { GoogleCalendarSettingsPage } from '../pages/employee/GoogleCalendarSettingsPage'
 import { WorkspaceTasksPage } from '../pages/employee/WorkspaceTasksPage'
@@ -311,6 +312,7 @@ export function AppRoutes() {
 
       <Route element={<RoleProtectedRoute roles={['ACCOUNT_MANAGER']} />}>
         <Route element={<EmployeeLayout />}>
+          <Route path="/workspace/customers" element={<StaffCustomersPage />} />
           <Route path="/workspace/orders" element={<WorkspaceOrdersPage />} />
           <Route path="/workspace/orders/:orderId" element={<WorkspaceOrderDetailPage />} />
           <Route path="/workspace/support" element={<WorkspaceSupportPage />} />
@@ -356,6 +358,7 @@ export function AppRoutes() {
           <Route path="/owner/requirements/:id" element={<OwnerRequirementsPage />} />
           <Route path="/owner/files" element={<OwnerFilesPage />} />
           <Route path="/owner/notifications" element={<OwnerNotificationsPage />} />
+          <Route path="/owner/customers" element={<StaffCustomersPage />} />
         </Route>
       </Route>
 

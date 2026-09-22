@@ -279,6 +279,8 @@ class ProjectService
         $query = User::query()
             ->active()
             ->where('role', UserRole::Customer)
+            ->withCount('customerProjects')
+            ->withMax('tokens', 'last_used_at')
             ->orderBy('name');
 
         $term = is_string($search) ? trim($search) : '';

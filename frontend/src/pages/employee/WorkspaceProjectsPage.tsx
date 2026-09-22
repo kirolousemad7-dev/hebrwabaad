@@ -2,11 +2,12 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { WorkspaceEmptyState, WorkspaceErrorState, WorkspaceSkeleton } from '../../components/workspace/WorkspaceStatus'
 import { WorkspacePagination } from '../../components/workspace/WorkspaceListControls'
+import { AddCustomerModal } from '../../components/workspace/AddCustomerModal'
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { ApiRequestError } from '../../services/api'
 import { createWorkspaceProject, buildCreateWorkspaceProjectPayload, getProjectCustomers, getWorkspaceProjects } from '../../services/workspaceProjects'
-import type { Employee } from '../../types/api'
+import type { StaffCustomer } from '../../services/staffCustomers'
 import { formatProjectDate, formatProjectProgress, PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
 
 const fieldClass =
@@ -82,6 +83,8 @@ function AccountManagerProjectsPage() {
   const [startedAt, setStartedAt] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false)
+  const [localCustomers, setLocalCustomers] = useState<StaffCustomer[] | null>(null)
   const skipReload = useRef(true)
 
   useEffect(() => {
@@ -92,10 +95,18 @@ function AccountManagerProjectsPage() {
     void reload()
   }, [listQuery, reload])
 
-  const customers = useMemo(
-    () => (state.status === 'ready' ? state.data.customers : []),
-    [state],
-  )
+  const customers = useMemo(() => {
+    if (localCustomers) {
+      return localCustomers
+    }
+    return state.status === 'ready' ? state.data.customers : []
+  }, [localCustomers, state])
+
+  useEffect(() => {
+    if (state.status === 'ready') {
+      setLocalCustomers(null)
+    }
+  }, [state])
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -152,17 +163,22 @@ function AccountManagerProjectsPage() {
           الوصف
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} className={fieldClass} rows={3} />
         </label>
-        <label className="block text-sm">
-          العميل
-          <select required aria-label="عميل المشروع" value={customerId} onChange={(event) => setCustomerId(event.target.value)} className={fieldClass}>
-            <option value="">اختر عميلاً</option>
-            {customers.map((customer: Employee) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="space-y-2">
+          <label className="block text-sm">
+            العميل
+            <select required aria-label="عميل المشروع" value={customerId} onChange={(event) => setCustomerId(event.target.value)} className={fieldClass}>
+              <option value="">اختر عميلاً</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={() => setAddCustomerOpen(true)} className="text-sm text-slate-700 underline">
+            + إضافة عميل
+          </button>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block text-sm">
             تاريخ البدء
@@ -181,6 +197,22 @@ function AccountManagerProjectsPage() {
           {saving ? 'جاري الحفظ...' : 'إنشاء المشروع'}
         </button>
       </form>
+
+      <AddCustomerModal
+        open={addCustomerOpen}
+        onClose={() => setAddCustomerOpen(false)}
+        onCreated={async (customer) => {
+          setLocalCustomers((current) => {
+            const base = current ?? ((state.status === 'ready' ? state.data.customers : []) as StaffCustomer[])
+            if (base.some((row) => row.id === customer.id)) {
+              return base
+            }
+            return [...base, customer].sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+          })
+          setCustomerId(String(customer.id))
+          await reload()
+        }}
+      />
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">المشاريع المُدارة</h2>

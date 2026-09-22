@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Workspace\StoreWorkspaceProjectRequest;
 use App\Http\Requests\Workspace\UpdateWorkspaceProjectRequest;
-use App\Http\Resources\EmployeeResource;
+use App\Http\Resources\CustomerDirectoryResource;
 use App\Http\Resources\ProjectResource;
 use App\Http\Resources\TaskResource;
 use App\Models\Project;
@@ -91,7 +91,7 @@ class WorkspaceProjectController extends Controller
         $search = is_string($request->query('q')) ? $request->query('q') : null;
 
         return ApiResponse::success(
-            EmployeeResource::collection($this->projects->customers($search))->resolve($request)
+            CustomerDirectoryResource::collection($this->projects->customers($search))->resolve($request)
         );
     }
 }
