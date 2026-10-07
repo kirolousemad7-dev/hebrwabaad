@@ -21,8 +21,8 @@ export function DashboardHeader({
   profileTo,
 }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-slate-50">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-8">
+    <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-slate-50">
+      <div className="flex items-center gap-3 px-4 py-3 lg:gap-4 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -41,6 +41,8 @@ export function DashboardHeader({
             {subtitle ? <p className="truncate text-xs text-slate-500">{subtitle}</p> : null}
           </div>
         </div>
+
+        <div id="dashboard-header-search" className="hidden min-w-0 flex-1 lg:block" />
 
         <div className="flex shrink-0 items-center gap-2">
           <NotificationBell />

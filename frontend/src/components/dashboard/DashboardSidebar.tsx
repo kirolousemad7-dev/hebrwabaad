@@ -252,8 +252,8 @@ export function DashboardSidebar({
       <aside
         id="dashboard-sidebar-desktop"
         className={[
-          'hidden h-dvh shrink-0 flex-col self-start overflow-y-auto border-e border-brand-ink-700 bg-brand-ink-900 transition-[width] duration-300 ease-out lg:sticky lg:top-0 lg:flex',
-          collapsed ? 'w-[4.5rem] min-w-[4.5rem]' : 'w-64 min-w-64',
+          'hidden h-full shrink-0 flex-col overflow-x-hidden overflow-y-auto border-e border-brand-ink-700 bg-brand-ink-900 transition-[width] duration-300 ease-out lg:flex',
+          collapsed ? 'w-[4.5rem] min-w-[4.5rem]' : 'w-[280px] min-w-[280px]',
         ].join(' ')}
       >
         <NavBody compact={collapsed} closeOnNavigate={false} />
@@ -272,7 +272,7 @@ export function DashboardSidebar({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="fixed inset-y-0 start-0 z-50 flex w-[min(18rem,88vw)] flex-col overflow-y-auto bg-brand-ink-900 text-white shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
+            className="fixed inset-y-0 start-0 z-50 flex w-[min(280px,88vw)] flex-col overflow-y-auto bg-brand-ink-900 text-white shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
           >
             <NavBody compact={false} closeOnNavigate />
           </aside>

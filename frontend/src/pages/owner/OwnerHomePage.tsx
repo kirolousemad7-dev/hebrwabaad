@@ -40,7 +40,7 @@ export function OwnerHomePage() {
   const { state, reload } = useAsyncData(() => getOwnerDashboard())
 
   return (
-    <section className="space-y-8">
+    <section className="space-y-5">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">لوحة التحكم</h1>
         <p className="text-slate-600">مرحباً {user?.name}. نظرة على النشاط الفعلي في المنصة.</p>
@@ -56,7 +56,7 @@ export function OwnerHomePage() {
 
       {state.status === 'ready' ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <DashboardStatCard
               title="الإيرادات"
               icon="revenue"
@@ -153,7 +153,7 @@ export function OwnerHomePage() {
             />
           </DashboardSection>
 
-          <div className="grid gap-8 xl:grid-cols-5">
+          <div className="grid items-start gap-4 xl:grid-cols-5">
             <div className="xl:col-span-3">
               <DashboardSection title="النشاط الأخير">
                 <DashboardRecentActivity items={state.data.recent_activity} />

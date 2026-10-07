@@ -353,6 +353,16 @@
   }
 }
 
+.brand-watermark.brand-watermark--quiet img {
+  top: auto;
+  bottom: 6%;
+  left: auto;
+  inset-inline-end: 8%;
+  width: min(12rem, 18vw);
+  transform: none;
+  opacity: 0.012;
+}
+
 /* Logo-derived geometric accents (diagonal / curved cuts) */
 .brand-corner {
   position: absolute;
