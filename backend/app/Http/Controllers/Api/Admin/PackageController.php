@@ -17,7 +17,7 @@ class PackageController extends Controller
     public function index(Request $request): JsonResponse
     {
         $packages = Package::query()
-            ->with(['items.service', 'tiers', 'primaryMedia'])
+            ->with(['items.service', 'tiers', 'primaryMedia', 'sectors:id'])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
@@ -32,9 +32,10 @@ class PackageController extends Controller
         $validated = $request->validated();
         $items = $validated['items'] ?? null;
         $tiers = $validated['tiers'] ?? null;
-        unset($validated['items'], $validated['tiers']);
+        $sectorIds = array_key_exists('sector_ids', $validated) ? $validated['sector_ids'] : null;
+        unset($validated['items'], $validated['tiers'], $validated['sector_ids']);
 
-        $package = DB::transaction(function () use ($validated, $items, $tiers): Package {
+        $package = DB::transaction(function () use ($validated, $items, $tiers, $sectorIds): Package {
             $package = Package::query()->create($this->attributes($validated));
 
             if ($items !== null) {
@@ -45,11 +46,15 @@ class PackageController extends Controller
                 $this->syncTiers($package, $tiers);
             }
 
+            if (is_array($sectorIds)) {
+                $package->sectors()->sync($sectorIds);
+            }
+
             return $package;
         });
 
         return ApiResponse::success(
-            PackageResource::make($package->load(['items.service', 'tiers', 'primaryMedia']))->resolve($request),
+            PackageResource::make($package->load(['items.service', 'tiers', 'primaryMedia', 'sectors:id']))->resolve($request),
             201
         );
     }
@@ -66,9 +71,10 @@ class PackageController extends Controller
         $validated = $request->validated();
         $items = array_key_exists('items', $validated) ? $validated['items'] : null;
         $tiers = array_key_exists('tiers', $validated) ? $validated['tiers'] : null;
-        unset($validated['items'], $validated['tiers']);
+        $sectorIds = array_key_exists('sector_ids', $validated) ? $validated['sector_ids'] : null;
+        unset($validated['items'], $validated['tiers'], $validated['sector_ids']);
 
-        DB::transaction(function () use ($package, $validated, $items, $tiers): void {
+        DB::transaction(function () use ($package, $validated, $items, $tiers, $sectorIds): void {
             $package->update($this->attributes($validated, $package));
 
             if ($items !== null) {
@@ -78,10 +84,14 @@ class PackageController extends Controller
             if ($tiers !== null) {
                 $this->syncTiers($package, $tiers);
             }
+
+            if (is_array($sectorIds)) {
+                $package->sectors()->sync($sectorIds);
+            }
         });
 
         return ApiResponse::success(
-            PackageResource::make($package->fresh()->load(['items.service', 'tiers', 'primaryMedia']))->resolve($request)
+            PackageResource::make($package->fresh()->load(['items.service', 'tiers', 'primaryMedia', 'sectors:id']))->resolve($request)
         );
     }
 

@@ -6,6 +6,7 @@ type PublicCtaProps = {
   to: string
   children: React.ReactNode
   variant?: PublicCtaVariant
+  style?: React.CSSProperties
 }
 
 const publicCtaClassName: Record<PublicCtaVariant, string> = {
@@ -17,9 +18,9 @@ const publicCtaClassName: Record<PublicCtaVariant, string> = {
     'brand-btn-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
 }
 
-export function PublicCta({ to, children, variant = 'primary' }: PublicCtaProps) {
+export function PublicCta({ to, children, variant = 'primary', style }: PublicCtaProps) {
   return (
-    <Link to={to} className={publicCtaClassName[variant]}>
+    <Link to={to} className={publicCtaClassName[variant]} style={style}>
       {children}
     </Link>
   )

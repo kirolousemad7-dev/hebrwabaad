@@ -150,6 +150,8 @@ export function OwnerSupplierDetailPage() {
         description: String(form.get('description') || '') || undefined,
         unit: String(form.get('unit') || '') || undefined,
         price: form.get('price') ? Number(form.get('price')) : undefined,
+        compare_at_price: form.get('compare_at_price') ? Number(form.get('compare_at_price')) : undefined,
+        button_color: String(form.get('button_color') || '') || undefined,
         currency: String(form.get('currency') || 'SAR'),
         minimum_quantity: form.get('minimum_quantity') ? Number(form.get('minimum_quantity')) : undefined,
         lead_time: String(form.get('lead_time') || '') || undefined,
@@ -373,7 +375,9 @@ export function OwnerSupplierDetailPage() {
             <input name="sku" placeholder="رمز المنتج" className="rounded-md border px-3 py-2 text-sm" />
             <input name="category" placeholder="التصنيف" className="rounded-md border px-3 py-2 text-sm" />
             <input name="unit" placeholder="الوحدة" className="rounded-md border px-3 py-2 text-sm" />
-            <input name="price" type="number" placeholder="السعر" className="rounded-md border px-3 py-2 text-sm" />
+            <input name="price" type="number" placeholder="السعر الجديد" className="rounded-md border px-3 py-2 text-sm" />
+            <input name="compare_at_price" type="number" placeholder="السعر القديم" className="rounded-md border px-3 py-2 text-sm" />
+            <input name="button_color" dir="ltr" placeholder="#315CFF" className="rounded-md border px-3 py-2 text-sm" />
             <input name="currency" defaultValue="SAR" className="rounded-md border px-3 py-2 text-sm" />
             <input name="minimum_quantity" type="number" placeholder="الحد الأدنى" className="rounded-md border px-3 py-2 text-sm" />
             <input name="lead_time" placeholder="مدة التوريد" className="rounded-md border px-3 py-2 text-sm" />

@@ -61,6 +61,10 @@ class MarketingSectionSeeder extends Seeder
                 ['content_key' => 'cta_primary', 'value_text' => 'اكتشف احتياجك', 'sort_order' => 4],
                 ['content_key' => 'cta_secondary', 'value_text' => 'تصفح الخدمات', 'sort_order' => 5],
                 ['content_key' => 'visual_image', 'value_text' => null, 'sort_order' => 6, 'metadata' => ['visual_key' => 'hero', 'local_public_path' => '/marketing/storefront.jpg']],
+                ['content_key' => 'visual_aspect', 'value_text' => '4:3', 'sort_order' => 20],
+                ['content_key' => 'visual_video', 'value_text' => null, 'sort_order' => 21],
+                ['content_key' => 'visual_width', 'value_text' => null, 'sort_order' => 22],
+                ['content_key' => 'visual_height', 'value_text' => null, 'sort_order' => 23],
             ],
             'services' => [
                 ['content_key' => 'eyebrow', 'value_text' => 'SERVICES', 'sort_order' => 1],

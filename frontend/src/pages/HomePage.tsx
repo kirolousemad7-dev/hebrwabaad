@@ -11,6 +11,7 @@ import { ProcessSection } from '../components/landing/ProcessSection'
 import { ServicesSection } from '../components/landing/ServicesSection'
 import { SuppliersNetworkSection } from '../components/landing/SuppliersNetworkSection'
 import { WhyUsSection } from '../components/landing/WhyUsSection'
+import { WorkGroupsSection } from '../components/landing/WorkGroupsSection'
 
 export function HomePage() {
   const location = useLocation()
@@ -30,8 +31,8 @@ export function HomePage() {
     <>
       <HeroSection />
       <ServicesSection />
-      <WhyUsSection />
       <PackagesSection />
+      <WorkGroupsSection />
       <BuildPackageSection />
       <ProcessSection />
       <PortfolioSection compact />
@@ -39,6 +40,7 @@ export function HomePage() {
       <AboutSection />
       <FinalCta />
       <ContactSection />
+      <WhyUsSection />
     </>
   )
 }

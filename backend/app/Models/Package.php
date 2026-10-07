@@ -31,6 +31,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'is_featured',
     'is_public',
     'sort_order',
+    'button_color',
+    'excluded_service_names',
 ])]
 class Package extends Model
 {
@@ -63,6 +65,7 @@ class Package extends Model
             'deliverables' => 'array',
             'price' => 'decimal:2',
             'discount_amount' => 'decimal:2',
+            'excluded_service_names' => 'array',
             'duration_days' => 'integer',
             'revision_rounds' => 'integer',
             'sort_order' => 'integer',

@@ -6,6 +6,7 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import { listPublicCmsFooterPages } from '../../services/cmsPages'
 import { groupFooterPages } from '../../utils/cmsPages'
 import { LANDING_SECTION_NAV } from '../../utils/publicNav'
+import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '../../utils/whatsapp'
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: 'Instagram',
@@ -31,160 +32,87 @@ export function PublicFooter() {
   const footerDescription =
     settings.website.footer_description || settings.business.short_description || ''
   const showSocial = settings.website.show_social_in_footer && settings.social.length > 0
-  const showContact = settings.website.show_contact_in_footer
   const showQuickLinks = settings.website.show_quick_links
 
   const { state: cmsFooterState } = useAsyncData(listPublicCmsFooterPages, [])
   const cmsGroups = cmsFooterState.status === 'ready' ? groupFooterPages(cmsFooterState.data) : []
 
   return (
-    <footer className="mt-auto border-t border-brand-ink-100 bg-white">
-      <div className="marketing-container flex flex-col gap-10 py-14">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-sm space-y-3">
-            <BrandLogo size="nav" />
-            {footerDescription ? (
-              <p className="text-sm leading-7 text-brand-ink-500">{footerDescription}</p>
-            ) : null}
-            {settings.brand.tagline ? (
-              <p className="text-xs text-brand-ink-300">{settings.brand.tagline}</p>
-            ) : null}
-          </div>
-          <nav
-            aria-label="روابط تذييل الموقع"
-            className={`grid gap-8 text-sm ${
-              cmsGroups.length > 0 ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'sm:grid-cols-2'
-            }`}
+    <footer className="mt-auto bg-brand-ink-900 text-white">
+      <div className="marketing-container flex flex-col items-center gap-4 py-6 text-center">
+        <BrandLogo size="nav" className="brightness-0 invert" />
+        {footerDescription ? <p className="max-w-xl text-sm leading-7 text-white/70">{footerDescription}</p> : null}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm" dir="ltr">
+          <a
+            href={WHATSAPP_CHAT_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-white"
           >
-            {showQuickLinks ? (
-              <div>
-                <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">
-                  {useLandingSections ? 'الموقع' : 'المنصة'}
-                </p>
-                <ul className="flex flex-col gap-2.5 text-brand-ink-500">
-                  {useLandingSections
-                    ? LANDING_SECTION_NAV.filter((item) => {
-                        if (item.id === 'suppliers' && settings.website.features.show_suppliers === false) {
-                          return false
-                        }
-                        if (item.id === 'services' && settings.website.features.show_services === false) {
-                          return false
-                        }
-                        if (item.id === 'packages' && settings.website.features.show_packages === false) {
-                          return false
-                        }
-                        if (
-                          item.id === 'build-package' &&
-                          settings.website.features.show_build_package === false
-                        ) {
-                          return false
-                        }
-                        if (item.id === 'portfolio' && settings.website.features.show_portfolio === false) {
-                          return false
-                        }
-                        return true
-                      }).map((item) => (
-                        <li key={item.id}>
-                          <a
-                            href={`#${item.id}`}
-                            className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                            onClick={(event) => {
-                              event.preventDefault()
-                              document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
-                            }}
-                          >
-                            {item.label}
-                          </a>
-                        </li>
-                      ))
-                    : navigation.map((item) => (
-                        <li key={item.id}>
-                          <Link
-                            to={item.path}
-                            className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                          >
-                            {item.label}
-                          </Link>
-                        </li>
-                      ))}
-                </ul>
-              </div>
+            WhatsApp {WHATSAPP_DISPLAY}
+          </a>
+          {settings.contact.email ? <span className="text-white/70">{settings.contact.email}</span> : null}
+        </div>
+        {(settings.business.commercial_register || settings.business.tax_number) ? (
+          <p className="flex flex-wrap items-center justify-center gap-2 text-xs text-white/70">
+            <span aria-label="علم السعودية">🇸🇦</span>
+            {settings.business.commercial_register ? (
+              <span dir="ltr">CR {settings.business.commercial_register}</span>
             ) : null}
-            {cmsGroups.map((group) => (
-              <div key={group.group}>
-                <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">{group.group}</p>
-                <ul className="flex flex-col gap-2.5 text-brand-ink-500">
-                  {group.pages.map((page) => (
-                    <li key={page.id}>
-                      <Link
-                        to={page.path || `/${page.slug}`}
-                        className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                      >
-                        {page.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            <div>
-              <p className="mb-3 text-xs font-semibold tracking-wide text-brand-ink-900">الحساب</p>
-              <ul className="flex flex-col gap-2.5 text-brand-ink-500">
-                <li>
-                  <Link
-                    to="/login"
-                    className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                  >
-                    تسجيل الدخول
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/register"
-                    className="transition hover:text-brand-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                  >
-                    إنشاء حساب
-                  </Link>
-                </li>
-              </ul>
-              {showContact && (settings.contact.phone || settings.contact.email) ? (
-                <div className="mt-5 space-y-1.5 text-brand-ink-500">
-                  <p className="text-xs font-semibold tracking-wide text-brand-ink-900">تواصل</p>
-                  {settings.contact.phone ? <p>{settings.contact.phone}</p> : null}
-                  {settings.contact.email ? <p>{settings.contact.email}</p> : null}
-                  {settings.contact.whatsapp_url ? (
-                    <a
-                      href={settings.contact.whatsapp_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-brand-cobalt-700 hover:underline"
-                    >
-                      واتساب
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
-              {showSocial ? (
-                <ul className="mt-5 flex flex-wrap gap-3 text-brand-ink-500">
-                  {settings.social.map((item) => (
-                    <li key={`${item.platform}-${item.url}`}>
-                      <a href={item.url} target="_blank" rel="noreferrer" className="hover:text-brand-ink-900">
-                        {SOCIAL_LABELS[item.platform] || item.platform}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </nav>
-        </div>
-        <div className="flex items-center justify-between gap-4 border-t border-brand-ink-100 pt-6">
-          <p className="text-xs text-brand-ink-300">
-            {settings.website.copyright_text ||
-              `© ${new Date().getFullYear()} ${brandName}. جميع الحقوق محفوظة.`}
+            {settings.business.tax_number ? <span dir="ltr">VAT {settings.business.tax_number}</span> : null}
           </p>
-          <span aria-hidden="true" className="hidden h-1.5 w-8 rounded-full bg-brand-cobalt-500 sm:block" />
-        </div>
+        ) : null}
+        {showSocial ? (
+          <ul className="flex flex-wrap justify-center gap-3 text-sm text-white/75">
+            {settings.social.map((item) => (
+              <li key={`${item.platform}-${item.url}`}>
+                <a href={item.url} target="_blank" rel="noreferrer" className="hover:text-white">
+                  {SOCIAL_LABELS[item.platform] || item.platform}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <nav aria-label="روابط تذييل الموقع" className="flex max-w-3xl flex-wrap justify-center gap-x-4 gap-y-2 text-sm text-white/70">
+          {showQuickLinks
+            ? (useLandingSections
+                ? LANDING_SECTION_NAV.filter((item) => {
+                    if (item.id === 'suppliers' && settings.website.features.show_suppliers === false) return false
+                    if (item.id === 'services' && settings.website.features.show_services === false) return false
+                    if (item.id === 'packages' && settings.website.features.show_packages === false) return false
+                    if (item.id === 'build-package' && settings.website.features.show_build_package === false) return false
+                    if (item.id === 'portfolio' && settings.website.features.show_portfolio === false) return false
+                    return true
+                  }).map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })
+                      }}
+                    >
+                      {item.label}
+                    </a>
+                  ))
+                : navigation.map((item) => (
+                    <Link key={item.id} to={item.path}>
+                      {item.label}
+                    </Link>
+                  )))
+            : null}
+          {cmsGroups.flatMap((group) =>
+            group.pages.map((page) => (
+              <Link key={page.id} to={page.path || `/${page.slug}`}>
+                {page.title}
+              </Link>
+            )),
+          )}
+          <Link to="/login">تسجيل الدخول</Link>
+        </nav>
+        <p className="text-xs text-white/45">
+          {settings.website.copyright_text || `© ${new Date().getFullYear()} ${brandName}. جميع الحقوق محفوظة.`}
+        </p>
       </div>
     </footer>
   )

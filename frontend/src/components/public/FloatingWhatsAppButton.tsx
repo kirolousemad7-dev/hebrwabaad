@@ -1,4 +1,6 @@
-export const WHATSAPP_CHAT_URL = 'https://wa.me/966546927022'
+import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '../../utils/whatsapp'
+
+export { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY }
 
 export function FloatingWhatsAppButton() {
   return (
@@ -6,7 +8,7 @@ export function FloatingWhatsAppButton() {
       href={WHATSAPP_CHAT_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="تواصل معنا عبر واتساب"
+      aria-label={`واتساب ${WHATSAPP_DISPLAY}`}
       className="fixed bottom-[5.75rem] start-4 z-[70] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#1ebe57] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] sm:bottom-[6.5rem] sm:start-6"
     >
       <svg viewBox="0 0 24 24" className="h-7 w-7" aria-hidden="true" fill="currentColor">

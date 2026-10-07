@@ -26,6 +26,8 @@ const emptyProduct = {
   short_description: '',
   pricing_mode: 'QUOTE',
   starting_price: '',
+  compare_at_price: '',
+  button_color: '',
   is_active: true,
   is_public: true,
   is_featured: false,
@@ -79,6 +81,8 @@ export function OwnerPrintingCatalogPage() {
             draft.pricing_mode === 'QUOTE' || draft.starting_price === ''
               ? null
               : Number(draft.starting_price),
+          compare_at_price: draft.compare_at_price === '' ? null : Number(draft.compare_at_price),
+          button_color: draft.button_color.trim() === '' ? null : draft.button_color.trim(),
         },
         editingId ?? undefined,
       )
@@ -210,6 +214,25 @@ export function OwnerPrintingCatalogPage() {
               onChange={(e) => setDraft((prev) => ({ ...prev, starting_price: e.target.value }))}
             />
           </label>
+          <label className="block text-sm">
+            السعر قبل الخصم
+            <input
+              type="number"
+              className={`${fieldClass} mt-1`}
+              value={draft.compare_at_price}
+              onChange={(e) => setDraft((prev) => ({ ...prev, compare_at_price: e.target.value }))}
+            />
+          </label>
+          <label className="block text-sm">
+            لون الزر
+            <input
+              dir="ltr"
+              className={`${fieldClass} mt-1`}
+              placeholder="#315CFF"
+              value={draft.button_color}
+              onChange={(e) => setDraft((prev) => ({ ...prev, button_color: e.target.value }))}
+            />
+          </label>
           <div className="flex flex-wrap gap-4 text-sm lg:col-span-2">
             {(
               [
@@ -333,6 +356,9 @@ export function OwnerPrintingCatalogPage() {
                           pricing_mode: product.pricing_mode,
                           starting_price:
                             product.starting_price == null ? '' : String(product.starting_price),
+                          compare_at_price:
+                            product.compare_at_price == null ? '' : String(product.compare_at_price),
+                          button_color: product.button_color ?? '',
                           is_active: product.is_active,
                           is_public: product.is_public,
                           is_featured: product.is_featured,

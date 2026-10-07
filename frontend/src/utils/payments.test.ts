@@ -100,8 +100,8 @@ describe('payments', () => {
   })
 
   it('renders the authoritative amount with catalog currency', () => {
-    expect(formatPaymentAmount('1500.00', 'SAR')).toContain('SAR')
-    expect(formatPaymentAmount('1500.00', 'SAR')).toContain('١')
+    expect(formatPaymentAmount('1500.00', 'SAR')).toContain('⃁')
+    expect(formatPaymentAmount('1500.00', 'SAR')).toContain('1,500')
     expect(formatPaymentAmount(null)).toBe('—')
     expect(formatPaymentAmount(undefined, 'SAR')).toBe('—')
     expect(formatPaymentAmount(null)).not.toContain('0')

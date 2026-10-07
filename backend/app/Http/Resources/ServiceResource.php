@@ -42,6 +42,8 @@ class ServiceResource extends JsonResource
             'revision_rounds' => $this->revision_rounds,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
+            'button_color' => $this->button_color,
+            'icon_key' => $this->icon_key,
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,

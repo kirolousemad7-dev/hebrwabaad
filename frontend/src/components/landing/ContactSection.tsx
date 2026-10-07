@@ -6,6 +6,7 @@ import { submitContactInquiry } from '../../services/marketing'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
 import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { fadeUp, motionOrReduced, slideLeft, slideRight, staggerContainer } from '../../utils/marketingMotion'
+import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '../../utils/whatsapp'
 import { LandingCta } from './LandingCta'
 
 export function ContactSection() {
@@ -29,8 +30,6 @@ export function ContactSection() {
 
   const phoneValue = settings.contact.phone
   const emailValue = settings.contact.email
-  const whatsapp = settings.contact.whatsapp_url
-  const hasContactInfo = Boolean(phoneValue || emailValue || whatsapp)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -65,8 +64,7 @@ export function ContactSection() {
             <p className="max-w-md text-base leading-9 text-brand-ink-500">{description}</p>
           </motion.div>
 
-          {hasContactInfo ? (
-            <motion.ul variants={motionOrReduced(reduceMotion, fadeUp)} className="space-y-3 text-sm text-brand-ink-700">
+          <motion.ul variants={motionOrReduced(reduceMotion, fadeUp)} className="space-y-3 text-sm text-brand-ink-700">
               {phoneValue ? (
                 <li>
                   <span className="text-brand-ink-500">الهاتف: </span>
@@ -83,27 +81,19 @@ export function ContactSection() {
                   </a>
                 </li>
               ) : null}
-              {whatsapp ? (
-                <li>
-                  <a
-                    href={whatsapp}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium text-brand-cobalt-700 hover:underline"
-                  >
-                    واتساب
-                  </a>
-                </li>
-              ) : null}
+              <li>
+                <span className="text-brand-ink-500">واتساب: </span>
+                <a
+                  href={WHATSAPP_CHAT_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  dir="ltr"
+                  className="font-medium text-brand-cobalt-700 hover:underline"
+                >
+                  {WHATSAPP_DISPLAY}
+                </a>
+              </li>
             </motion.ul>
-          ) : (
-            <motion.p
-              variants={motionOrReduced(reduceMotion, fadeUp)}
-              className="max-w-md border-s-2 border-brand-cobalt-500 ps-4 text-sm leading-7 text-brand-ink-500"
-            >
-              يمكنك الإرسال عبر النموذج أو إنشاء حساب — بيانات التواصل الرسمية تظهر هنا عند تفعيلها من إعدادات المنصة.
-            </motion.p>
-          )}
 
           <motion.div variants={motionOrReduced(reduceMotion, fadeUp)}>
             <LandingCta to="/register" variant="navy">

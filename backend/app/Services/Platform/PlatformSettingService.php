@@ -255,6 +255,14 @@ class PlatformSettingService
             'working_days' => $business['working_days'],
         ];
 
+        if (filled($business['commercial_register'] ?? null)) {
+            $publicBusiness['commercial_register'] = (string) $business['commercial_register'];
+        }
+
+        if (filled($business['tax_number'] ?? null)) {
+            $publicBusiness['tax_number'] = (string) $business['tax_number'];
+        }
+
         if (($business['expose_legal_publicly'] ?? false) === true) {
             $publicBusiness['address'] = $business['address'];
             $publicBusiness['district'] = $business['district'];

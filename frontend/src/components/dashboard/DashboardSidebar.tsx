@@ -252,7 +252,7 @@ export function DashboardSidebar({
       <aside
         id="dashboard-sidebar-desktop"
         className={[
-          'hidden min-h-screen shrink-0 flex-col self-stretch border-e border-brand-ink-700 bg-brand-ink-900 transition-[width] duration-300 ease-out lg:flex',
+          'hidden h-dvh shrink-0 flex-col self-start overflow-y-auto border-e border-brand-ink-700 bg-brand-ink-900 transition-[width] duration-300 ease-out lg:sticky lg:top-0 lg:flex',
           collapsed ? 'w-[4.5rem] min-w-[4.5rem]' : 'w-64 min-w-64',
         ].join(' ')}
       >

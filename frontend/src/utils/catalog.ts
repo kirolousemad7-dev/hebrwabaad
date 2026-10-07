@@ -24,14 +24,23 @@ export const PACKAGE_CATEGORY_LABELS: Record<PackageCategory, string> = {
   EVENTS: 'فعاليات',
 }
 
-export function formatMoney(amount: string | number, currency = 'SAR'): string {
+export function formatEnglishAmount(amount: string | number): string {
   const value = typeof amount === 'string' ? Number.parseFloat(amount) : amount
 
   if (Number.isNaN(value)) {
-    return `${amount} ${currency}`
+    return String(amount)
   }
 
-  return `${value.toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ${currency}`
+  return value.toLocaleString('en-US', { maximumFractionDigits: 2 })
+}
+
+export function formatMoney(amount: string | number, currency = 'SAR'): string {
+  const formatted = formatEnglishAmount(amount)
+  if (Number.isNaN(typeof amount === 'string' ? Number.parseFloat(amount) : amount)) {
+    return currency === 'SAR' ? `${amount} \u20C1` : `${amount} ${currency}`
+  }
+
+  return currency === 'SAR' ? `${formatted} \u20C1` : `${formatted} ${currency}`
 }
 
 /** Integer SAR halalas (1/100) so line totals avoid float drift. */

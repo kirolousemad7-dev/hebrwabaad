@@ -1,74 +1,67 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { BrandSectionAccent } from '../brand/BrandSectionAccent'
+import { MediaLightbox } from '../ui/MediaLightbox'
+import { ServiceGlyph, type ServiceIconKey } from '../ui/ServiceGlyph'
 import { BrandVisual } from '../marketing/BrandVisual'
 import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { marketingVisuals, type LandingServiceId } from '../../utils/marketingVisuals'
 import { CATALOG_SECTIONS } from '../../utils/catalogRoutes'
-import { fadeUp, imageReveal, motionOrReduced, staggerContainer } from '../../utils/marketingMotion'
+import { buttonColorStyle } from '../../utils/buttonColor'
 
 type ServiceItem = {
   key: LandingServiceId
   title: string
-  shortLabel: string
   body: string
   href: string
-  features: string[]
+  icon: ServiceIconKey
 }
 
 const SERVICES: ServiceItem[] = [
   {
     key: 'strategy',
     title: CATALOG_SECTIONS['business-diagnosis-strategy'].title,
-    shortLabel: 'استراتيجية',
-    body: CATALOG_SECTIONS['business-diagnosis-strategy'].description,
+    body: 'تحليل النشاط وتحديد الأولويات.',
     href: CATALOG_SECTIONS['business-diagnosis-strategy'].path,
-    features: ['تحليل النشاط والسوق', 'تحديد الأولويات', 'خطة قابلة للقياس'],
+    icon: 'design',
   },
   {
     key: 'branding',
     title: CATALOG_SECTIONS['branding-design'].title,
-    shortLabel: 'تصميم',
-    body: CATALOG_SECTIONS['branding-design'].description,
+    body: 'هوية بصرية وتطبيقات واضحة.',
     href: CATALOG_SECTIONS['branding-design'].path,
-    features: ['شعار وهوية', 'دليل استخدام', 'تطبيقات بصرية'],
+    icon: 'design',
   },
   {
     key: 'digital',
     title: CATALOG_SECTIONS['content-writing'].title,
-    shortLabel: 'محتوى',
-    body: CATALOG_SECTIONS['content-writing'].description,
+    body: 'محتوى يشرح القيمة ويبني الثقة.',
     href: CATALOG_SECTIONS['content-writing'].path,
-    features: ['محتوى مقنع', 'نصوص حملات', 'رسائل العلامة'],
+    icon: 'speed',
   },
   {
     key: 'ecommerce',
     title: CATALOG_SECTIONS['ecommerce-digital-experience'].title,
-    shortLabel: 'متاجر',
-    body: CATALOG_SECTIONS['ecommerce-digital-experience'].description,
+    body: 'متاجر وصفحات هبوط جاهزة للبيع.',
     href: CATALOG_SECTIONS['ecommerce-digital-experience'].path,
-    features: ['متاجر ومواقع', 'تجربة شراء', 'صفحات هبوط'],
+    icon: 'delivery',
   },
   {
     key: 'printing',
     title: 'الطباعة والتغليف',
-    shortLabel: 'طباعة',
-    body: 'حلول طباعة وتغليف احترافية للمنتجات، الهوية المكتبية، والمواد الدعائية بتشطيبات عالية الجودة.',
+    body: 'مطبوعات وتغليف بجودة تشطيب عالية.',
     href: '/printing-packaging',
-    features: ['مطبوعات فاخرة', 'تغليف وباكدجنج', 'مواد دعائية'],
+    icon: 'print',
   },
   {
     key: 'events',
     title: CATALOG_SECTIONS['events-management'].title,
-    shortLabel: 'فعاليات',
-    body: CATALOG_SECTIONS['events-management'].description,
+    body: 'تنظيم الفعاليات من الهوية حتى التشغيل.',
     href: CATALOG_SECTIONS['events-management'].path,
-    features: ['افتتاحات ومعارض', 'هوية الفعالية', 'تشغيل وتغطية'],
+    icon: 'warranty',
   },
 ]
 
-const SERVICE_VISUAL_KEYS: Record<LandingServiceId, string> = {
+const VISUAL_KEYS: Record<LandingServiceId, string> = {
   strategy: 'visual_strategy',
   branding: 'visual_branding',
   digital: 'visual_digital',
@@ -77,156 +70,68 @@ const SERVICE_VISUAL_KEYS: Record<LandingServiceId, string> = {
   events: 'visual_events',
 }
 
+const ICON_BY_KEY: Record<string, ServiceIconKey> = {
+  warranty: 'warranty',
+  speed: 'speed',
+  print: 'print',
+  whatsapp: 'whatsapp',
+  delivery: 'delivery',
+  design: 'design',
+}
+
 export function ServicesSection() {
-  const reduceMotion = useReducedMotion()
   const { resolveContent, resolveVisual } = usePublicMarketing()
-  const [active, setActive] = useState(0)
-  const current = SERVICES[active] ?? SERVICES[0]
-
-  const eyebrow = resolveContent('services', 'eyebrow', 'SERVICES')
+  const [preview, setPreview] = useState<{ src: string; title: string } | null>(null)
   const title = resolveContent('services', 'title', 'خدمات تبني حضور علامتك')
-  const description = resolveContent(
-    'services',
-    'description',
-    'اختر محورًا واستكشف كيف ننفّذه — من التشخيص والهوية إلى الطباعة والفعاليات.',
-  )
-
-  const serviceVisual = resolveVisual(
-    'services',
-    SERVICE_VISUAL_KEYS[current.key],
-    marketingVisuals.services[current.key],
-  )
-
-  function go(delta: number) {
-    setActive((index) => (index + delta + SERVICES.length) % SERVICES.length)
-  }
+  const description = resolveContent('services', 'description', 'كروت مختصرة، والتفاصيل تحت كل خدمة.')
+  const buttonStyle = buttonColorStyle(resolveContent('services', 'button_color', ''))
 
   return (
     <section id="services" className="marketing-section scroll-mt-24 bg-white">
       <div className="marketing-container">
-        <BrandSectionAccent
-          className="mb-12 max-w-2xl"
-          english={eyebrow}
-          title={title}
-          description={description}
-        />
-
-        <div className="grid items-stretch gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-14">
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.key}
-                className="group relative overflow-hidden rounded-[1.75rem] border border-brand-ink-100 bg-brand-paper shadow-card"
-                variants={motionOrReduced(reduceMotion, imageReveal)}
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
-              >
-                <div className="aspect-[16/11] sm:aspect-[16/10]">
-                  <BrandVisual visual={serviceVisual} zoomable />
+        <header className="mb-4 max-w-2xl space-y-2">
+          <h2 className="text-2xl font-bold text-brand-ink-900 sm:text-3xl">{title}</h2>
+          <p className="text-sm leading-7 text-brand-ink-500">{description}</p>
+        </header>
+        <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
+          {SERVICES.map((service) => {
+            const visual = resolveVisual('services', VISUAL_KEYS[service.key], marketingVisuals.services[service.key])
+            const iconKey = resolveContent('services', `icon_${service.key}`, service.icon)
+            const icon = ICON_BY_KEY[iconKey] ?? service.icon
+            return (
+              <li key={service.key} className="flex w-[15rem] shrink-0 snap-start flex-col rounded-2xl border border-brand-ink-100 bg-brand-paper p-3 sm:w-[16.25rem]">
+                <button
+                  type="button"
+                  className="block w-full overflow-hidden rounded-xl"
+                  onClick={() => {
+                    if (visual.image) {
+                      setPreview({ src: visual.image, title: service.title })
+                    }
+                  }}
+                >
+                  <div className="aspect-[4/3]">
+                    <BrandVisual visual={visual} />
+                  </div>
+                </button>
+                <div className="mt-3 flex items-center gap-2 text-brand-ink-900">
+                  <ServiceGlyph name={icon} />
+                  <h3 className="text-base font-semibold">{service.title}</h3>
                 </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-ink-900/85 via-brand-ink-900/35 to-transparent p-6 sm:p-8">
-                  <p className="text-xs font-medium tracking-wide text-white/70">
-                    {String(active + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{current.title}</h3>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <motion.div
-            className="flex flex-col justify-center gap-6"
-            variants={motionOrReduced(reduceMotion, staggerContainer)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`copy-${current.key}`}
-                variants={motionOrReduced(reduceMotion, fadeUp)}
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0, y: 12, transition: { duration: 0.18 } }}
-                className="space-y-4"
-              >
-                <h3 className="text-2xl font-semibold text-brand-ink-900 sm:text-3xl">{current.title}</h3>
-                <p className="max-w-md text-base leading-8 text-brand-ink-500">{current.body}</p>
-                <ul className="space-y-2 text-sm text-brand-ink-500">
-                  {current.features.map((feature) => (
-                    <li key={feature} className="flex gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-ink-300" aria-hidden="true" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link to={current.href} className="brand-btn-primary w-fit">
-                  استكشف الخدمة
+                <p className="mt-1 text-sm leading-6 text-brand-ink-500">{service.body}</p>
+                <Link to={service.href} className="brand-btn-primary mt-3 w-full justify-center" style={buttonStyle}>
+                  تفاصيل الخدمة
                 </Link>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="border-t border-brand-ink-100 pt-6">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => go(-1)}
-                  className="inline-flex min-h-10 items-center rounded-xl border border-brand-ink-100 bg-white px-3 text-sm text-brand-ink-700 transition hover:border-brand-ink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                >
-                  السابق
-                </button>
-                <button
-                  type="button"
-                  onClick={() => go(1)}
-                  className="inline-flex min-h-10 items-center rounded-xl border border-brand-ink-100 bg-white px-3 text-sm text-brand-ink-700 transition hover:border-brand-ink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
-                >
-                  التالي
-                </button>
-              </div>
-              <div
-                role="tablist"
-                aria-label="اختيار الخدمة"
-                className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible"
-              >
-                {SERVICES.map((service, index) => {
-                  const selected = index === active
-                  return (
-                    <button
-                      key={service.key}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      aria-label={service.title}
-                      onClick={() => setActive(index)}
-                      className={[
-                        'inline-flex min-h-11 shrink-0 flex-col items-start justify-center rounded-xl px-3 py-1.5 text-start transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500',
-                        selected
-                          ? 'bg-brand-ink-900 text-white'
-                          : 'bg-brand-paper text-brand-ink-700 hover:bg-brand-ink-100',
-                      ].join(' ')}
-                    >
-                      <span className={`text-[0.65rem] font-medium ${selected ? 'text-white/70' : 'text-brand-ink-300'}`}>
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-                      <span className="text-xs font-semibold sm:text-sm">{service.shortLabel}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        <div className="mt-12 flex flex-wrap gap-3">
-          <Link to="/services" className="brand-btn-secondary">
-            كل الخدمات
-          </Link>
-          <Link to="/build-package" className="brand-btn-ghost">
-            صمّم باقتك
-          </Link>
-        </div>
+              </li>
+            )
+          })}
+        </ul>
       </div>
+      <MediaLightbox
+        open={preview !== null}
+        imageSrc={preview?.src}
+        title={preview?.title}
+        onClose={() => setPreview(null)}
+      />
     </section>
   )
 }

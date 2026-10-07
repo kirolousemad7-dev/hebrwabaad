@@ -69,6 +69,8 @@ export type PortfolioItem = {
   cover_url?: string | null
   project_url?: string | null
   video_url?: string | null
+  catalog_pdf_url?: string | null
+  profile_pdf_url?: string | null
   media_type?: PortfolioMediaType | null
   primary_media_type?: PortfolioMediaType | null
   has_video?: boolean

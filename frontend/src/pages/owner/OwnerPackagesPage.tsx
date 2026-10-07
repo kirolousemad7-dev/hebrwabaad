@@ -37,6 +37,9 @@ type FormState = {
   price: string
   discount_amount: string
   duration_days: string
+  button_color: string
+  excluded_service_names: string
+  sector_ids: string
   revision_rounds: string
   sort_order: string
   is_active: boolean
@@ -57,6 +60,9 @@ const emptyForm: FormState = {
   price: '0',
   discount_amount: '0',
   duration_days: '',
+  button_color: '',
+  excluded_service_names: '',
+  sector_ids: '',
   revision_rounds: '',
   sort_order: '0',
   is_active: true,
@@ -78,6 +84,9 @@ function toFormState(pkg: Package): FormState {
     price: pkg.price,
     discount_amount: pkg.discount_amount,
     duration_days: pkg.duration_days === null ? '' : String(pkg.duration_days),
+    button_color: pkg.button_color ?? '',
+    excluded_service_names: (pkg.excluded_service_names ?? []).join('\n'),
+    sector_ids: (pkg.sector_ids ?? []).join(','),
     revision_rounds: pkg.revision_rounds === null ? '' : String(pkg.revision_rounds),
     sort_order: String(pkg.sort_order ?? 0),
     is_active: pkg.is_active ?? true,
@@ -235,6 +244,12 @@ export function OwnerPackagesPage() {
       return
     }
 
+    const buttonColor = form.button_color.trim()
+    if (buttonColor !== '' && !/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(buttonColor)) {
+      setError('لون الزر يجب أن يكون بصيغة #RGB أو #RRGGBB.')
+      return
+    }
+
     const payload: PackageInput = {
       name: form.name.trim(),
       slug: form.slug.trim() === '' ? null : form.slug.trim(),
@@ -249,6 +264,15 @@ export function OwnerPackagesPage() {
       price,
       discount_amount: discount,
       duration_days: optionalNumber(form.duration_days),
+      button_color: buttonColor === '' ? null : buttonColor,
+      excluded_service_names: form.excluded_service_names
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== ''),
+      sector_ids: form.sector_ids
+        .split(/[,\s]+/)
+        .map((value) => Number.parseInt(value, 10))
+        .filter((value) => Number.isFinite(value)),
       revision_rounds: optionalNumber(form.revision_rounds),
       sort_order: Number.parseInt(form.sort_order, 10) || 0,
       is_active: form.is_active,
@@ -452,6 +476,34 @@ export function OwnerPackagesPage() {
                 step="0.01"
                 value={form.discount_amount}
                 onChange={(event) => patch({ discount_amount: event.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>لون زر الباقة</span>
+              <input
+                dir="ltr"
+                value={form.button_color}
+                placeholder="#315CFF"
+                onChange={(event) => patch({ button_color: event.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="block space-y-1 text-sm md:col-span-2">
+              <span>خدمات غير مضمنة (سطر لكل خدمة)</span>
+              <textarea
+                value={form.excluded_service_names}
+                onChange={(event) => patch({ excluded_service_names: event.target.value })}
+                className="min-h-20 w-full rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>معرّفات القطاعات</span>
+              <input
+                dir="ltr"
+                value={form.sector_ids}
+                placeholder="1, 2"
+                onChange={(event) => patch({ sector_ids: event.target.value })}
                 className="w-full rounded-md border border-slate-300 px-3 py-2"
               />
             </label>

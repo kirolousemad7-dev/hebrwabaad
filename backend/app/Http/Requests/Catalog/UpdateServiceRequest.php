@@ -38,6 +38,8 @@ class UpdateServiceRequest extends ApiFormRequest
             'gallery' => ['sometimes', 'nullable', 'array'],
             'gallery.*' => ['string', 'max:500'],
             'hero_image' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'button_color' => ['sometimes', 'nullable', 'string', 'regex:/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
+            'icon_key' => ['sometimes', 'nullable', 'string', 'max:64'],
             'category' => ['sometimes', 'required', Rule::in(ServiceCategory::values())],
             'subcategory' => ['sometimes', 'nullable', 'string', 'max:120'],
             'base_price' => ['sometimes', 'nullable', 'numeric', 'min:0'],

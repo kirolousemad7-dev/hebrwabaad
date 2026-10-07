@@ -43,14 +43,12 @@ export function WhyUsSection() {
   return (
     <section id="why-us" className="marketing-section scroll-mt-24 bg-brand-paper">
       <div className="marketing-container">
-        <header className="mb-12 max-w-2xl space-y-3">
+        <header className="mb-4 max-w-2xl space-y-2">
           <p className="brand-label text-brand-ink-500">{eyebrow}</p>
-          <h2 className="text-[clamp(1.75rem,1.3rem+1.4vw,2.75rem)] font-bold leading-tight text-brand-ink-900">
-            {title}
-          </h2>
+          <h2 className="text-2xl font-bold leading-tight text-brand-ink-900 sm:text-3xl">{title}</h2>
         </header>
         <motion.ul
-          className="grid gap-5 md:grid-cols-2"
+          className="grid gap-3 md:grid-cols-2"
           variants={motionOrReduced(reduceMotion, staggerContainer)}
           initial="hidden"
           whileInView="show"
@@ -60,13 +58,13 @@ export function WhyUsSection() {
             <motion.li
               key={`why-us-${index}`}
               variants={motionOrReduced(reduceMotion, fadeUp)}
-              className="relative overflow-hidden rounded-[1.5rem] border border-brand-ink-100 bg-white p-7"
+              className="relative overflow-hidden rounded-2xl border border-brand-ink-100 bg-white p-4"
             >
-              <span className="mb-4 block text-xs font-semibold tracking-wider text-brand-cobalt-700">
+              <span className="mb-1 block text-xs font-semibold tracking-wider text-brand-cobalt-700" dir="ltr">
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <h3 className="text-xl font-semibold text-brand-ink-900">{item.title}</h3>
-              <p className="mt-3 leading-8 text-brand-ink-500">{item.body}</p>
+              <h3 className="text-base font-semibold text-brand-ink-900">{item.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-brand-ink-500">{item.body}</p>
             </motion.li>
           ))}
         </motion.ul>

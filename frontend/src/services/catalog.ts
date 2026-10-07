@@ -15,6 +15,8 @@ export type ServiceInput = {
   tags?: string[] | null
   gallery?: string[] | null
   hero_image?: string | null
+  button_color?: string | null
+  icon_key?: string | null
   category: ServiceCategory
   subcategory?: string | null
   base_price: number
@@ -77,6 +79,9 @@ export type PackageInput = {
   category: PackageCategory
   price: number
   discount_amount: number
+  button_color?: string | null
+  excluded_service_names?: string[]
+  sector_ids?: number[]
   currency?: string
   pricing_mode?: PricingMode
   duration_days?: number | null

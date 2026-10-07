@@ -229,6 +229,16 @@ export function OwnerWebsiteMediaPage() {
           </label>
           <div className="space-y-3">
             <label className="block text-sm">
+              <span className="font-medium text-slate-700">تصوير مباشر من الكاميرا</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="mt-1 block w-full text-sm"
+                onChange={(event) => onPickUpload(event.target.files?.[0] ?? null)}
+              />
+            </label>
+            <label className="block text-sm">
               <span className="font-medium text-slate-700">العنوان</span>
               <input
                 value={uploadTitle}

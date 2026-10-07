@@ -30,6 +30,7 @@ export function SupplierHomePage() {
   const [error, setError] = useState<string | null>(null)
   const [portfolioTitle, setPortfolioTitle] = useState('')
   const [productName, setProductName] = useState('')
+  const [productImage, setProductImage] = useState('')
   const [coverUrl, setCoverUrl] = useState('/brand/logo.png')
 
   const items = state.status === 'ready' ? state.data.items : []
@@ -59,8 +60,10 @@ export function SupplierHomePage() {
         name: productName,
         short_description: productName,
         contact_for_price: true,
+        images: productImage ? [productImage] : [],
       })
       setProductName('')
+      setProductImage('')
       toast.success('حُفظ المنتج كمسودة.')
       await reload()
     } catch (caught) {
@@ -113,16 +116,43 @@ export function SupplierHomePage() {
         <form onSubmit={(event) => void addPortfolio(event)} className="space-y-2 rounded-2xl border bg-white p-4">
           <h3 className="font-semibold">إضافة عمل للمعرض</h3>
           <input required value={portfolioTitle} onChange={(event) => setPortfolioTitle(event.target.value)} placeholder="عنوان العمل" className="w-full rounded-md border px-3 py-2 text-sm" />
-          <input type="file" accept="image/*" onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (!file) return
-            void uploadContentMedia(file, 'cover').then((uploaded) => setCoverUrl(uploaded.data.url)).catch((caught) => setError(describeApiError(caught, 'تعذر رفع الصورة.')))
-          }} className="w-full text-sm" />
+          <label className="block text-xs text-slate-600">
+            من المعرض
+            <input type="file" accept="image/*" onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (!file) return
+              void uploadContentMedia(file, 'cover').then((uploaded) => setCoverUrl(uploaded.data.url)).catch((caught) => setError(describeApiError(caught, 'تعذر رفع الصورة.')))
+            }} className="mt-1 w-full text-sm" />
+          </label>
+          <label className="block text-xs text-slate-600">
+            تصوير من الكاميرا
+            <input type="file" accept="image/*" capture="environment" onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (!file) return
+              void uploadContentMedia(file, 'cover').then((uploaded) => setCoverUrl(uploaded.data.url)).catch((caught) => setError(describeApiError(caught, 'تعذر رفع الصورة.')))
+            }} className="mt-1 w-full text-sm" />
+          </label>
           <button type="submit" className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm text-white">حفظ مسودة</button>
         </form>
         <form onSubmit={(event) => void addProduct(event)} className="space-y-2 rounded-2xl border bg-white p-4">
           <h3 className="font-semibold">إضافة منتج</h3>
           <input required value={productName} onChange={(event) => setProductName(event.target.value)} placeholder="اسم المنتج" className="w-full rounded-md border px-3 py-2 text-sm" />
+          <label className="block text-xs text-slate-600">
+            من المعرض
+            <input type="file" accept="image/*" onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (!file) return
+              void uploadContentMedia(file, 'cover').then((uploaded) => setProductImage(uploaded.data.url)).catch((caught) => setError(describeApiError(caught, 'تعذر رفع الصورة.')))
+            }} className="mt-1 w-full text-sm" />
+          </label>
+          <label className="block text-xs text-slate-600">
+            تصوير من الكاميرا
+            <input type="file" accept="image/*" capture="environment" onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (!file) return
+              void uploadContentMedia(file, 'cover').then((uploaded) => setProductImage(uploaded.data.url)).catch((caught) => setError(describeApiError(caught, 'تعذر رفع الصورة.')))
+            }} className="mt-1 w-full text-sm" />
+          </label>
           <button type="submit" className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm text-white">حفظ مسودة</button>
         </form>
       </div>

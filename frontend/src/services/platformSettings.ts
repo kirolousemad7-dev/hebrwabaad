@@ -44,6 +44,8 @@ export type PrintingCatalogAdmin = {
     image_url: string | null
     pricing_mode: string
     starting_price: string | number | null
+    compare_at_price?: string | number | null
+    button_color?: string | null
     currency: string
     is_active: boolean
     is_public: boolean

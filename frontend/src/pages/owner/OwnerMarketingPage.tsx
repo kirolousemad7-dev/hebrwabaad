@@ -56,6 +56,8 @@ type PortfolioForm = {
   image_url: string
   project_url: string
   video_url: string
+  catalog_pdf_url: string
+  profile_pdf_url: string
   primary_media_type: PortfolioMediaType | ''
   service_ids: string
   sector_ids: string
@@ -103,6 +105,8 @@ const emptyPortfolio: PortfolioForm = {
   image_url: '/brand/logo.png',
   project_url: '',
   video_url: '',
+  catalog_pdf_url: '',
+  profile_pdf_url: '',
   primary_media_type: '',
   service_ids: '',
   sector_ids: '',
@@ -140,6 +144,8 @@ function itemToForm(item: PortfolioItem): PortfolioForm {
     image_url: item.image_url,
     project_url: item.project_url ?? '',
     video_url: item.video_url ?? '',
+    catalog_pdf_url: item.catalog_pdf_url ?? '',
+    profile_pdf_url: item.profile_pdf_url ?? '',
     primary_media_type: item.primary_media_type ?? '',
     service_ids: (item.service_ids ?? []).join(','),
     sector_ids: (item.sector_ids ?? []).join(','),
@@ -203,6 +209,8 @@ export function OwnerMarketingPage() {
       image_url: portfolioForm.image_url,
       project_url: portfolioForm.project_url || null,
       video_url: portfolioForm.video_url || null,
+      catalog_pdf_url: portfolioForm.catalog_pdf_url || null,
+      profile_pdf_url: portfolioForm.profile_pdf_url || null,
       primary_media_type: portfolioForm.primary_media_type || null,
       service_ids: parseIdList(portfolioForm.service_ids),
       sector_ids: parseIdList(portfolioForm.sector_ids),
@@ -523,6 +531,26 @@ export function OwnerMarketingPage() {
                     value={portfolioForm.video_url}
                     onChange={(event) =>
                       setPortfolioForm((current) => current && { ...current, video_url: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block space-y-1 text-sm">
+                  <span>ملف الكتالوج PDF</span>
+                  <input
+                    dir="ltr"
+                    value={portfolioForm.catalog_pdf_url}
+                    onChange={(event) =>
+                      setPortfolioForm((current) => current && { ...current, catalog_pdf_url: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block space-y-1 text-sm">
+                  <span>ملف البروفايل PDF</span>
+                  <input
+                    dir="ltr"
+                    value={portfolioForm.profile_pdf_url}
+                    onChange={(event) =>
+                      setPortfolioForm((current) => current && { ...current, profile_pdf_url: event.target.value })
                     }
                   />
                 </label>

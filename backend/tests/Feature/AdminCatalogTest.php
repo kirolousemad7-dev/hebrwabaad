@@ -305,4 +305,75 @@ class AdminCatalogTest extends TestCase
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'غير موجود.');
     }
+
+    public function test_owner_can_store_optional_package_presentation_fields(): void
+    {
+        $response = $this->withToken($this->tokenFor(UserRole::Owner))
+            ->postJson('/api/admin/packages', [
+                'name' => 'عرض مضغوط',
+                'category' => PackageCategory::General->value,
+                'price' => 900,
+                'discount_amount' => 100,
+                'duration_days' => 7,
+                'button_color' => '#112233',
+                'excluded_service_names' => ['تغطية فعاليات'],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.button_color', '#112233')
+            ->assertJsonPath('data.excluded_service_names.0', 'تغطية فعاليات')
+            ->assertJsonPath('data.final_price', '800.00');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->postJson('/api/admin/packages', [
+                'name' => 'لون غير صالح',
+                'category' => PackageCategory::General->value,
+                'price' => 100,
+                'button_color' => 'red',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['button_color']);
+    }
+
+    public function test_service_presentation_fields_stay_optional(): void
+    {
+        $created = $this->withToken($this->tokenFor(UserRole::Owner))
+            ->postJson('/api/admin/services', [
+                'name' => 'خدمة اختيارية',
+                'category' => ServiceCategory::Other->value,
+                'base_price' => 10,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.button_color', null)
+            ->assertJsonPath('data.icon_key', null)
+            ->json('data');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->putJson('/api/admin/services/'.$created['id'], [
+                'name' => 'خدمة اختيارية',
+                'category' => ServiceCategory::Other->value,
+                'base_price' => 10,
+                'button_color' => '#112233',
+                'icon_key' => 'print',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.button_color', '#112233')
+            ->assertJsonPath('data.icon_key', 'print');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->putJson('/api/admin/services/'.$created['id'], [
+                'name' => 'خدمة اختيارية',
+                'category' => ServiceCategory::Other->value,
+                'base_price' => 25,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.button_color', '#112233')
+            ->assertJsonPath('data.base_price', '25.00');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->deleteJson('/api/admin/services/'.$created['id'])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('services', ['id' => $created['id']]);
+    }
 }

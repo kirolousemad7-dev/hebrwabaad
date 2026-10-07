@@ -7,6 +7,7 @@ use App\Enums\PackageCategory;
 use App\Enums\ServiceCategory;
 use App\Models\Media;
 use App\Models\Package;
+use App\Models\Sector;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -84,7 +85,19 @@ class PublicCatalogTest extends TestCase
         $this->getJson('/api/packages')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.slug', 'active-package');
+            ->assertJsonPath('data.0.slug', 'active-package')
+            ->assertJsonPath('data.0.sector_ids', []);
+    }
+
+    public function test_public_package_list_includes_linked_sector_ids(): void
+    {
+        $package = Package::factory()->create(['slug' => 'sector-package']);
+        $sector = Sector::factory()->create();
+        $package->sectors()->attach($sector->id);
+
+        $this->getJson('/api/packages')
+            ->assertOk()
+            ->assertJsonPath('data.0.sector_ids.0', $sector->id);
     }
 
     public function test_public_package_list_can_filter_by_category(): void

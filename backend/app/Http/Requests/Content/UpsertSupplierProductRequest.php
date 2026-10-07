@@ -26,6 +26,8 @@ class UpsertSupplierProductRequest extends ApiFormRequest
             'specifications' => ['nullable', 'array'],
             'variants' => ['nullable', 'array'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'compare_at_price' => ['nullable', 'numeric', 'min:0'],
+            'button_color' => ['nullable', 'string', 'regex:/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
             'currency' => ['nullable', 'string', 'size:3'],
             'unit' => ['nullable', 'string', 'max:40'],
             'minimum_quantity' => ['nullable', 'integer', 'min:0'],

@@ -32,6 +32,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
     'image_url',
     'project_url',
     'video_url',
+    'catalog_pdf_url',
+    'profile_pdf_url',
     'primary_media_type',
     'is_sample',
     'is_published',

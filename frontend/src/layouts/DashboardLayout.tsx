@@ -68,9 +68,9 @@ export function DashboardLayout({
   }, [sidebarCollapsed])
 
   return (
-    <div className="relative isolate min-h-screen overflow-x-hidden bg-brand-paper text-brand-ink-900 lg:flex lg:items-stretch">
+    <div className="relative isolate min-h-dvh bg-brand-paper text-brand-ink-900 lg:flex">
       <BrandWatermark />
-      <div className="relative z-10 min-h-screen w-full min-w-0 lg:flex lg:items-stretch">
+      <div className="relative z-10 flex min-h-dvh w-full min-w-0">
         <DashboardSidebar
           title={title}
           items={items}
@@ -81,7 +81,7 @@ export function DashboardLayout({
           onClose={() => setMenuOpen(false)}
           onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
         />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-dvh min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
           <DashboardHeader
             title={title}
             subtitle={subtitle}

@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
+import { MediaLightbox } from '../components/ui/MediaLightbox'
+import { SarAmount } from '../components/ui/SarAmount'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { apiGet } from '../services/api'
 import { APP_NAME } from '../utils/constants'
@@ -15,6 +17,8 @@ type PublicProduct = {
   category: string | null
   specifications: Record<string, unknown> | unknown[] | null
   price: string | null
+  compare_at_price?: string | null
+  button_color?: string | null
   currency: string
   contact_for_price: boolean
   seo?: { title: string | null; description: string | null; robots: string; og_image: string | null; canonical_url: string | null }
@@ -23,6 +27,7 @@ type PublicProduct = {
 export function SupplierProductPage() {
   const { slug = '', productSlug = '' } = useParams()
   const { state, reload } = useAsyncData(() => apiGet<PublicProduct>(`/api/suppliers/${encodeURIComponent(slug)}/products/${encodeURIComponent(productSlug)}`))
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     if (state.status !== 'ready') return
@@ -61,14 +66,30 @@ export function SupplierProductPage() {
   }
 
   const product = state.data
+  const compare = product.compare_at_price ? Number(product.compare_at_price) : 0
+  const current = product.price ? Number(product.price) : 0
 
   return (
     <article className="space-y-6">
       <p className="text-sm"><Link to={`/suppliers/${encodeURIComponent(slug)}`} className="underline">العودة لملف المورد</Link></p>
       <h1 className="text-3xl font-semibold">{product.name}</h1>
-      {product.images[0] ? <img src={product.images[0]} alt="" className="max-h-96 w-full rounded-3xl object-cover" /> : null}
+      {product.images[0] ? (
+        <button type="button" onClick={() => setOpen(true)}>
+          <img src={product.images[0]} alt="" className="max-h-96 w-full rounded-3xl object-cover" loading="lazy" />
+        </button>
+      ) : null}
       <p className="leading-8 text-slate-600">{product.description || product.short_description}</p>
-      <p className="font-medium">{product.contact_for_price ? 'السعر عند التواصل' : `${product.price} ${product.currency}`}</p>
+      <div className="flex flex-wrap items-center gap-3 font-medium">
+        {product.contact_for_price || !product.price ? (
+          <span>السعر عند التواصل</span>
+        ) : (
+          <>
+            <SarAmount amount={product.price} className="text-2xl" />
+            {compare > current ? <SarAmount amount={compare} struck /> : null}
+          </>
+        )}
+      </div>
+      <MediaLightbox open={open} imageSrc={product.images[0]} title={product.name} onClose={() => setOpen(false)} />
     </article>
   )
 }

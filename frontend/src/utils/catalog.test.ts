@@ -71,7 +71,7 @@ function service(overrides: Partial<Service> = {}): Service {
 
 describe('catalog pricing labels', () => {
   it('shows a fixed catalog price as-is', () => {
-    expect(packagePriceLabel(pkg())).toContain('SAR')
+    expect(packagePriceLabel(pkg())).toContain('⃁')
     expect(packagePriceLabel(pkg())).not.toContain('يبدأ من')
   })
 
@@ -79,7 +79,7 @@ describe('catalog pricing labels', () => {
     const label = packagePriceLabel(pkg({ pricing_mode: 'STARTING_FROM' }))
 
     expect(label).toContain('يبدأ من')
-    expect(label).toContain('SAR')
+    expect(label).toContain('⃁')
   })
 
   it('never invents a price for a package the owner has not priced', () => {
@@ -93,14 +93,14 @@ describe('catalog pricing labels', () => {
   it('asks for a quote on an unpriced package level', () => {
     expect(tierPriceLabel(tier())).toBe(PRICING_MODE_LABELS.QUOTE)
     expect(tierPriceLabel(tier({ price: '0.00' }))).toBe(PRICING_MODE_LABELS.QUOTE)
-    expect(tierPriceLabel(tier({ price: '4500.00', is_priced: true }))).toContain('SAR')
+    expect(tierPriceLabel(tier({ price: '4500.00', is_priced: true }))).toContain('⃁')
   })
 
   it('asks for a quote on an unpriced service', () => {
     expect(servicePriceLabel(service())).toBe(PRICING_MODE_LABELS.QUOTE)
     expect(
       servicePriceLabel(service({ pricing_mode: 'FIXED', base_price: '2500.00', is_chargeable: true })),
-    ).toContain('SAR')
+    ).toContain('⃁')
     expect(servicePriceLabel(service({ pricing_mode: 'STARTING_FROM', base_price: '2500.00' }))).toContain(
       'يبدأ من',
     )

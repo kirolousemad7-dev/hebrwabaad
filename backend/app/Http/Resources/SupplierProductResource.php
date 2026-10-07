@@ -29,6 +29,8 @@ class SupplierProductResource extends JsonResource
             'specifications' => $this->specifications,
             'variants' => $this->variants,
             'price' => $this->price,
+            'compare_at_price' => $this->compare_at_price,
+            'button_color' => $this->button_color,
             'currency' => $this->currency,
             'unit' => $this->unit,
             'minimum_quantity' => $this->minimum_quantity,

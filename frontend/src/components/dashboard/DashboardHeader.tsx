@@ -21,7 +21,7 @@ export function DashboardHeader({
   profileTo,
 }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-slate-50/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-slate-50">
       <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <button

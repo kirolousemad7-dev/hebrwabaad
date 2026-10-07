@@ -35,6 +35,9 @@ class PackageResource extends JsonResource
             'revision_rounds' => $this->revision_rounds,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
+            'button_color' => $this->button_color,
+            'excluded_service_names' => $this->excluded_service_names ?? [],
+            'sector_ids' => $this->whenLoaded('sectors', fn () => $this->sectors->pluck('id')->map(fn ($id) => (int) $id)->values()),
             'image_url' => $this->relationLoaded('primaryMedia')
                 ? $this->primaryMedia?->url()
                 : null,

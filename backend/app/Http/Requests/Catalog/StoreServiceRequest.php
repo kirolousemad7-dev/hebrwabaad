@@ -36,6 +36,8 @@ class StoreServiceRequest extends ApiFormRequest
             'gallery' => ['nullable', 'array'],
             'gallery.*' => ['string', 'max:500'],
             'hero_image' => ['nullable', 'string', 'max:500'],
+            'button_color' => ['nullable', 'string', 'regex:/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/'],
+            'icon_key' => ['nullable', 'string', 'max:64'],
             'category' => ['required', Rule::in(ServiceCategory::values())],
             'subcategory' => ['nullable', 'string', 'max:120'],
             'base_price' => ['nullable', 'numeric', 'min:0'],

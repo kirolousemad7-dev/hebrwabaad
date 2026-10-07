@@ -42,6 +42,8 @@ function mapApiProduct(row: Record<string, unknown>): PrintingProduct | null {
       .map((item) => String(item.name_ar ?? '')),
     isActive: true,
     requiresQuote: pricingMode === 'QUOTE' || starting <= 0,
+    compareAtPrice: row.compare_at_price == null ? null : Number(row.compare_at_price),
+    buttonColor: row.button_color == null ? null : String(row.button_color),
   }
 }
 

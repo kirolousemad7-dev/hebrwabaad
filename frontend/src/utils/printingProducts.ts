@@ -14,6 +14,8 @@ export type PrintingProduct = {
   materials: string[]
   isActive: boolean
   requiresQuote?: boolean
+  compareAtPrice?: number | null
+  buttonColor?: string | null
 }
 
 /**

@@ -229,4 +229,57 @@ class MarketingSiteTest extends TestCase
         $this->assertDatabaseMissing('portfolio_items', ['id' => $id]);
         $this->getJson('/api/portfolio')->assertOk()->assertJsonMissing(['title' => 'عمل محدّث']);
     }
+
+    public function test_owner_can_publish_video_catalog_and_profile_then_delete_them(): void
+    {
+        $owner = User::factory()->owner()->create();
+
+        $created = $this->asUser($owner)
+            ->postJson('/api/admin/portfolio', [
+                'title' => 'عمل متعدد الوسائط',
+                'category' => 'video',
+                'image_url' => '/brand/logo.png',
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9wgxcq',
+                'catalog_pdf_url' => '/files/catalog.pdf',
+                'profile_pdf_url' => 'https://example.com/profile.pdf',
+                'primary_media_type' => 'EXTERNAL_VIDEO',
+                'is_published' => true,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.catalog_pdf_url', '/files/catalog.pdf')
+            ->assertJsonPath('data.profile_pdf_url', 'https://example.com/profile.pdf')
+            ->assertJsonPath('data.video_url', 'https://www.youtube.com/watch?v=dQw4w9wgxcq')
+            ->json('data');
+
+        $this->getJson('/api/portfolio')
+            ->assertOk()
+            ->assertJsonFragment([
+                'title' => 'عمل متعدد الوسائط',
+                'catalog_pdf_url' => '/files/catalog.pdf',
+                'profile_pdf_url' => 'https://example.com/profile.pdf',
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9wgxcq',
+            ]);
+
+        $this->asUser($owner)
+            ->putJson('/api/admin/portfolio/'.$created['id'], [
+                'title' => 'عمل متعدد الوسائط',
+                'category' => 'video',
+                'image_url' => '/brand/logo.png',
+                'catalog_pdf_url' => '/files/catalog-2.pdf',
+                'profile_pdf_url' => null,
+                'video_url' => null,
+                'primary_media_type' => 'IMAGE',
+                'is_published' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.catalog_pdf_url', '/files/catalog-2.pdf')
+            ->assertJsonPath('data.profile_pdf_url', null)
+            ->assertJsonPath('data.video_url', null);
+
+        $this->asUser($owner)
+            ->deleteJson('/api/admin/portfolio/'.$created['id'])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('portfolio_items', ['id' => $created['id']]);
+    }
 }

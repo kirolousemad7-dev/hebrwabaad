@@ -86,6 +86,9 @@ class PortfolioShowcaseService
             'is_featured' => (bool) $item->is_featured,
             'sort_order' => $item->sort_order,
             'has_video' => $mediaType?->isVideo() ?? false,
+            'video_url' => $mediaType?->isVideo() ? $this->sanitizePublicUrl($item->video_url) : null,
+            'catalog_pdf_url' => $this->sanitizePublicUrl($item->catalog_pdf_url),
+            'profile_pdf_url' => $this->sanitizePublicUrl($item->profile_pdf_url),
             'sectors' => $item->sectors->map(fn ($sector) => [
                 'id' => $sector->id,
                 'name' => $sector->name_ar ?: $sector->name_en,
@@ -136,7 +139,9 @@ class PortfolioShowcaseService
             'tags' => $item->tags ?? [],
             'image_url' => $item->image_url,
             'project_url' => $this->sanitizePublicUrl($item->project_url),
-            'video_url' => null,
+            'video_url' => $this->sanitizePublicUrl($item->video_url),
+            'catalog_pdf_url' => $this->sanitizePublicUrl($item->catalog_pdf_url),
+            'profile_pdf_url' => $this->sanitizePublicUrl($item->profile_pdf_url),
             'primary_media_type' => $this->resolvePrimaryMediaType($item)?->value,
             'is_sample' => $item->is_sample,
             'is_featured' => (bool) $item->is_featured,
@@ -235,6 +240,12 @@ class PortfolioShowcaseService
                 'video_url' => array_key_exists('video_url', $data)
                     ? $this->sanitizePublicUrl($data['video_url'] ?? null)
                     : $item->video_url,
+                'catalog_pdf_url' => array_key_exists('catalog_pdf_url', $data)
+                    ? $this->sanitizePublicUrl($data['catalog_pdf_url'] ?? null)
+                    : $item->catalog_pdf_url,
+                'profile_pdf_url' => array_key_exists('profile_pdf_url', $data)
+                    ? $this->sanitizePublicUrl($data['profile_pdf_url'] ?? null)
+                    : $item->profile_pdf_url,
                 'primary_media_type' => $data['primary_media_type'] ?? $item->primary_media_type,
                 'is_sample' => array_key_exists('is_sample', $data) ? (bool) $data['is_sample'] : ($item->is_sample ?? true),
                 'is_published' => array_key_exists('is_published', $data) ? (bool) $data['is_published'] : ($item->is_published ?? true),

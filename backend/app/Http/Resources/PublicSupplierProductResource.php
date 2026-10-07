@@ -26,6 +26,8 @@ class PublicSupplierProductResource extends JsonResource
             'specifications' => $this->when($request->route('productSlug') !== null, $this->specifications ?? []),
             'variants' => $this->when($request->route('productSlug') !== null, $this->variants ?? []),
             'price' => $this->contact_for_price ? null : $this->price,
+            'compare_at_price' => $this->contact_for_price ? null : $this->compare_at_price,
+            'button_color' => $this->button_color,
             'currency' => $this->currency,
             'contact_for_price' => $this->contact_for_price,
             'availability' => $this->availability,

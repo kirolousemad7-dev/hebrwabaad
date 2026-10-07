@@ -33,6 +33,8 @@ export type PlatformSettingsPublic = {
     address?: string | null
     district?: string | null
     postal_code?: string | null
+    commercial_register?: string | null
+    tax_number?: string | null
   }
   contact: {
     phone: string | null

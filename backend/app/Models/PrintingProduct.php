@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'image_path',
     'pricing_mode',
     'starting_price',
+    'compare_at_price',
+    'button_color',
     'currency',
     'is_active',
     'is_public',
@@ -34,6 +36,7 @@ class PrintingProduct extends Model
     {
         return [
             'starting_price' => 'decimal:2',
+            'compare_at_price' => 'decimal:2',
             'is_active' => 'boolean',
             'is_public' => 'boolean',
             'is_featured' => 'boolean',

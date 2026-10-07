@@ -35,6 +35,8 @@ class UpsertPortfolioItemRequest extends ApiFormRequest
             'image_url' => [$itemId ? 'sometimes' : 'required', 'string', 'max:2048', 'regex:/^(https:\/\/|\/)(?!\/)/i'],
             'project_url' => ['nullable', 'string', 'max:2048'],
             'video_url' => ['nullable', 'string', 'max:2048'],
+            'catalog_pdf_url' => ['nullable', 'string', 'max:2048', 'regex:/^(https:\/\/|\/)(?!\/)/i'],
+            'profile_pdf_url' => ['nullable', 'string', 'max:2048', 'regex:/^(https:\/\/|\/)(?!\/)/i'],
             'primary_media_type' => ['nullable', Rule::in(PortfolioMediaType::values())],
             'is_sample' => ['sometimes', 'boolean'],
             'is_published' => ['sometimes', 'boolean'],

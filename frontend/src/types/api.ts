@@ -75,6 +75,8 @@ export type Service = {
   revision_rounds?: number | null
   is_featured: boolean
   sort_order?: number
+  button_color?: string | null
+  icon_key?: string | null
   seo?: {
     title: string | null
     description: string | null
@@ -194,6 +196,9 @@ export type Package = {
   revision_rounds: number | null
   is_featured: boolean
   sort_order: number
+  button_color?: string | null
+  excluded_service_names?: string[]
+  sector_ids?: number[]
   /** Primary PUBLIC package image (absolute API/storage URL when present). */
   image_url?: string | null
   items: PackageItem[]

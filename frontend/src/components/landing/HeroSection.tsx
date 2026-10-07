@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { BrandLogo } from '../brand/BrandLogo'
+import { MediaLightbox } from '../ui/MediaLightbox'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
 import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { marketingVisuals } from '../../utils/marketingVisuals'
@@ -19,7 +21,8 @@ function scrollToId(id: string) {
 export function HeroSection() {
   const reduceMotion = useReducedMotion()
   const { settings } = usePlatformSettings()
-  const { resolveVisual } = usePublicMarketing()
+  const { resolveVisual, resolveContent } = usePublicMarketing()
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const heading = settings.homepage.hero_heading || 'نمنح أعمالك أبعادًا للنمو'
   const [headingMain, headingAccent] = heading.includes('من الفكرة')
     ? [heading.replace(/\s*من الفكرة حتى التسليم\s*$/, ''), 'من الفكرة حتى التسليم']
@@ -40,6 +43,12 @@ export function HeroSection() {
       rawTagline.includes(headingMain))
   const eyebrow = taglineDuplicatesHeading ? `${brandName} للطباعة والتصميم` : rawTagline || null
   const heroVisual = resolveVisual('hero', 'visual_image', marketingVisuals.hero)
+  const heroVideo = resolveContent('hero', 'visual_video', '').trim()
+  const aspect = resolveContent('hero', 'visual_aspect', '4:3')
+  const width = Number.parseInt(resolveContent('hero', 'visual_width', ''), 10)
+  const height = Number.parseInt(resolveContent('hero', 'visual_height', ''), 10)
+  const aspectClass =
+    aspect === '1:1' ? 'aspect-square' : aspect === '16:9' ? 'aspect-video' : aspect === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'
 
   return (
     <section id="home" className="relative overflow-hidden bg-brand-paper text-brand-ink-900">
@@ -89,15 +98,37 @@ export function HeroSection() {
         </motion.div>
 
         <motion.div
-          className="relative z-10 w-full max-w-md justify-self-center lg:max-w-xl lg:justify-self-stretch"
+          className="relative z-10 w-full max-w-xs justify-self-center sm:max-w-sm"
           variants={motionOrReduced(reduceMotion, imageReveal)}
           initial="hidden"
           animate="show"
+          style={Number.isFinite(width) && width > 0 ? { maxWidth: `${width}px` } : undefined}
         >
           <div className="group relative">
-            <div className="relative aspect-[16/11] overflow-hidden rounded-[1.5rem] border border-brand-ink-100 shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)] sm:aspect-[5/4] lg:aspect-[4/5]">
-              <BrandVisual visual={heroVisual} priority zoomable />
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (heroVideo || heroVisual.image) {
+                  setLightboxOpen(true)
+                }
+              }}
+              className="block w-full text-start"
+              aria-label="فتح صورة اكتشف احتياجك"
+            >
+              <div
+                className={`relative overflow-hidden rounded-[1.5rem] border border-brand-ink-100 shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)] ${aspectClass}`}
+                style={Number.isFinite(height) && height > 0 ? { height: `${height}px` } : undefined}
+              >
+                {heroVideo && !heroVideo.includes('youtube') && !heroVideo.includes('youtu.be') && !heroVideo.includes('vimeo') ? (
+                  <video src={heroVideo} className="h-full w-full object-cover" muted playsInline loop autoPlay />
+                ) : (
+                  <BrandVisual visual={heroVisual} priority zoomable />
+                )}
+                <span className="absolute inset-x-3 bottom-3 rounded-full bg-brand-ink-900/80 px-3 py-1 text-center text-xs text-white">
+                  اكتشف احتياجك
+                </span>
+              </div>
+            </button>
             {!reduceMotion ? (
               <motion.div
                 aria-hidden="true"
@@ -125,6 +156,13 @@ export function HeroSection() {
         <span className="hero-scroll-indicator mb-2 block h-8 w-px bg-brand-ink-300" aria-hidden="true" />
         استكشف
       </a>
+      <MediaLightbox
+        open={lightboxOpen}
+        title="اكتشف احتياجك"
+        imageSrc={heroVideo ? null : heroVisual.image}
+        videoSrc={heroVideo || null}
+        onClose={() => setLightboxOpen(false)}
+      />
     </section>
   )
 }

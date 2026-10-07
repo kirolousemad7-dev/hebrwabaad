@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { MediaUploader } from '../../components/files/MediaUploader'
+import { CameraImageInput } from '../../components/ui/CameraImageInput'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   createService,
@@ -33,6 +34,8 @@ type FormState = {
   is_public: boolean
   sort_order: string
   hero_image: string
+  button_color: string
+  icon_key: string
   gallery: string
   features: string
   process_steps: string
@@ -71,6 +74,8 @@ const emptyForm: FormState = {
   is_public: true,
   sort_order: '0',
   hero_image: '',
+  button_color: '',
+  icon_key: '',
   gallery: '',
   features: '',
   process_steps: '',
@@ -110,6 +115,8 @@ function toFormState(service: Service): FormState {
     is_public: service.is_public ?? true,
     sort_order: String(service.sort_order ?? 0),
     hero_image: service.hero_image ?? '',
+    button_color: service.button_color ?? '',
+    icon_key: service.icon_key ?? '',
     gallery: (service.gallery ?? []).join('\n'),
     features: (service.features ?? []).join('\n'),
     process_steps: (service.process_steps ?? [])
@@ -185,6 +192,11 @@ export function OwnerServicesPage() {
       return
     }
 
+    if (form.button_color.trim() !== '' && !/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(form.button_color.trim())) {
+      setError('لون الزر يجب أن يكون بصيغة #RGB أو #RRGGBB.')
+      return
+    }
+
     const checklist = form.checklist_template
       .split('\n')
       .map((line) => line.trim())
@@ -241,6 +253,8 @@ export function OwnerServicesPage() {
       is_public: form.is_public,
       sort_order: Number.parseInt(form.sort_order || '0', 10) || 0,
       hero_image: form.hero_image.trim() === '' ? null : form.hero_image.trim(),
+      button_color: form.button_color.trim() === '' ? null : form.button_color.trim(),
+      icon_key: form.icon_key.trim() === '' ? null : form.icon_key.trim(),
       gallery,
       features,
       process_steps,
@@ -529,6 +543,28 @@ export function OwnerServicesPage() {
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
                   dir="ltr"
                 />
+              </label>
+              <CameraImageInput onUploaded={(url) => patch({ hero_image: url })} />
+              {form.hero_image ? (
+                <button type="button" className="text-sm text-red-700" onClick={() => patch({ hero_image: '' })}>
+                  إزالة الصورة
+                </button>
+              ) : null}
+              <label className="block space-y-1 text-sm">
+                <span>لون الزر</span>
+                <input dir="ltr" value={form.button_color} placeholder="#315CFF" onChange={(event) => patch({ button_color: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>أيقونة الخدمة</span>
+                <select value={form.icon_key} onChange={(event) => patch({ icon_key: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2">
+                  <option value="">افتراضي</option>
+                  <option value="warranty">الضمان الذهبي</option>
+                  <option value="speed">سرعة التنفيذ</option>
+                  <option value="print">جودة الطباعة</option>
+                  <option value="whatsapp">دعم واتساب</option>
+                  <option value="delivery">التسليم</option>
+                  <option value="design">تصميم احترافي</option>
+                </select>
               </label>
               <label className="block space-y-1 text-sm">
                 <span>المعرض (رابط في كل سطر)</span>

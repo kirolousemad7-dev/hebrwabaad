@@ -39,6 +39,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'is_featured',
     'is_public',
     'sort_order',
+    'button_color',
+    'icon_key',
     'department_id',
     'task_title_template',
     'default_task_priority',

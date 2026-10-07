@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
+import { MediaLightbox } from '../ui/MediaLightbox'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { usePublicMarketing } from '../../context/PublicMarketingContext'
 import { getPublicPortfolio, type PortfolioCategory, type PortfolioItem } from '../../services/marketing'
@@ -36,6 +37,8 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
   const { state } = useAsyncData(getPublicPortfolio)
   const { resolveContent } = usePublicMarketing()
   const [filter, setFilter] = useState<PortfolioCategory | 'all'>('all')
+  const [player, setPlayer] = useState<{ title: string; src: string } | null>(null)
+  const [imagePreview, setImagePreview] = useState<{ title: string; src: string } | null>(null)
   const items = state.status === 'ready' ? state.data : EMPTY_ITEMS
   const visible = useMemo(
     () => (filter === 'all' ? items : items.filter((item) => item.category === filter)),
@@ -114,60 +117,58 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
               const imageSrc = resolveMediaUrl(item.cover_url || item.image_url)
               return (
                 <li key={item.id} className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-                  <Link
-                    to={detailPath(item)}
-                    className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[#315CFF]"
-                  >
-                    <div className="relative">
-                      {imageSrc ? (
+                  <div className="relative">
+                    {imageSrc ? (
+                      <button type="button" className="block w-full" onClick={() => setImagePreview({ title: item.title, src: imageSrc })}>
                         <img
                           src={imageSrc}
                           alt={item.title}
-                          className="h-44 w-full object-cover transition group-hover:scale-[1.02]"
+                          className="h-40 w-full object-cover"
                           loading="lazy"
                           width={640}
-                          height={176}
+                          height={160}
                         />
-                      ) : (
-                        <div className="flex h-44 items-end bg-gradient-to-br from-white/10 via-[#315CFF]/20 to-[#315CFF]/30 p-5">
-                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70">
-                            {CATEGORY_LABELS[item.category]}
-                          </span>
-                        </div>
-                      )}
-                      {item.has_video ? (
-                        <span
-                          className="absolute bottom-3 left-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white"
-                          aria-hidden
-                        >
-                          ▶
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="space-y-2 p-5">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/80">
+                      </button>
+                    ) : (
+                      <div className="flex h-40 items-end bg-gradient-to-br from-white/10 via-[#315CFF]/20 to-[#315CFF]/30 p-5">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70">
                           {CATEGORY_LABELS[item.category]}
                         </span>
-                        {(item.sectors ?? []).slice(0, 2).map((sector) => (
-                          <span key={sector.id} className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/80">
-                            {sector.name}
-                          </span>
-                        ))}
-                        {(item.services ?? []).slice(0, 2).map((service) => (
-                          <span key={service.id} className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/80">
-                            {service.name}
-                          </span>
-                        ))}
-                        {item.is_sample ? (
-                          <span className="rounded-full bg-[#315CFF]/25 px-2 py-0.5 text-xs text-[#315CFF]">نموذج عرض</span>
-                        ) : null}
                       </div>
-                      <h3 className="font-semibold group-hover:text-[#315CFF]">{item.title}</h3>
-                      {item.description ? <p className="text-sm leading-7 text-white/70">{item.description}</p> : null}
-                      <span className="inline-flex min-h-10 items-center text-sm font-medium text-[#315CFF]">عرض المشروع</span>
+                    )}
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <h3 className="font-semibold">{item.title}</h3>
+                    {item.description ? <p className="line-clamp-2 text-sm leading-6 text-white/70">{item.description}</p> : null}
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      {item.video_url || item.has_video ? (
+                        <button
+                          type="button"
+                          className="min-h-10 rounded-full bg-white px-3 text-slate-900"
+                          onClick={() => {
+                            if (item.video_url) {
+                              setPlayer({ title: item.title, src: item.video_url })
+                            }
+                          }}
+                        >
+                          تشغيل الفيديو
+                        </button>
+                      ) : null}
+                      {item.catalog_pdf_url ? (
+                        <>
+                          <a className="min-h-10 rounded-full bg-white/10 px-3 leading-10" href={item.catalog_pdf_url} target="_blank" rel="noreferrer">عرض الكتالوج</a>
+                          <a className="min-h-10 rounded-full bg-white/10 px-3 leading-10" href={item.catalog_pdf_url} download>تحميل</a>
+                        </>
+                      ) : null}
+                      {item.profile_pdf_url ? (
+                        <>
+                          <a className="min-h-10 rounded-full bg-white/10 px-3 leading-10" href={item.profile_pdf_url} target="_blank" rel="noreferrer">عرض البروفايل</a>
+                          <a className="min-h-10 rounded-full bg-white/10 px-3 leading-10" href={item.profile_pdf_url} download>تحميل</a>
+                        </>
+                      ) : null}
+                      <Link to={detailPath(item)} className="min-h-10 leading-10 text-[#9db4ff]">التفاصيل</Link>
                     </div>
-                  </Link>
+                  </div>
                 </li>
               )
             })}
@@ -185,6 +186,8 @@ export function PortfolioSection({ compact = true }: { compact?: boolean }) {
           </div>
         ) : null}
       </div>
+      <MediaLightbox open={imagePreview !== null} imageSrc={imagePreview?.src} title={imagePreview?.title} onClose={() => setImagePreview(null)} />
+      <MediaLightbox open={player !== null} videoSrc={player?.src} title={player?.title} onClose={() => setPlayer(null)} />
     </section>
   )
 }

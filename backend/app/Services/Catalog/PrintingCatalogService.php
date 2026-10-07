@@ -105,6 +105,10 @@ class PrintingCatalogService
             'image_path' => isset($data['image_path']) ? (string) $data['image_path'] : ($product?->image_path),
             'pricing_mode' => $pricingMode,
             'starting_price' => $pricingMode === 'QUOTE' ? null : ($data['starting_price'] ?? null),
+            'compare_at_price' => array_key_exists('compare_at_price', $data) ? $data['compare_at_price'] : $product?->compare_at_price,
+            'button_color' => array_key_exists('button_color', $data)
+                ? (is_string($data['button_color']) && preg_match('/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/', $data['button_color']) ? $data['button_color'] : null)
+                : $product?->button_color,
             'currency' => strtoupper((string) ($data['currency'] ?? 'SAR')),
             'is_active' => array_key_exists('is_active', $data) ? (bool) $data['is_active'] : true,
             'is_public' => array_key_exists('is_public', $data) ? (bool) $data['is_public'] : true,
@@ -230,6 +234,8 @@ class PrintingCatalogService
             'image_url' => $image,
             'pricing_mode' => $product->pricing_mode,
             'starting_price' => $product->pricing_mode === 'QUOTE' ? null : $product->starting_price,
+            'compare_at_price' => $product->compare_at_price,
+            'button_color' => $product->button_color,
             'currency' => $product->currency,
             'is_featured' => $product->is_featured,
             'allows_design_and_print' => $product->allows_design_and_print,
