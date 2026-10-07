@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
     'created_by',
     'priority',
     'status',
+    'progress_percent',
+    'sort_order',
     'deadline',
     'start_at',
     'due_at',
@@ -61,6 +63,8 @@ class Task extends Model
         return [
             'priority' => TaskPriority::class,
             'status' => TaskStatus::class,
+            'progress_percent' => 'integer',
+            'sort_order' => 'integer',
             'deadline' => 'date',
             'start_at' => 'datetime',
             'due_at' => 'datetime',

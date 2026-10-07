@@ -79,7 +79,7 @@ class UnifiedWorkController extends Controller
         $this->assertCanView($request);
         $ref = $this->parseRef($work);
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:open,in_progress,review,completed,cancelled,overdue'],
+            'status' => ['required', 'string', 'in:open,in_progress,waiting_client,review,completed,cancelled,overdue'],
         ]);
 
         return ApiResponse::success($this->actions->setStatus(
@@ -103,6 +103,41 @@ class UnifiedWorkController extends Controller
             $ref,
             $validated['due_at'] ?? null,
             $validated['starts_at'] ?? null,
+        ));
+    }
+
+    public function progress(Request $request, string $work): JsonResponse
+    {
+        $this->assertCanView($request);
+        $ref = $this->parseRef($work);
+        $validated = $request->validate([
+            'progress_percent' => ['required', 'integer', 'between:0,100'],
+        ]);
+
+        return ApiResponse::success($this->actions->setProgress(
+            $request->user(),
+            $ref,
+            (int) $validated['progress_percent'],
+        ));
+    }
+
+    public function move(Request $request, string $work): JsonResponse
+    {
+        $this->assertCanView($request);
+        $ref = $this->parseRef($work);
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:open,in_progress,waiting_client,review,completed'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'ordered_ids' => ['nullable', 'array', 'max:200'],
+            'ordered_ids.*' => ['string', 'max:80'],
+        ]);
+
+        return ApiResponse::success($this->actions->move(
+            $request->user(),
+            $ref,
+            $validated['status'],
+            isset($validated['sort_order']) ? (int) $validated['sort_order'] : null,
+            $validated['ordered_ids'] ?? [],
         ));
     }
 

@@ -562,6 +562,8 @@ Route::prefix('operations')->middleware([
         Route::post('/work/{work}/assign', [UnifiedWorkController::class, 'assign'])->where('work', '.*');
         Route::post('/work/{work}/priority', [UnifiedWorkController::class, 'priority'])->where('work', '.*');
         Route::post('/work/{work}/status', [UnifiedWorkController::class, 'status'])->where('work', '.*');
+        Route::post('/work/{work}/progress', [UnifiedWorkController::class, 'progress'])->where('work', '.*');
+        Route::post('/work/{work}/move', [UnifiedWorkController::class, 'move'])->where('work', '.*');
         Route::post('/work/{work}/reschedule', [UnifiedWorkController::class, 'reschedule'])->where('work', '.*');
         Route::post('/work/{work}/start', [UnifiedWorkController::class, 'start'])->where('work', '.*');
     });

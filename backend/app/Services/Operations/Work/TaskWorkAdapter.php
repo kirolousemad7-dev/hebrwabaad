@@ -25,7 +25,7 @@ class TaskWorkAdapter
      */
     public function toItem(Task $task, User $actor): array
     {
-        $task->loadMissing(['assignee', 'project', 'creator']);
+        $task->loadMissing(['assignee', 'project.customer', 'creator', 'tags']);
 
         $statusValue = $task->status instanceof TaskStatus ? $task->status->value : (string) $task->status;
         $priorityValue = $task->priority instanceof TaskPriority ? $task->priority->value : (string) $task->priority;
@@ -73,6 +73,13 @@ class TaskWorkAdapter
             'source_badge' => 'task',
         ])->toArray() + [
             'calendar_item_id' => $task->calendar_item_id !== null ? (int) $task->calendar_item_id : null,
+            'progress_percent' => max(0, min(100, (int) ($task->progress_percent ?? 0))),
+            'sort_order' => (int) ($task->sort_order ?? 0),
+            'board_status' => $this->boardStatus($statusValue),
+            'assignee_name' => $task->assignee?->name,
+            'project_title' => $task->project?->title,
+            'customer_name' => $task->project?->customer?->name,
+            'tags' => $task->tags->pluck('name')->map(fn ($name) => (string) $name)->values()->all(),
         ];
     }
 
@@ -168,6 +175,28 @@ class TaskWorkAdapter
         return $this->setStatus($actor, $task, 'in_progress');
     }
 
+    public function setProgress(User $actor, Task $task, int $percent): array
+    {
+        $this->assertCanMutateStatus($actor, $task);
+
+        $task->update([
+            'progress_percent' => max(0, min(100, $percent)),
+        ]);
+
+        return $this->toItem($task->fresh(['assignee', 'project.customer', 'creator', 'tags']) ?? $task, $actor);
+    }
+
+    public function setSortOrder(User $actor, Task $task, int $sortOrder): array
+    {
+        $this->assertCanMutateStatus($actor, $task);
+
+        $task->update([
+            'sort_order' => max(0, $sortOrder),
+        ]);
+
+        return $this->toItem($task->fresh(['assignee', 'project.customer', 'creator', 'tags']) ?? $task, $actor);
+    }
+
     private function assertCanManage(User $actor, Task $task): void
     {
         if (! Gate::forUser($actor)->allows('update', $task)) {
@@ -182,6 +211,18 @@ class TaskWorkAdapter
         }
 
         throw new AuthorizationException;
+    }
+
+    private function boardStatus(string $status): string
+    {
+        return match ($status) {
+            TaskStatus::Todo->value => 'open',
+            TaskStatus::InProgress->value => 'in_progress',
+            TaskStatus::Revision->value => 'waiting_client',
+            TaskStatus::Review->value => 'review',
+            TaskStatus::Completed->value => 'completed',
+            default => 'open',
+        };
     }
 
     private function normalizeStatus(string $status): string
@@ -200,6 +241,7 @@ class TaskWorkAdapter
         return match (strtolower($status)) {
             'open' => TaskStatus::Todo,
             'in_progress' => TaskStatus::InProgress,
+            'waiting_client' => TaskStatus::Revision,
             'review' => TaskStatus::Review,
             'completed' => TaskStatus::Completed,
             default => throw ValidationException::withMessages([

@@ -130,6 +130,7 @@ class TaskService
                 'created_by' => $creator->id,
                 'priority' => $attributes['priority'],
                 'status' => $attributes['status'] ?? TaskStatus::Todo->value,
+                'progress_percent' => (int) ($attributes['progress_percent'] ?? 0),
                 'deadline' => $attributes['deadline'] ?? null,
                 'start_at' => $attributes['start_at'] ?? null,
                 'due_at' => $attributes['due_at'] ?? null,
@@ -229,6 +230,12 @@ class TaskService
             'assigned_to' => $assignee->id,
             'priority' => $attributes['priority'],
             'status' => $attributes['status'],
+            'progress_percent' => array_key_exists('progress_percent', $attributes)
+                ? (int) $attributes['progress_percent']
+                : (int) ($task->progress_percent ?? 0),
+            'sort_order' => array_key_exists('sort_order', $attributes)
+                ? (int) $attributes['sort_order']
+                : (int) ($task->sort_order ?? 0),
             'deadline' => $attributes['deadline'] ?? null,
             'start_at' => $attributes['start_at'] ?? $task->start_at,
             'due_at' => $attributes['due_at'] ?? $task->due_at,

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DashboardEmptyState,
   DashboardErrorState,
@@ -28,6 +28,7 @@ import {
   type UnifiedWorkItem,
   type UnifiedWorkKanban,
 } from '../../services/operations'
+import { TaskKanbanBoard } from '../../components/owner/TaskKanbanBoard'
 import { describeApiError } from '../../utils/errors'
 
 const fieldClass =
@@ -96,7 +97,7 @@ type OwnerWorkPageProps = {
 }
 
 export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
-  const [bucket, setBucket] = useState<BucketTab>('all')
+  const [bucket, setBucket] = useState<BucketTab>('kanban')
   const [items, setItems] = useState<UnifiedWorkItem[]>([])
   const [kanban, setKanban] = useState<UnifiedWorkKanban['columns'] | null>(null)
   const [savedViews, setSavedViews] = useState<OperationalSavedView[]>([])
@@ -123,12 +124,17 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
     priority: '',
     source: '',
     status: '',
+    q: '',
+    from: '',
+    to: '',
   })
+  const kanbanLoaded = useRef(false)
 
   const listFilters = useMemo((): UnifiedWorkFilters => {
     const next: UnifiedWorkFilters = {
       per_page: 40,
       sort: 'overdue_first',
+      scope: basePath === '/owner' ? 'team' : 'mine',
     }
     if (bucket !== 'kanban' && bucket !== 'all') {
       next.bucket = bucket
@@ -139,8 +145,11 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
     if (filters.priority) next.priority = filters.priority
     if (filters.source) next.source = filters.source
     if (filters.status) next.status = filters.status
+    if (filters.q.trim()) next.q = filters.q.trim()
+    if (filters.from) next.from = filters.from
+    if (filters.to) next.to = filters.to
     return next
-  }, [bucket, filters])
+  }, [basePath, bucket, filters])
 
   const loadLookups = useCallback(async () => {
     const [deptRes, projectRes, assigneeRes, viewsRes] = await Promise.all([
@@ -156,22 +165,30 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
   }, [])
 
   const load = useCallback(async () => {
-    setLoading(true)
+    const silent = bucket === 'kanban' && kanbanLoaded.current
+    if (!silent) {
+      setLoading(true)
+    }
     setError(null)
     try {
       if (bucket === 'kanban') {
         const response = await getWorkKanban(listFilters)
         setKanban(response.data.columns)
+        kanbanLoaded.current = true
         setItems([])
       } else {
+        kanbanLoaded.current = false
         const response = await getWork(listFilters)
         setItems(response.data.items ?? [])
         setKanban(null)
       }
     } catch (caught) {
       setError(describeApiError(caught, 'تعذر تحميل العمل الموحد.'))
-      setItems([])
-      setKanban(null)
+      if (!silent) {
+        setItems([])
+        setKanban(null)
+        kanbanLoaded.current = false
+      }
     } finally {
       setLoading(false)
     }
@@ -430,16 +447,8 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
     )
   }
 
-  const kanbanColumns: Array<{ key: keyof NonNullable<typeof kanban>; label: string }> = [
-    { key: 'open', label: 'مفتوح' },
-    { key: 'in_progress', label: 'قيد التنفيذ' },
-    { key: 'review', label: 'مراجعة' },
-    { key: 'overdue', label: 'متأخر' },
-    { key: 'completed', label: 'مكتمل' },
-  ]
-
   return (
-    <section className="space-y-6">
+    <section className="min-w-0 space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">العمل</h1>
@@ -540,7 +549,8 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
           </DashboardSection>
         </aside>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
+          {bucket === 'kanban' ? null : (
           <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-2 xl:grid-cols-3">
             <label className="text-xs text-slate-500">
               القسم
@@ -630,6 +640,7 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
               </select>
             </label>
           </div>
+          )}
 
           {loading ? <DashboardPanelSkeleton label="جاري تحميل العمل..." /> : null}
           {!loading && error && items.length === 0 && !kanban ? (
@@ -645,37 +656,33 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
           ) : null}
 
           {!loading && bucket === 'kanban' && kanban ? (
-            <div className="grid gap-3 overflow-x-auto md:grid-cols-2 xl:grid-cols-5">
-              {kanbanColumns.map((column) => (
-                <div key={column.key} className="min-w-[200px] rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-800">
-                    {column.label}{' '}
-                    <span className="text-xs font-normal text-slate-500">
-                      ({(kanban[column.key] ?? []).length.toLocaleString('ar-SA')})
-                    </span>
-                  </h3>
-                  <ul className="space-y-2">
-                    {(kanban[column.key] ?? []).slice(0, 12).map((item) => (
-                      <li key={item.id} className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm">
-                        <p className="font-medium text-slate-900">{item.title}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-500">
-                          {sourceBadgeLabel(item.source_badge)} · {priorityLabel(item.priority)}
-                        </p>
-                        {canAddToCalendar(item) ? (
-                          <button
-                            type="button"
-                            className="mt-1 text-[11px] underline"
-                            onClick={() => openScheduleModal(item)}
-                          >
-                            إضافة للتقويم
-                          </button>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            <TaskKanbanBoard
+              columns={{
+                open: kanban.open ?? [],
+                in_progress: kanban.in_progress ?? [],
+                waiting_client: kanban.waiting_client ?? [],
+                review: kanban.review ?? [],
+                overdue: kanban.overdue ?? [],
+                completed: kanban.completed ?? [],
+                cancelled: kanban.cancelled ?? [],
+              }}
+              projects={projects}
+              assignees={assignees.map((person) => ({ id: person.id, name: person.name }))}
+              filters={{
+                q: filters.q,
+                project_id: filters.project_id,
+                assigned_to: filters.assigned_to,
+                priority: filters.priority,
+                from: filters.from,
+                to: filters.to,
+              }}
+              onFiltersChange={(next) => setFilters((current) => ({ ...current, ...next }))}
+              onReload={async () => {
+                await load()
+              }}
+              onError={setError}
+              onNotice={setNotice}
+            />
           ) : null}
         </div>
       </div>

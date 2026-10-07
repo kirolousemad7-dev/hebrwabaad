@@ -662,21 +662,39 @@ class UnifiedWorkService
         $items = $this->collectForSummary($actor, $scope);
         $items = $this->applyNormalizedFilters($items, $filters);
 
+        $items = $this->applyKanbanFilters($items, $filters);
+
         $columns = [
             'open' => [],
             'in_progress' => [],
+            'waiting_client' => [],
             'review' => [],
-            'overdue' => [],
             'completed' => [],
+            'overdue' => [],
             'cancelled' => [],
         ];
 
         foreach ($items as $item) {
-            $status = $item['status'] ?? 'open';
-            if (! array_key_exists($status, $columns)) {
-                $status = 'open';
+            $completed = (bool) ($item['is_completed'] ?? false);
+            $overdue = (bool) ($item['is_overdue'] ?? false);
+            if ($overdue && ! $completed) {
+                $key = 'overdue';
+            } else {
+                $key = (string) ($item['board_status'] ?? $item['status'] ?? 'open');
+                if (! array_key_exists($key, $columns)) {
+                    $key = 'open';
+                }
             }
-            $columns[$status][] = $item;
+            $columns[$key][] = $item;
+        }
+
+        foreach ($columns as $key => $rows) {
+            usort($rows, function (array $left, array $right): int {
+                $order = ((int) ($left['sort_order'] ?? 0)) <=> ((int) ($right['sort_order'] ?? 0));
+
+                return $order !== 0 ? $order : strcmp((string) $left['id'], (string) $right['id']);
+            });
+            $columns[$key] = $rows;
         }
 
         return $columns;
@@ -997,6 +1015,64 @@ class UnifiedWorkService
      * @param  array<string, mixed>  $filters
      * @return list<array<string, mixed>>
      */
+    /**
+     * @param  list<array<string, mixed>>  $items
+     * @param  array<string, mixed>  $filters
+     * @return list<array<string, mixed>>
+     */
+    private function applyKanbanFilters(array $items, array $filters): array
+    {
+        return array_values(array_filter($items, function (array $item) use ($filters): bool {
+            if (! empty($filters['project_id']) && (int) ($item['project_id'] ?? 0) !== (int) $filters['project_id']) {
+                return false;
+            }
+
+            if (! empty($filters['assigned_to']) && ! in_array((int) $filters['assigned_to'], array_map('intval', $item['assignee_ids'] ?? []), true)) {
+                return false;
+            }
+
+            if (! empty($filters['priority']) && strtoupper((string) $item['priority']) !== strtoupper((string) $filters['priority'])) {
+                return false;
+            }
+
+            if (! empty($filters['source'])) {
+                $source = (string) $filters['source'];
+                if (($item['source_type'] ?? '') !== $source && ($item['source_badge'] ?? '') !== $source) {
+                    return false;
+                }
+            }
+
+            if (! empty($filters['q'])) {
+                $needle = mb_strtolower(trim((string) $filters['q']));
+                $haystack = mb_strtolower(trim(implode(' ', [
+                    (string) ($item['title'] ?? ''),
+                    (string) ($item['description'] ?? ''),
+                    (string) ($item['project_title'] ?? ''),
+                    (string) ($item['assignee_name'] ?? ''),
+                    (string) ($item['customer_name'] ?? ''),
+                ])));
+                if (! str_contains($haystack, $needle)) {
+                    return false;
+                }
+            }
+
+            if (! empty($filters['from']) || ! empty($filters['to'])) {
+                $due = isset($item['due_at']) ? substr((string) $item['due_at'], 0, 10) : '';
+                if ($due === '') {
+                    return false;
+                }
+                if (! empty($filters['from']) && $due < substr((string) $filters['from'], 0, 10)) {
+                    return false;
+                }
+                if (! empty($filters['to']) && $due > substr((string) $filters['to'], 0, 10)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
+    }
+
     private function applyNormalizedFilters(array $items, array $filters): array
     {
         $status = isset($filters['status']) ? strtolower((string) $filters['status']) : null;

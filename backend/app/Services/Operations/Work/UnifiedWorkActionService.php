@@ -10,6 +10,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class UnifiedWorkActionService
 {
@@ -191,6 +192,65 @@ class UnifiedWorkActionService
             $this->occurrenceScope($item, $parsed),
             $parsed->occurrenceDate()?->toDateString(),
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function setProgress(User $actor, string $ref, int $percent): array
+    {
+        $resolved = $this->resolve($actor, $ref);
+
+        if ($resolved['adapter'] !== 'task') {
+            throw ValidationException::withMessages([
+                'progress_percent' => ['نسبة التنفيذ متاحة لمهام المشاريع فقط.'],
+            ]);
+        }
+
+        /** @var Task $task */
+        $task = $resolved['model'];
+
+        return $this->tasks->setProgress($actor, $task, $percent);
+    }
+
+    /**
+     * @param  list<string>  $orderedIds
+     * @return array<string, mixed>
+     */
+    public function move(User $actor, string $ref, string $status, ?int $sortOrder, array $orderedIds = []): array
+    {
+        $item = $this->setStatus($actor, $ref, $status);
+
+        if ($sortOrder !== null) {
+            $resolved = $this->resolve($actor, $ref);
+            if ($resolved['adapter'] === 'task') {
+                /** @var Task $task */
+                $task = $resolved['model'];
+                $item = $this->tasks->setSortOrder($actor, $task, $sortOrder);
+            }
+        }
+
+        foreach ($orderedIds as $index => $orderedId) {
+            try {
+                $resolved = $this->resolve($actor, $orderedId);
+            } catch (AuthorizationException|ModelNotFoundException|InvalidArgumentException) {
+                continue;
+            }
+
+            if ($resolved['adapter'] !== 'task') {
+                continue;
+            }
+
+            /** @var Task $task */
+            $task = $resolved['model'];
+            if (! Gate::forUser($actor)->allows('updateStatus', $task) && ! Gate::forUser($actor)->allows('update', $task)) {
+                continue;
+            }
+
+            $task->update(['sort_order' => $index]);
+        }
+
+        return $item;
     }
 
     /**

@@ -64,6 +64,8 @@ class UpdateWorkspaceTaskRequest extends ApiFormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'status' => ['required', 'string', Rule::enum(TaskStatus::class)],
+            'progress_percent' => ['sometimes', 'integer', 'between:0,100'],
+            'sort_order' => ['sometimes', 'integer', 'min:0', 'max:100000'],
             'is_client_visible' => ['nullable', 'boolean'],
             'link_to_calendar' => ['nullable', 'boolean'],
             'reminders' => ['nullable', 'array', 'max:10'],

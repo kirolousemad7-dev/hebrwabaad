@@ -100,7 +100,15 @@ class CalendarTaskWorkAdapter
                     && $statusValue !== CalendarItemStatus::Cancelled->value,
             ],
             'source_badge' => 'calendar',
-        ])->toArray();
+        ])->toArray() + [
+            'progress_percent' => 0,
+            'sort_order' => 0,
+            'board_status' => $this->normalizeStatus($statusValue),
+            'assignee_name' => $item->assignees->first()?->name,
+            'project_title' => null,
+            'customer_name' => null,
+            'tags' => [],
+        ];
     }
 
     public function complete(User $actor, CalendarItem $item): array
@@ -231,6 +239,7 @@ class CalendarTaskWorkAdapter
         return match (strtolower($status)) {
             'open' => CalendarItemStatus::Scheduled,
             'in_progress' => CalendarItemStatus::InProgress,
+            'waiting_client' => CalendarItemStatus::InProgress,
             'review' => CalendarItemStatus::InProgress,
             'completed' => CalendarItemStatus::Completed,
             'cancelled' => CalendarItemStatus::Cancelled,

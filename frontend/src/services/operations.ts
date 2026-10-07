@@ -539,6 +539,13 @@ export type UnifiedWorkItem = {
   source_badge: 'task' | 'calendar' | string
   calendar_item_id?: number | null
   linked_task_id?: number | null
+  progress_percent?: number
+  sort_order?: number
+  board_status?: string
+  assignee_name?: string | null
+  project_title?: string | null
+  customer_name?: string | null
+  tags?: string[]
 }
 
 export type UnifiedWorkFilters = {
@@ -568,6 +575,7 @@ export type UnifiedWorkKanban = {
   columns: {
     open: UnifiedWorkItem[]
     in_progress: UnifiedWorkItem[]
+    waiting_client: UnifiedWorkItem[]
     review: UnifiedWorkItem[]
     overdue: UnifiedWorkItem[]
     completed: UnifiedWorkItem[]
@@ -1356,6 +1364,19 @@ export function setWorkPriority(id: string, priority: string) {
 
 export function setWorkStatus(id: string, status: string) {
   return apiPost<UnifiedWorkItem>(`/api/operations/work/${encodeURIComponent(id)}/status`, { status })
+}
+
+export function setWorkProgress(id: string, progressPercent: number) {
+  return apiPost<UnifiedWorkItem>(`/api/operations/work/${encodeURIComponent(id)}/progress`, {
+    progress_percent: progressPercent,
+  })
+}
+
+export function moveWork(
+  id: string,
+  payload: { status: string; sort_order?: number; ordered_ids?: string[] },
+) {
+  return apiPost<UnifiedWorkItem>(`/api/operations/work/${encodeURIComponent(id)}/move`, payload)
 }
 
 export function getWorkFocus(limit = 5) {
