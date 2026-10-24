@@ -36,6 +36,14 @@ class TaskResource extends JsonResource
             'calendar_item_id' => $this->calendar_item_id,
             'is_client_visible' => (bool) $this->is_client_visible,
             'is_overdue' => $this->isOverdue(),
+            'comments_count' => $this->when(
+                array_key_exists('comments_count', $this->getAttributes()),
+                (int) $this->comments_count,
+            ),
+            'attachments_count' => $this->when(
+                array_key_exists('attachments_count', $this->getAttributes()),
+                (int) $this->attachments_count,
+            ),
             'assigned_to' => $this->assigned_to,
             'created_by' => $this->created_by,
             'google_sync' => [

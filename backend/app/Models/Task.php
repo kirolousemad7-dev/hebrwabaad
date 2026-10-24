@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
@@ -167,6 +168,30 @@ class Task extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsToMany<ProjectReference, $this>
+     */
+    public function references(): BelongsToMany
+    {
+        return $this->belongsToMany(ProjectReference::class, 'project_reference_task')->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<WorkspaceNote, $this>
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(WorkspaceNote::class);
+    }
+
+    /**
+     * @return HasMany<ManagedFile, $this>
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(ManagedFile::class);
     }
 
     /**

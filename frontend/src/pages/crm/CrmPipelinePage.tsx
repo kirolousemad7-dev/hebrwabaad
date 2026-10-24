@@ -153,7 +153,7 @@ export function CrmPipelinePage() {
             return (
               <div
                 key={stage.id}
-                className="w-80 shrink-0 rounded-2xl border border-slate-200 bg-slate-50"
+                className="w-80 shrink-0 rounded-2xl border border-slate-200 bg-[#f4f6f8]"
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={() => {
                   if (draggingId != null) void moveLead(draggingId, stage.id)

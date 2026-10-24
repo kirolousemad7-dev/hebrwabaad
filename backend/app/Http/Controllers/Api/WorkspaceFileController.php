@@ -45,7 +45,7 @@ class WorkspaceFileController extends Controller
         $file = $this->files->store(
             $request->user(),
             $request->file('file'),
-            $request->safe()->only(['project_id', 'order_id', 'task_id', 'calendar_item_id', 'is_client_visible']),
+            $request->safe()->only(['project_id', 'order_id', 'task_id', 'calendar_item_id', 'is_client_visible', 'category']),
         );
 
         return ApiResponse::success(ManagedFileResource::make($file)->resolve($request), 201);

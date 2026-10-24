@@ -320,7 +320,7 @@ export function OwnerWebsiteSectionPage() {
               <div className="mt-4 grid gap-4 md:grid-cols-[1fr_8rem]">
                 <div>
                   {meta.kind === 'readonly_note' ? (
-                    <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{draft.value_text}</p>
+                    <p className="rounded-lg bg-[#f4f6f8] px-3 py-2 text-sm text-slate-600">{draft.value_text}</p>
                   ) : null}
                   {meta.kind === 'text' || meta.kind === 'url' ? (
                     <input

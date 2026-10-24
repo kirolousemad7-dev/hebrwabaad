@@ -45,7 +45,7 @@ export function DashboardEmptyState({
   action?: React.ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
+    <div className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center">
       <p className="font-medium">{title}</p>
       <p className="mt-1 text-sm leading-7 text-slate-600">{description}</p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

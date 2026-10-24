@@ -200,4 +200,17 @@ class Project extends Model
             'percent' => $total === 0 ? 0.0 : round(($completed / $total) * 100, 1),
         ];
     }
+
+    public function publicCoverUrl(): ?string
+    {
+        $media = $this->relationLoaded('primaryMedia')
+            ? $this->primaryMedia
+            : $this->primaryMedia()->first();
+
+        if ($media === null || ! $media->isImage()) {
+            return null;
+        }
+
+        return $media->url();
+    }
 }

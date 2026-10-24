@@ -84,7 +84,7 @@ export function MarketingMediaPickerModal({ open, onClose, onSelect, selectedId 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-[#f4f6f8]"
           >
             إغلاق
           </button>

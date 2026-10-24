@@ -479,9 +479,9 @@ export function CrmLeadsPage() {
 
       {!loading && !error && items.length > 0 ? (
         <>
-          <div className="overflow-x-auto rounded-2xl border bg-white">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-right">
+              <thead className="border-b border-slate-200 bg-[#f4f6f8] text-start text-xs text-slate-500">
                 <tr>
                   <th className="px-3 py-2">
                     <input

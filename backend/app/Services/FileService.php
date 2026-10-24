@@ -101,6 +101,7 @@ class FileService
             'task_id' => $context['task_id'],
             'calendar_item_id' => $context['calendar_item_id'],
             'is_client_visible' => $this->resolveClientVisibility($actor, $attributes, $context),
+            'category' => $this->normalizeCategory($attributes['category'] ?? null),
         ]);
 
         $file = $file->load($this->eagerLoad());
@@ -260,6 +261,13 @@ class FileService
         }
 
         return ['project_id' => $order->project_id, 'order_id' => $order->id, 'task_id' => null, 'calendar_item_id' => null];
+    }
+
+    private function normalizeCategory(mixed $category): ?string
+    {
+        $value = is_string($category) ? strtoupper(trim($category)) : '';
+
+        return in_array($value, ['CLIENT', 'REFERENCE', 'WORK', 'REVIEW', 'FINAL'], true) ? $value : null;
     }
 
     private function staffCanUseTask(User $actor, Task $task): bool

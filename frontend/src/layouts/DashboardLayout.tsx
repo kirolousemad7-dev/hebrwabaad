@@ -68,7 +68,7 @@ export function DashboardLayout({
   }, [sidebarCollapsed])
 
   return (
-    <div className="relative isolate flex h-dvh overflow-hidden bg-brand-paper text-brand-ink-900">
+    <div className="relative isolate flex h-dvh overflow-hidden bg-white text-brand-ink-900">
       <BrandWatermark quiet />
       <div className="relative z-10 flex h-full w-full min-w-0">
         <DashboardSidebar
@@ -90,7 +90,7 @@ export function DashboardLayout({
             onMenuToggle={() => setMenuOpen((open) => !open)}
             profileTo={profileTo}
           />
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain">
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-white">
             <DashboardContent />
           </div>
         </div>

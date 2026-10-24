@@ -222,7 +222,7 @@ export function OwnerDepartmentsPage() {
             <article
               key={department.id}
               className={`rounded-2xl border p-4 ${
-                department.is_active ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50 opacity-80'
+                department.is_active ? 'border-slate-200 bg-white' : 'border-slate-200 bg-[#f4f6f8] opacity-80'
               }`}
             >
               <div className="flex items-start justify-between gap-2">

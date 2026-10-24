@@ -67,6 +67,10 @@ export type Service = {
   category: ServiceCategory
   subcategory?: string | null
   base_price: string
+  /** Optional compare price. The chargeable amount stays in base_price. */
+  price_before_discount?: string | null
+  /** Computed from the compare price. Zero when there is no discount. */
+  discount_amount?: string
   currency: string
   pricing_mode: PricingMode
   pricing_label: string
@@ -120,6 +124,8 @@ export type Service = {
     summary: string | null
     category: ServiceCategory
     base_price: string
+    price_before_discount?: string | null
+    discount_amount?: string
     currency: string
     pricing_mode: PricingMode
     pricing_label: string
@@ -583,6 +589,7 @@ export type ManagedFileItem = {
   size: number
   can_preview: boolean
   is_client_visible: boolean
+  category?: string | null
   created_at: string | null
   project?: { id: number; title: string } | null
   order?: { id: number; reference: string } | null

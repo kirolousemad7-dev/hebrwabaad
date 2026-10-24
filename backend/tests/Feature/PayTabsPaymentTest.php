@@ -13,17 +13,20 @@ use App\Notifications\OwnerPaymentReceivedNotification;
 use App\Notifications\PaymentPaidNotification;
 use App\Services\Payments\CardPaymentGateway;
 use App\Services\Payments\PayTabsCheckoutGateway;
+use App\Services\Payments\PayTabsClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Tests\Support\SignsPayTabsCallbacks;
 use Tests\TestCase;
 
 class PayTabsPaymentTest extends TestCase
 {
     use RefreshDatabase;
+    use SignsPayTabsCallbacks;
 
     private const SERVER_KEY = 'hebr-test-paytabs-server-key';
 
@@ -57,6 +60,8 @@ class PayTabsPaymentTest extends TestCase
             'payments.paytabs.server_key' => self::SERVER_KEY,
             'payments.paytabs.base_url' => 'https://secure-egypt.paytabs.com',
             'payments.paytabs.environment' => 'test',
+            'payments.paytabs.callback_url' => null,
+            'payments.paytabs.return_url' => null,
             'payments.paytabs.timeout' => 15,
             'app.url' => 'http://127.0.0.1:8000',
             'app.frontend_url' => 'http://localhost:5173',
@@ -129,11 +134,64 @@ class PayTabsPaymentTest extends TestCase
             ])
             ->assertStatus(503)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            ->assertJsonPath('message', PayTabsClient::HOSTED_PAGE_REQUIRED);
 
         $this->assertStringNotContainsString(self::SERVER_KEY, (string) $response->getContent());
         $this->assertLogsDoNotContainSecrets();
+        Http::assertNothingSent();
         $this->assertSame(0, Payment::query()->where('status', PaymentStatus::Paid)->count());
+    }
+
+    public function test_public_and_secret_keys_are_not_used_as_hosted_page_credentials(): void
+    {
+        $unusedSecret = 'sk-test-not-a-server-key';
+        $unusedPublic = 'pk-test-not-a-client-key';
+
+        config([
+            'payments.paytabs.profile_id' => '',
+            'payments.paytabs.server_key' => '',
+            'payments.paytabs.merchant_id' => 'merchant-fixture-not-real',
+            'payments.paytabs.public_key' => $unusedPublic,
+            'payments.paytabs.secret_key' => $unusedSecret,
+            'payments.paytabs.region' => 'SAU',
+            'payments.paytabs.currency' => 'SAR',
+            'payments.paytabs.environment' => 'test',
+        ]);
+
+        $setup = $this->payableOrder();
+
+        $this->asUser($setup['customer'])
+            ->postJson('/api/payments/paytabs/checkout', [
+                'order_id' => $setup['order']->id,
+            ])
+            ->assertStatus(503)
+            ->assertJsonPath('message', PayTabsClient::HOSTED_PAGE_REQUIRED);
+
+        Http::assertNothingSent();
+
+        $this->postPayTabsCallback('/api/payments/paytabs/callback', [
+            'tran_ref' => 'TST-UNUSED',
+            'cart_id' => 'cart-unused',
+            'cart_amount' => '1500.00',
+            'cart_currency' => 'SAR',
+            'payment_result' => ['response_status' => 'A'],
+        ], hash_hmac('sha256', '{}', $unusedSecret))->assertUnauthorized();
+
+        $this->artisan('payments:paytabs-status')
+            ->expectsOutputToContain('hosted_payment_page')
+            ->expectsOutputToContain('SAU')
+            ->expectsOutputToContain('SAR')
+            ->expectsOutputToContain('test')
+            ->expectsOutputToContain(PayTabsClient::HOSTED_PAGE_REQUIRED)
+            ->expectsOutputToContain('Read-only')
+            ->doesntExpectOutputToContain($unusedSecret)
+            ->doesntExpectOutputToContain($unusedPublic)
+            ->assertSuccessful();
+
+        foreach ($this->logLines as $line) {
+            $this->assertStringNotContainsString($unusedSecret, $line);
+            $this->assertStringNotContainsString($unusedPublic, $line);
+        }
     }
 
     public function test_card_checkout_sends_paytabs_hosted_page_payload_and_returns_redirect_url(): void
@@ -176,8 +234,8 @@ class PayTabsPaymentTest extends TestCase
                 && $request['cart_currency'] === 'SAR'
                 && $request['cart_amount'] === '1500.00'
                 && $request['payment_methods'] === ['creditcard']
-                && $request['callback'] === 'http://127.0.0.1:8000/api/webhooks/paytabs'
-                && $request['return'] === 'http://127.0.0.1:8000/api/payments/paytabs/return'
+                && $request['callback'] === 'http://127.0.0.1:8000/api/payments/paytabs/callback'
+                && str_starts_with((string) $request['return'], 'http://localhost:5173/payment/return?payment='.$created['id'])
                 && $authValue === self::SERVER_KEY;
         });
 
@@ -215,12 +273,12 @@ class PayTabsPaymentTest extends TestCase
 
         $payload = $this->callbackPayload($setup, 'A', '1500.00');
 
-        $this->postJson('/api/webhooks/paytabs', $payload)
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $payload)
             ->assertOk()
             ->assertJsonPath('data.received', true)
             ->assertJsonMissingPath('data.server_key');
 
-        $this->postJson('/api/webhooks/paytabs', $payload)->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $payload)->assertOk();
 
         $payment = Payment::query()->findOrFail($setup['id']);
         $this->assertSame(PaymentStatus::Paid, $payment->status);
@@ -247,17 +305,17 @@ class PayTabsPaymentTest extends TestCase
     {
         $failed = $this->startCardPayment();
         $this->fakeQuery($failed, 'D', '1500.00', 'SAR', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($failed, 'D'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($failed, 'D'))->assertOk();
         $this->assertSame(PaymentStatus::Failed, Payment::query()->find($failed['id'])?->status);
 
         $cancelled = $this->startCardPayment();
         $this->fakeQuery($cancelled, 'C', '1500.00', 'SAR', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($cancelled, 'C'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($cancelled, 'C'))->assertOk();
         $this->assertSame(PaymentStatus::Cancelled, Payment::query()->find($cancelled['id'])?->status);
 
         $pending = $this->startCardPayment();
         $this->fakeQuery($pending, 'P', '1500.00', 'SAR', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($pending, 'P'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($pending, 'P'))->assertOk();
         $this->assertSame(PaymentStatus::Processing, Payment::query()->find($pending['id'])?->status);
         $this->assertNull(Payment::query()->find($pending['id'])?->paid_at);
     }
@@ -266,18 +324,18 @@ class PayTabsPaymentTest extends TestCase
     {
         $amount = $this->startCardPayment();
         $this->fakeQuery($amount, 'A', '1.00', 'SAR', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($amount, 'A', '1.00'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($amount, 'A', '1.00'))->assertOk();
         $this->assertSame(PaymentStatus::Failed, Payment::query()->find($amount['id'])?->status);
         $this->assertNull(Payment::query()->find($amount['id'])?->paid_at);
 
         $currency = $this->startCardPayment();
         $this->fakeQuery($currency, 'A', '1500.00', 'EGP', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($currency, 'A'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($currency, 'A'))->assertOk();
         $this->assertSame(PaymentStatus::Failed, Payment::query()->find($currency['id'])?->status);
 
         $profile = $this->startCardPayment();
         $this->fakeQuery($profile, 'A', '1500.00', 'SAR', 999999);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($profile, 'A'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($profile, 'A'))->assertOk();
         $this->assertSame(PaymentStatus::Failed, Payment::query()->find($profile['id'])?->status);
 
         $this->assertSame(0, Payment::query()->where('status', PaymentStatus::Paid)->count());
@@ -298,14 +356,14 @@ class PayTabsPaymentTest extends TestCase
             [500, ['message' => 'down']],
         ];
 
-        $this->postJson('/api/webhooks/paytabs', [
+        $this->postPayTabsCallback('/api/webhooks/paytabs', [
             'tran_ref' => 'TST-UNKNOWN',
             'cart_id' => 'MISSING-P999',
         ])->assertOk();
 
         $this->assertSame(0, Payment::query()->count());
 
-        $this->postJson('/api/webhooks/paytabs', ['tran_ref' => 'TST-DOWN'])
+        $this->postPayTabsCallback('/api/webhooks/paytabs', ['tran_ref' => 'TST-DOWN'])
             ->assertStatus(503);
     }
 
@@ -377,7 +435,7 @@ class PayTabsPaymentTest extends TestCase
         Notification::fake();
         $paid = $this->startCardPayment();
         $this->fakeQuery($paid, 'A', '1500.00', 'SAR', 154601);
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($paid, 'A'))->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($paid, 'A'))->assertOk();
 
         $this->asUser($paid['customer'])
             ->postJson('/api/customer/payments/'.$paid['id'].'/card')
@@ -402,7 +460,7 @@ class PayTabsPaymentTest extends TestCase
             'tran_ref' => $setup['tran_ref'],
             'cart_id' => $setup['cart_id'],
             'payment_result' => ['response_status' => 'A'],
-        ])->assertRedirect('http://localhost:5173/dashboard/orders/'.$setup['order']->id.'/pay?payment='.$setup['id'].'&checkout=return');
+        ])->assertRedirect('http://localhost:5173/payment/return?payment='.$setup['id'].'&cart_id='.rawurlencode($setup['cart_id']));
 
         $this->assertSame(PaymentStatus::Processing, Payment::query()->find($setup['id'])?->status);
         $this->assertNull(Payment::query()->find($setup['id'])?->paid_at);
@@ -411,11 +469,66 @@ class PayTabsPaymentTest extends TestCase
     public function test_webhook_is_public_and_does_not_expose_secrets(): void
     {
         $this->postJson('/api/webhooks/paytabs', ['note' => 'empty'])
-            ->assertOk()
-            ->assertJsonPath('data.received', true);
+            ->assertUnauthorized();
 
         $this->getJson('/api/webhooks/stripe')->assertNotFound();
         $this->assertLogsDoNotContainSecrets();
+    }
+
+    public function test_callback_with_bad_signature_is_rejected_and_duplicate_signed_callback_is_idempotent(): void
+    {
+        $setup = $this->startCardPayment();
+        $payload = $this->callbackPayload($setup, 'A', '1500.00');
+
+        $this->postPayTabsCallback('/api/payments/paytabs/callback', $payload, 'bad-signature')
+            ->assertUnauthorized();
+
+        $this->assertSame(PaymentStatus::Processing, Payment::query()->find($setup['id'])?->status);
+
+        $this->fakeQuery($setup, 'A', '1500.00', 'SAR', 154601);
+        $this->postPayTabsCallback('/api/payments/paytabs/callback', $payload)->assertOk();
+        $this->postPayTabsCallback('/api/payments/paytabs/callback', $payload)->assertOk();
+
+        $this->assertSame(PaymentStatus::Paid, Payment::query()->find($setup['id'])?->status);
+        $this->assertSame(1, Payment::query()->where('status', PaymentStatus::Paid)->count());
+    }
+
+    public function test_checkout_endpoint_returns_payment_url_and_status_endpoint_hides_secrets(): void
+    {
+        $setup = $this->payableOrder();
+
+        $created = $this->asUser($setup['customer'])
+            ->postJson('/api/payments/paytabs/checkout', [
+                'order_id' => $setup['order']->id,
+                'amount' => '1500.00',
+                'customer_name' => $setup['customer']->name,
+                'customer_email' => $setup['customer']->email,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.status', PaymentStatus::Processing->value)
+            ->json('data');
+
+        $this->assertIsString($created['payment_url']);
+        $this->assertStringContainsString('paytabs.com', $created['payment_url']);
+        $this->assertArrayNotHasKey('server_key', $created);
+
+        $payment = Payment::query()->findOrFail($created['payment_id']);
+
+        $this->getJson('/api/payments/paytabs/'.$payment->id.'/status?cart_id='.urlencode((string) $payment->checkout_session_id))
+            ->assertOk()
+            ->assertJsonPath('data.status', PaymentStatus::Processing->value)
+            ->assertJsonMissingPath('data.server_key')
+            ->assertJsonMissingPath('data.customer_email');
+
+        $this->getJson('/api/payments/paytabs/'.$payment->id.'/status?cart_id=wrong')
+            ->assertNotFound();
+
+        $this->asUser($setup['customer'])
+            ->postJson('/api/payments/paytabs/checkout', [
+                'order_id' => $setup['order']->id,
+                'amount' => '1.00',
+            ])
+            ->assertStatus(422);
     }
 
     /**

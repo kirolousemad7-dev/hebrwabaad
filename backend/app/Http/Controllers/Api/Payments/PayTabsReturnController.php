@@ -18,18 +18,12 @@ class PayTabsReturnController extends Controller
         $payment = $this->findPayment($request);
 
         if ($payment === null) {
-            return redirect()->away($frontend.'/dashboard/orders');
+            return redirect()->away($frontend.'/payment/return');
         }
 
-        if ($payment->printing_quotation_id !== null) {
-            return redirect()->away(
-                $frontend.'/payment/result?payment_id='.$payment->id.'&ref=printing'
-            );
-        }
+        $cartId = rawurlencode((string) ($payment->checkout_session_id ?? ''));
 
-        return redirect()->away(
-            $frontend.'/dashboard/orders/'.$payment->order_id.'/pay?payment='.$payment->id.'&checkout=return'
-        );
+        return redirect()->away($frontend.'/payment/return?payment='.$payment->id.'&cart_id='.$cartId);
     }
 
     private function findPayment(Request $request): ?Payment

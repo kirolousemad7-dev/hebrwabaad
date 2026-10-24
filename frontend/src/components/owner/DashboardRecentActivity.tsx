@@ -22,7 +22,7 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
   }
 
   return (
-    <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+    <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
       {items.map((item) => {
         const typeLabel = ACTIVITY_TYPE_LABELS[item.type] ?? item.type
         const statusLabel = ACTIVITY_STATUS_LABELS[item.status] ?? item.status
@@ -50,7 +50,7 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
             {item.entity.href ? (
               <Link
                 to={item.entity.href}
-                className="block px-4 py-3 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                className="block px-4 py-3 hover:bg-[#f4f6f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
               >
                 {body}
               </Link>

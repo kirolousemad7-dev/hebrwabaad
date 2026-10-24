@@ -121,11 +121,13 @@ use App\Http\Controllers\Api\Operations\ProjectWorkspaceController;
 use App\Http\Controllers\Api\Operations\TaskCalendarLinkController;
 use App\Http\Controllers\Api\Operations\UnifiedWorkController;
 use App\Http\Controllers\Api\Operations\WorkflowAutomationController;
+use App\Http\Controllers\Api\Operations\WorkspaceNoteController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\Owner\CmsPageController as OwnerCmsPageController;
 use App\Http\Controllers\Api\Owner\MarketingMediaController as OwnerMarketingMediaController;
 use App\Http\Controllers\Api\Owner\MarketingSectionController as OwnerMarketingSectionController;
 use App\Http\Controllers\Api\Owner\OwnerRequirementController;
+use App\Http\Controllers\Api\Payments\PayTabsCheckoutController;
 use App\Http\Controllers\Api\Payments\PayTabsReturnController;
 use App\Http\Controllers\Api\Printing\PrintingRequestController;
 use App\Http\Controllers\Api\Public\PublicCmsPageController;
@@ -164,6 +166,8 @@ Route::get('/google-calendar/callback', [GoogleCalendarOAuthController::class, '
     ->middleware('throttle:hebr-login');
 
 Route::post('/webhooks/paytabs', [PayTabsWebhookController::class, 'handle']);
+Route::post('/payments/paytabs/callback', [PayTabsWebhookController::class, 'handle']);
+Route::get('/payments/paytabs/{payment}/status', [PayTabsCheckoutController::class, 'status']);
 Route::post('/webhooks/inbound/{inboundWebhook}', [InboundWebhookController::class, 'handle'])
     ->middleware('throttle:hebr-inbound-webhooks');
 Route::match(['GET', 'POST'], '/payments/paytabs/return', [PayTabsReturnController::class, 'handle']);
@@ -391,6 +395,9 @@ Route::prefix('operations')->middleware([
         Route::post('/projects/{project}/tasks', [ProjectWorkspaceController::class, 'storeTask']);
         Route::put('/projects/{project}/tasks/{task}', [ProjectWorkspaceController::class, 'updateTask']);
         Route::post('/projects/{project}/tasks/{task}/link-calendar', [ProjectWorkspaceController::class, 'linkTaskCalendar']);
+        Route::get('/projects/{project}/notes', [WorkspaceNoteController::class, 'index']);
+        Route::post('/projects/{project}/notes', [WorkspaceNoteController::class, 'store']);
+        Route::put('/projects/{project}/tasks/{task}/references', [WorkspaceNoteController::class, 'syncTaskReferences']);
         Route::get('/projects/{project}/brief', [ProjectBriefController::class, 'show']);
         Route::put('/projects/{project}/brief', [ProjectBriefController::class, 'update']);
         Route::get('/projects/{project}/references', [ProjectBriefController::class, 'references']);
@@ -896,6 +903,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CUSTOMER'])->group(fu
     Route::post('/customer/payments', [CustomerPaymentController::class, 'store'])->middleware('throttle:hebr-payments');
     Route::get('/customer/payments/{payment}', [CustomerPaymentController::class, 'show']);
     Route::post('/customer/payments/{payment}/card', [CustomerPaymentController::class, 'card'])->middleware('throttle:hebr-payments');
+    Route::post('/payments/paytabs/checkout', [PayTabsCheckoutController::class, 'store'])->middleware('throttle:hebr-payments');
     Route::post('/customer/payments/{payment}/manual-transfer', [CustomerPaymentController::class, 'manualTransfer'])->middleware('throttle:hebr-payments');
 
     Route::get('/customer/conversations', [CustomerConversationController::class, 'index']);

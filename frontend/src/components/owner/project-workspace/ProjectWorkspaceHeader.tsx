@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ProjectHealth, ProjectWorkspace } from '../../../services/operations'
+import { PROJECT_STATUS_LABELS, formatProjectDate, projectStatusVisual } from '../../../utils/workspaceProjects'
+import { ProjectCoverControl } from '../ProjectCoverControl'
 
 type Props = {
   workspace: ProjectWorkspace
@@ -7,19 +10,25 @@ type Props = {
   onAddMilestone?: () => void
   onAddPhase?: () => void
   canManage?: boolean
+  onCoverUpdated?: (url: string | null) => void
 }
 
 function healthTone(status: string) {
-  if (status === 'overdue') return 'border-red-300 bg-red-50 text-red-900'
-  if (status === 'needs_attention') return 'border-amber-300 bg-amber-50 text-amber-900'
-  return 'border-emerald-200 bg-emerald-50 text-emerald-900'
+  if (status === 'overdue') return 'bg-red-50 text-red-800'
+  if (status === 'needs_attention') return 'bg-amber-50 text-amber-900'
+  return 'bg-emerald-50 text-emerald-800'
 }
 
 function warningLabel(health: ProjectHealth, progress: ProjectWorkspace['progress']) {
   if (health.status === 'overdue' || progress.overdue > 0) return 'متأخر'
-  if (health.status === 'needs_attention') return 'يستحق المتابعة قريباً'
+  if (health.status === 'needs_attention') return 'يستحق المتابعة'
   return 'على المسار'
 }
+
+const primaryButton =
+  'inline-flex min-h-10 items-center rounded-lg bg-brand-cobalt-500 px-3 text-sm font-medium text-white transition hover:bg-brand-cobalt-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500'
+const secondaryButton =
+  'inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 transition hover:border-slate-300'
 
 export function ProjectWorkspaceHeader({
   workspace,
@@ -27,168 +36,117 @@ export function ProjectWorkspaceHeader({
   onAddMilestone,
   onAddPhase,
   canManage = true,
+  onCoverUpdated,
 }: Props) {
-  const { project, progress, health, current_phase, next_milestone, next_task, client_profile } = workspace
+  const { project, progress, health, current_phase, client_profile } = workspace
   const summary = workspace.execution_summary
-  const industry =
-    typeof client_profile?.industry === 'string' ? client_profile.industry : null
+  const [coverUrl, setCoverUrl] = useState(project.cover_url ?? null)
+  useEffect(() => {
+    setCoverUrl(project.cover_url ?? null)
+  }, [project.id, project.cover_url])
+  const statusVisual = projectStatusVisual(project.status)
+  const percent = Math.round(summary?.completion_percent ?? progress.percent)
+  const industry = typeof client_profile?.industry === 'string' ? client_profile.industry : null
   const business =
-    typeof client_profile?.company_name === 'string'
-      ? client_profile.company_name
-      : project.customer?.name
+    typeof client_profile?.company_name === 'string' ? client_profile.company_name : project.customer?.name
+  const teamCount = workspace.team_stats?.length ?? workspace.members.length
+  const overdue = summary?.overdue_tasks ?? progress.overdue
+  const phaseTitle = summary?.current_phase?.title ?? current_phase?.title
 
   return (
-    <header className="space-y-4">
-      <Link to="/owner/projects" className="text-sm text-slate-600 underline">
+    <header className="space-y-3">
+      <Link to="/owner/projects" className="text-sm text-slate-500 transition hover:text-slate-800">
         العودة للمشاريع
       </Link>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 space-y-1">
-            <p className="text-xs uppercase tracking-wide text-slate-500">العميل</p>
-            <p className="text-sm font-medium text-slate-800">
-              {business ?? 'بدون عميل'}
-              {industry ? ` · ${industry}` : ''}
-            </p>
-            <h1 className="text-2xl font-semibold text-slate-900">{project.title}</h1>
-            <p className="text-sm text-slate-600">
-              الحالة: {project.status}
-              {project.started_at ? ` · البداية ${project.started_at}` : ''}
-              {project.deadline ? ` · التسليم ${project.deadline}` : ''}
-            </p>
+          <div className="flex min-w-0 items-start gap-3">
+            {canManage ? (
+              <ProjectCoverControl
+                projectId={project.id}
+                title={project.title}
+                coverUrl={coverUrl}
+                onUpdated={(url) => {
+                  setCoverUrl(url)
+                  onCoverUpdated?.(url)
+                }}
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="truncate text-sm text-slate-500">{business ?? 'بدون عميل'}{industry ? ` · ${industry}` : ''}</p>
+              <h1 className="mt-0.5 text-xl font-semibold leading-8 text-slate-900 sm:text-2xl">{project.title}</h1>
+              <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusVisual.badge}`}>
+                {PROJECT_STATUS_LABELS[project.status] ?? project.status}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className={`rounded-full border px-3 py-1 text-xs ${healthTone(health.status)}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${healthTone(health.status)}`}>
               {health.label || warningLabel(health, progress)}
             </span>
-            {(summary?.overdue_tasks ?? progress.overdue) > 0 ? (
-              <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-900">
-                متأخر: {(summary?.overdue_tasks ?? progress.overdue).toLocaleString('ar-SA')}
-              </span>
-            ) : null}
-            {(summary?.attention_count ?? 0) > 0 ? (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900">
-                متابعة: {summary!.attention_count.toLocaleString('ar-SA')}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-600">تقدم المشروع</span>
-            <span className="font-semibold">
-              {Math.round(summary?.completion_percent ?? progress.percent).toLocaleString('ar-SA')}%
-            </span>
-          </div>
-          <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-brand-primary/80 transition-all"
-              style={{
-                width: `${Math.min(100, Math.max(0, summary?.completion_percent ?? progress.percent))}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          <div>
-            <dt className="text-xs text-slate-500">مدير الحساب</dt>
-            <dd className="text-sm font-medium">{project.account_manager?.name ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">المرحلة الحالية</dt>
-            <dd className="text-sm font-medium">
-              {summary?.current_phase?.title ?? current_phase?.title ?? '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">المعلم النشط</dt>
-            <dd className="text-sm font-medium">
-              {summary?.active_milestone?.title ?? next_milestone?.title ?? '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">مهام مفتوحة</dt>
-            <dd className="text-sm font-medium">
-              {(summary?.open_tasks ?? Math.max(0, progress.total - progress.completed)).toLocaleString(
-                'ar-SA',
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">الموعد التالي</dt>
-            <dd className="text-sm font-medium">
-              {summary?.next_deadline ?? workspace.next_deadline ?? next_task?.deadline ?? '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">بانتظار مراجعة</dt>
-            <dd className="text-sm font-medium">
-              {(summary?.in_review_tasks ?? progress.review + progress.revision).toLocaleString('ar-SA')}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">تحديثات حديثة</dt>
-            <dd className="text-sm font-medium">
-              {(summary?.recent_activity_count ?? workspace.recent_activity?.length ?? 0).toLocaleString(
-                'ar-SA',
-              )}
-            </dd>
-          </div>
-        </dl>
-
-        <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600">
-          <span>مكتمل {progress.completed.toLocaleString('ar-SA')}</span>
-          <span>قيد التنفيذ {progress.in_progress.toLocaleString('ar-SA')}</span>
-          <span>معلّق {progress.todo.toLocaleString('ar-SA')}</span>
-          <span>الإجمالي {progress.total.toLocaleString('ar-SA')}</span>
-          {(workspace.risks?.overdue_tasks ?? 0) > 0 ? (
-            <span className="font-medium text-red-700">
-              مهام متأخرة {workspace.risks!.overdue_tasks.toLocaleString('ar-SA')}
-            </span>
-          ) : null}
-          {(workspace.risks?.overdue_milestones ?? 0) > 0 ? (
-            <span className="font-medium text-red-700">
-              معالم متأخرة {workspace.risks!.overdue_milestones.toLocaleString('ar-SA')}
-            </span>
-          ) : null}
-          {workspace.risks?.due_soon ? (
-            <span className="font-medium text-amber-800">موعد قريب خلال أسبوع</span>
-          ) : null}
-        </div>
-
-        {canManage ? (
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-            {onAddTask ? (
-              <button
-                type="button"
-                onClick={onAddTask}
-                className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white"
-              >
-                + مهمة
+            {canManage && onAddTask ? (
+              <button type="button" onClick={onAddTask} className={primaryButton}>
+                إنشاء مهمة
               </button>
             ) : null}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <div>
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <p className="text-2xl font-semibold text-slate-900">{percent.toLocaleString('en-US')}% مكتمل</p>
+              <p className="text-sm text-slate-500">
+                {progress.completed.toLocaleString('en-US')} من {progress.total.toLocaleString('en-US')} مهام مكتملة
+              </p>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" dir="ltr">
+              <div
+                className={`ms-auto h-full rounded-full ${statusVisual.bar} transition-[width] duration-500`}
+                style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+              />
+            </div>
+            {overdue > 0 ? (
+              <p className="mt-2 text-xs font-medium text-red-700">
+                {overdue.toLocaleString('en-US')} مهمة متأخرة
+              </p>
+            ) : null}
+          </div>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div>
+              <dt className="text-xs text-slate-500">البداية</dt>
+              <dd className="font-medium text-slate-800">{formatProjectDate(project.started_at)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-500">التسليم</dt>
+              <dd className="font-medium text-slate-800">{formatProjectDate(project.deadline)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-500">مدير الحساب</dt>
+              <dd className="truncate font-medium text-slate-800">{project.account_manager?.name ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-500">الفريق</dt>
+              <dd className="font-medium text-slate-800">{teamCount.toLocaleString('en-US')}</dd>
+            </div>
+          </dl>
+        </div>
+        {phaseTitle ? <p className="mt-3 text-xs text-slate-500">المرحلة الحالية: {phaseTitle}</p> : null}
+
+        {canManage && (onAddMilestone || onAddPhase) ? (
+          <div className="mt-4 flex flex-wrap gap-2">
             {onAddMilestone ? (
-              <button
-                type="button"
-                onClick={onAddMilestone}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-              >
-                + معلم
+              <button type="button" onClick={onAddMilestone} className={secondaryButton}>
+                معلم
               </button>
             ) : null}
             {onAddPhase ? (
-              <button
-                type="button"
-                onClick={onAddPhase}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-              >
-                + مرحلة
+              <button type="button" onClick={onAddPhase} className={secondaryButton}>
+                مرحلة
               </button>
             ) : null}
-            <Link to="/owner/work" className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm underline">
+            <Link to="/owner/work" className={secondaryButton}>
               فتح العمل الموحّد
             </Link>
           </div>

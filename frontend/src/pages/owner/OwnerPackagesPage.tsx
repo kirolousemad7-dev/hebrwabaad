@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react'
+import { CatalogPriceFields } from '../../components/catalog/CatalogPriceFields'
 import { MediaUploader } from '../../components/files/MediaUploader'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
@@ -12,7 +13,7 @@ import {
   type PackageItemInput,
 } from '../../services/catalog'
 import { PACKAGE_CATEGORIES, PRICING_MODES, type Package, type PricingMode, type Service } from '../../types/api'
-import { packagePriceLabel, PACKAGE_CATEGORY_LABELS, PRICING_MODE_LABELS } from '../../utils/catalog'
+import { packagePriceLabel, PACKAGE_CATEGORY_LABELS, PRICING_MODE_LABELS, resolveListPrice } from '../../utils/catalog'
 import { describeApiError } from '../../utils/errors'
 
 type TierFormState = {
@@ -34,7 +35,8 @@ type FormState = {
   deliverables: string
   category: PackageInput['category']
   pricing_mode: PricingMode
-  price: string
+  current_price: string
+  price_before_discount: string
   discount_amount: string
   duration_days: string
   button_color: string
@@ -57,8 +59,9 @@ const emptyForm: FormState = {
   deliverables: '',
   category: 'GENERAL',
   pricing_mode: 'QUOTE',
-  price: '0',
-  discount_amount: '0',
+  current_price: '0',
+  price_before_discount: '',
+  discount_amount: '',
   duration_days: '',
   button_color: '',
   excluded_service_names: '',
@@ -81,8 +84,9 @@ function toFormState(pkg: Package): FormState {
     deliverables: pkg.deliverables.join('\n'),
     category: pkg.category,
     pricing_mode: pkg.pricing_mode,
-    price: pkg.price,
-    discount_amount: pkg.discount_amount,
+    current_price: pkg.final_price,
+    price_before_discount: Number.parseFloat(pkg.discount_amount) > 0 ? pkg.price : '',
+    discount_amount: Number.parseFloat(pkg.discount_amount) > 0 ? pkg.discount_amount : '',
     duration_days: pkg.duration_days === null ? '' : String(pkg.duration_days),
     button_color: pkg.button_color ?? '',
     excluded_service_names: (pkg.excluded_service_names ?? []).join('\n'),
@@ -226,21 +230,20 @@ export function OwnerPackagesPage() {
       return
     }
 
-    const price = Number.parseFloat(form.price)
-    const discount = Number.parseFloat(form.discount_amount === '' ? '0' : form.discount_amount)
-
     if (form.name.trim() === '') {
       setError('اسم الباقة مطلوب.')
       return
     }
 
-    if (Number.isNaN(price) || price < 0) {
-      setError('سعر الباقة يجب أن يكون رقماً غير سالب.')
-      return
-    }
+    const prices = resolveListPrice({
+      current: form.current_price,
+      before: form.price_before_discount,
+      discount: form.discount_amount,
+      requireCurrent: form.pricing_mode !== 'QUOTE',
+    })
 
-    if (Number.isNaN(discount) || discount < 0 || discount > price) {
-      setError('قيمة الخصم يجب أن تكون بين صفر وسعر الباقة.')
+    if (!prices.ok) {
+      setError(prices.message)
       return
     }
 
@@ -261,8 +264,8 @@ export function OwnerPackagesPage() {
         .filter((line) => line !== ''),
       category: form.category,
       pricing_mode: form.pricing_mode,
-      price,
-      discount_amount: discount,
+      price: prices.value.price,
+      discount_amount: prices.value.discountAmount,
       duration_days: optionalNumber(form.duration_days),
       button_color: buttonColor === '' ? null : buttonColor,
       excluded_service_names: form.excluded_service_names
@@ -455,30 +458,19 @@ export function OwnerPackagesPage() {
               />
             </label>
 
-            <label className="block space-y-1 text-sm">
-              <span>السعر (ريال)</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                value={form.price}
-                onChange={(event) => patch({ price: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
-
-            <label className="block space-y-1 text-sm">
-              <span>الخصم (ريال)</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.discount_amount}
-                onChange={(event) => patch({ discount_amount: event.target.value })}
-                className="w-full rounded-md border border-slate-300 px-3 py-2"
-              />
-            </label>
+            <CatalogPriceFields
+              current={form.current_price}
+              before={form.price_before_discount}
+              discount={form.discount_amount}
+              requireCurrent={form.pricing_mode !== 'QUOTE'}
+              onChange={(next) =>
+                patch({
+                  ...(next.current !== undefined ? { current_price: next.current } : {}),
+                  ...(next.before !== undefined ? { price_before_discount: next.before } : {}),
+                  ...(next.discount !== undefined ? { discount_amount: next.discount } : {}),
+                })
+              }
+            />
             <label className="block space-y-1 text-sm">
               <span>لون زر الباقة</span>
               <input

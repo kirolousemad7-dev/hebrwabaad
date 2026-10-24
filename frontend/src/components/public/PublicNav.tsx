@@ -299,7 +299,7 @@ export function PublicNav() {
         ].join(' ')}
       >
         <div className="marketing-container flex items-center justify-between gap-4 py-2.5">
-          <BrandLogo size="nav" />
+          <BrandLogo size="nav" className="!p-0" />
 
           <nav
             aria-label="التنقل الرئيسي"
@@ -355,7 +355,7 @@ export function PublicNav() {
             className="fixed inset-y-0 start-0 z-[60] flex w-[min(20rem,88vw)] flex-col gap-1 overflow-y-auto border-e border-brand-ink-100 bg-white px-5 py-6 text-sm shadow-xl"
           >
             <div className="mb-3">
-              <BrandLogo size="nav" />
+              <BrandLogo size="nav" className="!p-0" />
             </div>
             {mobilePrimaryLinks}
             <span className="my-2 h-px bg-brand-ink-100" aria-hidden="true" />

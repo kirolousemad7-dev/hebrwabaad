@@ -32,6 +32,10 @@ final class ProjectActivityAction
 
     public const MILESTONE_COMPLETED = 'milestone.completed';
 
+    public const NOTE_CREATED = 'note.created';
+
+    public const REFERENCE_LINKED = 'reference.linked';
+
     public const FILE_UPLOADED = 'file.uploaded';
 
     public const FILE_UPDATED = 'file.updated';

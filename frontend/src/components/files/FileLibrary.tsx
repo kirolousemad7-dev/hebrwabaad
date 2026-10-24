@@ -35,6 +35,14 @@ function fileVisibilityLabel(isClientVisible: boolean): string {
   return isClientVisible ? 'ظاهر للعميل' : 'داخلي'
 }
 
+const FILE_CATEGORY_LABELS: Record<string, string> = {
+  CLIENT: 'ملف عميل',
+  REFERENCE: 'مرجع',
+  WORK: 'قيد العمل',
+  REVIEW: 'مراجعة',
+  FINAL: 'تسليم نهائي',
+}
+
 export function FileLibrary({
   scope,
   query = '',
@@ -52,6 +60,7 @@ export function FileLibrary({
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [items, setItems] = useState<ManagedFileItem[]>([])
   const [visibilityPendingId, setVisibilityPendingId] = useState<number | null>(null)
+  const [category, setCategory] = useState('')
 
   const showVisibilityControls = scope === 'workspace'
   const showVisibilityToggle =
@@ -106,6 +115,9 @@ export function FileLibrary({
     if (kind === 'task') {
       body.append('task_id', rawId)
     }
+    if (category) {
+      body.append('category', category)
+    }
 
     setUploading(true)
     try {
@@ -142,7 +154,7 @@ export function FileLibrary({
       return
     }
 
-    const nextVisible = !Boolean(item.is_client_visible)
+    const nextVisible = !item.is_client_visible
     setFeedback(null)
     setVisibilityPendingId(item.id)
 
@@ -184,6 +196,23 @@ export function FileLibrary({
                 ))}
               </select>
             </label>
+            {scope === 'workspace' ? (
+              <label className="block text-sm">
+                <span className="font-medium">التصنيف</span>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                >
+                  <option value="">بدون تصنيف</option>
+                  {Object.entries(FILE_CATEGORY_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="block text-sm">
               <span className="font-medium">{FILE_COPY.chooseFile}</span>
               <input
@@ -245,6 +274,12 @@ export function FileLibrary({
                   <p className="truncate font-medium">{item.original_name}</p>
                   <p className="mt-1 text-sm text-slate-500">
                     {item.extension.toUpperCase()} · {formatFileSize(item.size)} · {fileContextLabel(item)}
+                    {item.uploaded_by?.name ? ` · ${item.uploaded_by.name}` : ''}
+                    {item.category ? (
+                      <span className="ms-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                        {FILE_CATEGORY_LABELS[item.category] ?? item.category}
+                      </span>
+                    ) : null}
                     {showVisibilityControls ? ` · ${fileVisibilityLabel(isClientVisible)}` : ''} ·{' '}
                     {formatDashboardDateTime(item.created_at)}
                   </p>

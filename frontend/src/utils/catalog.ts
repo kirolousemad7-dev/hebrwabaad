@@ -74,6 +74,94 @@ export function packageHasDiscount(pkg: Package): boolean {
   return Number.parseFloat(pkg.discount_amount) > 0
 }
 
+export type DiscountPresentation = {
+  amount: number
+  percent: number | null
+}
+
+/** Whole percents use a percent label. Other discounts stay as an amount. */
+export function discountPresentation(before: number, current: number): DiscountPresentation | null {
+  if (!Number.isFinite(before) || !Number.isFinite(current) || before <= current || current < 0) {
+    return null
+  }
+
+  const amount = Math.round((before - current) * 100) / 100
+  const rawPercent = (amount / before) * 100
+  const percent = Math.round(rawPercent)
+
+  return {
+    amount,
+    percent: percent > 0 && Math.abs(rawPercent - percent) < 0.05 ? percent : null,
+  }
+}
+
+export type ResolvedListPrice = {
+  current: number
+  price: number
+  discountAmount: number
+}
+
+export function resolveListPrice(input: {
+  current: string
+  before: string
+  discount: string
+  requireCurrent: boolean
+}): { ok: true; value: ResolvedListPrice } | { ok: false; message: string } {
+  const currentRaw = input.current.trim()
+
+  if (currentRaw === '') {
+    if (input.requireCurrent) {
+      return { ok: false, message: 'السعر الحالي مطلوب.' }
+    }
+
+    return resolveListPrice({ ...input, current: '0', requireCurrent: false })
+  }
+
+  const current = Number.parseFloat(currentRaw)
+  if (!Number.isFinite(current) || current < 0) {
+    return { ok: false, message: 'السعر الحالي يجب أن يكون رقماً غير سالب.' }
+  }
+
+  const beforeRaw = input.before.trim()
+  const discountRaw = input.discount.trim()
+  const before = beforeRaw === '' ? null : Number.parseFloat(beforeRaw)
+  const discount = discountRaw === '' ? null : Number.parseFloat(discountRaw)
+
+  if (before !== null && (!Number.isFinite(before) || before < 0)) {
+    return { ok: false, message: 'السعر قبل الخصم يجب أن يكون رقماً غير سالب.' }
+  }
+
+  if (discount !== null && (!Number.isFinite(discount) || discount < 0)) {
+    return { ok: false, message: 'قيمة الخصم يجب أن تكون رقماً غير سالب.' }
+  }
+
+  if (before !== null && before < current) {
+    return { ok: false, message: 'السعر قبل الخصم يجب ألا يقل عن السعر الحالي.' }
+  }
+
+  if (before !== null && discount !== null && discount > 0 && before > current) {
+    const expected = Math.round((before - current) * 100) / 100
+    if (Math.abs(expected - discount) > 0.01) {
+      return { ok: false, message: 'قيمة الخصم لا تطابق الفرق بين السعر قبل الخصم والسعر الحالي.' }
+    }
+  }
+
+  if (before !== null && before > current) {
+    const amount = discount !== null && discount > 0 ? discount : Math.round((before - current) * 100) / 100
+
+    return { ok: true, value: { current, price: before, discountAmount: amount } }
+  }
+
+  if (discount !== null && discount > 0) {
+    return {
+      ok: true,
+      value: { current, price: Math.round((current + discount) * 100) / 100, discountAmount: discount },
+    }
+  }
+
+  return { ok: true, value: { current, price: current, discountAmount: 0 } }
+}
+
 export const PRICING_MODE_LABELS: Record<PricingMode, string> = {
   FIXED: 'سعر ثابت',
   STARTING_FROM: 'يبدأ من',

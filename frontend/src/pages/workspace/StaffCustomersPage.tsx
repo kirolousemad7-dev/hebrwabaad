@@ -5,13 +5,14 @@ import {
   DashboardPanelSkeleton,
   DashboardSection,
 } from '../../components/owner/DashboardSection'
+import { ownerInputClass, ownerPrimaryButtonClass, ownerSecondaryButtonClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { AddCustomerModal } from '../../components/workspace/AddCustomerModal'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { listStaffCustomers, type StaffCustomer } from '../../services/staffCustomers'
 
-const fieldClass =
-  'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+const fieldClass = `mt-1 ${ownerInputClass}`
 
 function accountStatusLabel(customer: StaffCustomer): string {
   if (customer.account_status === 'ACTIVE' || customer.has_account) {
@@ -41,24 +42,22 @@ export function StaffCustomersPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">العملاء</h1>
-          <p className="text-sm text-slate-600">
-            إدارة العملاء للاستخدام في المشاريع — سواء سجّلوا بأنفسهم أو أُضيفوا من لوحة التحكم.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null)
-            setModalOpen(true)
-          }}
-          className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 text-sm text-white"
-        >
-          إضافة عميل
-        </button>
-      </header>
+      <OwnerPageHeader
+        title="العملاء"
+        description="الاسم والتواصل وحالة الحساب وعدد المشاريع المرتبطة."
+        action={
+          <button
+            type="button"
+            onClick={() => {
+              setError(null)
+              setModalOpen(true)
+            }}
+            className={ownerPrimaryButtonClass}
+          >
+            إضافة عميل
+          </button>
+        }
+      />
 
       {message ? <FeedbackBanner kind="success">{message}</FeedbackBanner> : null}
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
@@ -79,7 +78,7 @@ export function StaffCustomersPage() {
             placeholder="الاسم أو البريد"
           />
         </label>
-        <button type="submit" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm">
+        <button type="submit" className={ownerSecondaryButtonClass}>
           بحث
         </button>
       </form>
@@ -96,25 +95,22 @@ export function StaffCustomersPage() {
           />
         ) : null}
         {state.status === 'ready' && customers.length > 0 ? (
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
             {customers.map((customer) => (
-              <li key={customer.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
+              <li key={customer.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 hover:bg-[#f4f6f8]">
                 <div className="min-w-0 space-y-1">
                   <p className="font-medium text-slate-900">{customer.name}</p>
                   <p className="text-sm text-slate-600" dir="ltr">
                     {customer.email}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-                    {accountStatusLabel(customer)}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-                    مشاريع: {customer.projects_count}
-                  </span>
-                  {!customer.is_active ? (
-                    <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">معطّل</span>
-                  ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <StatusBadge
+                    label={accountStatusLabel(customer)}
+                    tone={customer.account_status === 'ACTIVE' || customer.has_account ? 'success' : 'neutral'}
+                  />
+                  <StatusBadge label={`مشاريع: ${customer.projects_count}`} tone="neutral" />
+                  {!customer.is_active ? <StatusBadge label="معطّل" tone="danger" /> : null}
                 </div>
               </li>
             ))}

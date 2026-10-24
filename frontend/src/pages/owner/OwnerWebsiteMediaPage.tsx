@@ -214,7 +214,7 @@ export function OwnerWebsiteMediaPage() {
 
       <DashboardSection title="رفع صورة جديدة" description="صور فقط — بحد أقصى 8 ميجابايت.">
         <form onSubmit={handleUpload} className="grid gap-4 lg:grid-cols-[16rem_1fr]">
-          <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-600">
+          <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-[#f4f6f8] text-sm text-slate-600">
             {uploadPreview ? (
               <img src={uploadPreview} alt="معاينة قبل الرفع" className="h-full w-full rounded-2xl object-cover" />
             ) : (
@@ -443,7 +443,7 @@ export function OwnerWebsiteMediaPage() {
             <p className="mt-2 text-sm text-slate-600">
               سيتم رفع صورة جديدة دون حذف القديمة. استبدال الصورة سيؤثر على الموقع بعد ربط المحتوى في Phase 3.
             </p>
-            <label className="mt-4 flex aspect-[4/3] cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+            <label className="mt-4 flex aspect-[4/3] cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-[#f4f6f8]">
               {replacePreview ? (
                 <img src={replacePreview} alt="معاينة الاستبدال" className="h-full w-full object-cover" />
               ) : (

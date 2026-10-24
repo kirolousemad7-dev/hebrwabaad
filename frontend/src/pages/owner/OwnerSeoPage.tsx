@@ -112,7 +112,7 @@ export function OwnerSeoPage() {
         <div className="space-y-6">
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
             <table className="min-w-full text-start text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+              <thead className="border-b border-slate-200 bg-[#f4f6f8] text-slate-600">
                 <tr>
                   <th className="px-4 py-3 font-medium">الصفحة</th>
                   <th className="px-4 py-3 font-medium">عنوان SEO</th>

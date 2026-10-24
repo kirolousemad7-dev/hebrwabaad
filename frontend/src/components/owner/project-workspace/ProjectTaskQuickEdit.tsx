@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react'
 import type { CalendarAssignee } from '../../../services/calendar'
 import type {
   ProjectMilestone,
   ProjectPhase,
   ProjectWorkspaceTask,
 } from '../../../services/operations'
+import { TASK_STATUS_LABELS } from '../../../utils/workspaceProjects'
 
 const fieldClass =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
@@ -16,6 +18,7 @@ type Props = {
   saving: boolean
   canEdit: boolean
   onClose: () => void
+  children?: ReactNode
   onSave: (payload: {
     title: string
     description: string | null
@@ -43,6 +46,7 @@ export function ProjectTaskQuickEdit({
   onClose,
   onSave,
   onLinkCalendar,
+  children,
 }: Props) {
   const startValue = (task.start_at ?? '').slice(0, 10)
   const deadlineValue = task.deadline ?? (task.due_at ?? '').slice(0, 10)
@@ -52,12 +56,19 @@ export function ProjectTaskQuickEdit({
       <div
         role="dialog"
         aria-modal="true"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-slate-500">مهمة #{task.id}</p>
             <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              {TASK_STATUS_LABELS[task.status] ?? task.status}
+              {' · '}
+              {task.assignee?.name ?? 'بدون مسؤول'}
+              {task.deadline ? ` · ${task.deadline}` : ''}
+              {task.is_overdue ? ' · متأخرة' : ''}
+            </p>
             {!canEdit ? (
               <p className="mt-1 text-xs text-amber-800">عرض فقط — لا صلاحية تعديل.</p>
             ) : null}
@@ -243,6 +254,7 @@ export function ProjectTaskQuickEdit({
             <span className="self-center text-xs text-slate-500">مربوط بالتقويم #{task.calendar_item_id}</span>
           ) : null}
         </div>
+        {children}
       </div>
     </div>
   )

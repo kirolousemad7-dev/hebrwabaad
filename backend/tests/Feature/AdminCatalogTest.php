@@ -376,4 +376,56 @@ class AdminCatalogTest extends TestCase
 
         $this->assertDatabaseMissing('services', ['id' => $created['id']]);
     }
+
+    public function test_owner_can_create_a_package_price_and_clear_its_discount(): void
+    {
+        $currentOnly = $this->withToken($this->tokenFor(UserRole::Owner))
+            ->postJson('/api/admin/packages', [
+                'name' => 'باقة بسعر حالي',
+                'category' => PackageCategory::General->value,
+                'price' => 3200,
+                'pricing_mode' => 'FIXED',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.price', '3200.00')
+            ->assertJsonPath('data.discount_amount', '0.00')
+            ->assertJsonPath('data.final_price', '3200.00')
+            ->json('data');
+
+        $discounted = $this->withToken($this->tokenFor(UserRole::Owner))
+            ->postJson('/api/admin/packages', [
+                'name' => 'باقة بخصم',
+                'category' => PackageCategory::General->value,
+                'price' => 4000,
+                'discount_amount' => 500,
+                'pricing_mode' => 'FIXED',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.final_price', '3500.00')
+            ->assertJsonPath('data.discount_amount', '500.00')
+            ->json('data');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->patchJson('/api/admin/packages/'.$discounted['id'], [
+                'name' => 'باقة بخصم',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.discount_amount', '500.00')
+            ->assertJsonPath('data.final_price', '3500.00');
+
+        $this->withToken($this->tokenFor(UserRole::Owner))
+            ->patchJson('/api/admin/packages/'.$discounted['id'], [
+                'price' => 3500,
+                'discount_amount' => 0,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.price', '3500.00')
+            ->assertJsonPath('data.discount_amount', '0.00')
+            ->assertJsonPath('data.final_price', '3500.00');
+
+        $this->getJson('/api/packages/'.$currentOnly['slug'])
+            ->assertOk()
+            ->assertJsonPath('data.final_price', '3200.00')
+            ->assertJsonPath('data.discount_amount', '0.00');
+    }
 }

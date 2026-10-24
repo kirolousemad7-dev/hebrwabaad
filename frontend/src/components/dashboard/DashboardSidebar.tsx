@@ -119,7 +119,7 @@ export function DashboardSidebar({
         onClick={closeOnNavigate ? onClose : undefined}
         className={[
           'flex items-center rounded-lg text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary',
-          compact ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2',
+          compact ? 'justify-center px-2 py-2' : 'gap-2.5 px-2.5 py-1.5',
           active ? 'bg-brand-primary font-medium text-white' : 'text-white/85 hover:bg-white/10',
         ].join(' ')}
       >
@@ -175,8 +175,8 @@ export function DashboardSidebar({
                     onClick={() => toggleSection(section.id)}
                     aria-expanded={expanded}
                     className={[
-                      'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold tracking-wide uppercase transition',
-                      sectionActive ? 'text-white' : 'text-white/55 hover:bg-white/5 hover:text-white/80',
+                      'flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+                      sectionActive ? 'text-white' : 'text-white/60 hover:bg-white/5 hover:text-white/85',
                     ].join(' ')}
                   >
                     <span>{section.label}</span>

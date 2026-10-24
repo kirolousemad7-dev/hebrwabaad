@@ -1,7 +1,8 @@
-import { useId, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import type { Package } from '../../types/api'
 import {
+  discountPresentation,
   formatDuration,
   packageHasDiscount,
   packagePriceLabel,
@@ -11,38 +12,28 @@ import { resolveMediaUrl } from '../../utils/mediaUrl'
 import { PACKAGE_ORDER_COPY } from '../../utils/orderIntent'
 import { fadeUp, motionOrReduced } from '../../utils/marketingMotion'
 import type { CatalogTone } from './CatalogHero'
-import { PackageDetails } from './PackageDetails'
+import { PackageDetailsModal } from './PackageDetailsModal'
 import { PackageOrderCta } from './PackageOrderCta'
+import { PackageVisual } from './PackageVisual'
 import { MediaLightbox } from '../ui/MediaLightbox'
 import { SarAmount } from '../ui/SarAmount'
 
 type PackageCardProps = {
   pkg: Package
   tone?: CatalogTone
-  /** When provided, parent controls accordion (only one open). */
-  open?: boolean
-  onToggle?: () => void
 }
 
-export function PackageCard({ pkg, open: openProp, onToggle }: PackageCardProps) {
-  const [internalOpen, setInternalOpen] = useState(false)
-  const controlled = typeof openProp === 'boolean'
-  const open = controlled ? openProp : internalOpen
-  const detailsId = useId()
+export function PackageCard({ pkg }: PackageCardProps) {
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const reduceMotion = useReducedMotion()
-  const discounted = packageHasDiscount(pkg)
+  const discounted = packageHasDiscount(pkg) && pkg.pricing_mode !== 'QUOTE'
   const duration = formatDuration(pkg.duration_days)
+  const offer = discounted
+    ? discountPresentation(Number.parseFloat(pkg.price), Number.parseFloat(pkg.final_price))
+    : null
   const imageSrc = resolveMediaUrl(pkg.image_url)
   const featured = Boolean(pkg.is_featured)
   const [imageOpen, setImageOpen] = useState(false)
-
-  function toggle() {
-    if (onToggle) {
-      onToggle()
-      return
-    }
-    setInternalOpen((current) => !current)
-  }
 
   return (
     <motion.article
@@ -53,53 +44,40 @@ export function PackageCard({ pkg, open: openProp, onToggle }: PackageCardProps)
       viewport={{ once: true, amount: 0.12 }}
       className={[
         'group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border bg-white transition duration-300',
-        'hover:-translate-y-2 hover:shadow-[0_28px_60px_-36px_rgba(17,19,24,0.45)]',
-        'focus-within:-translate-y-2 motion-reduce:hover:translate-y-0 motion-reduce:focus-within:translate-y-0',
-        featured ? 'border-brand-ink-900 shadow-card lg:scale-[1.02]' : 'border-brand-ink-100',
+        'hover:shadow-[0_28px_60px_-36px_rgba(17,19,24,0.45)]',
+        featured ? 'border-brand-ink-900 shadow-card' : 'border-brand-ink-100',
       ].join(' ')}
     >
       {featured ? (
         <span className="absolute top-0 inset-inline-start-0 z-10 h-full w-1 bg-brand-cobalt-500" aria-hidden="true" />
       ) : null}
 
-      {imageSrc ? (
-        <button type="button" className="relative aspect-[4/3] overflow-hidden bg-brand-ink-900" onClick={() => setImageOpen(true)}>
-          <img
-            src={imageSrc}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-            width={640}
-            height={480}
-          />
-          {featured ? (
-            <span className="absolute top-4 inset-inline-start-4 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-brand-ink-700">
-              موصى بها
-            </span>
-          ) : null}
-        </button>
-      ) : featured ? (
-        <div className="flex items-center gap-2 border-b border-brand-ink-100 px-6 py-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-brand-cobalt-500" aria-hidden="true" />
-          <span className="text-xs font-medium text-brand-ink-500">موصى بها</span>
-        </div>
-      ) : null}
+      <PackageVisual
+        src={imageSrc}
+        name={pkg.name}
+        featured={featured}
+        onOpen={imageSrc ? () => setImageOpen(true) : undefined}
+      />
 
       <div className="flex flex-1 flex-col gap-4 p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h3 className="text-xl font-semibold text-brand-ink-900 sm:text-2xl">{pkg.name}</h3>
-          {discounted ? (
+          {offer ? (
             <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
-              خصم <SarAmount amount={pkg.discount_amount} className="text-red-700" />
+              {offer.percent !== null ? (
+                `خصم ${offer.percent}%`
+              ) : (
+                <>
+                  خصم <SarAmount amount={offer.amount} className="text-red-700" />
+                </>
+              )}
             </span>
           ) : null}
         </div>
 
-        {pkg.description ? (
-          <p className="line-clamp-3 text-sm leading-7 text-brand-ink-500">{pkg.description}</p>
-        ) : null}
+        <p className="line-clamp-2 min-h-12 text-sm leading-6 text-brand-ink-500">{pkg.description || ' '}</p>
 
-        {pkg.audience ? <p className="text-xs text-brand-ink-300">لمن؟ {pkg.audience}</p> : null}
+        <p className="line-clamp-1 min-h-5 text-xs text-brand-ink-300">{pkg.audience ? `لمن؟ ${pkg.audience}` : '\u00a0'}</p>
 
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-y border-brand-ink-100 py-4">
           <span className="whitespace-nowrap text-3xl font-bold tracking-tight text-brand-ink-900">
@@ -114,20 +92,20 @@ export function PackageCard({ pkg, open: openProp, onToggle }: PackageCardProps)
               <SarAmount amount={pkg.final_price} />
             )}
           </span>
-          {discounted && pkg.pricing_mode === 'FIXED' ? (
-            <SarAmount amount={pkg.price} struck className="text-sm" />
-          ) : null}
+          {offer ? <SarAmount amount={pkg.price} struck className="text-sm" /> : null}
           {duration ? <span className="text-sm text-brand-ink-500">التسليم خلال {duration}</span> : null}
         </div>
 
         {pkg.items.length > 0 ? (
-          <ul className="space-y-2.5 text-sm text-brand-ink-500">
-            {pkg.items.slice(0, 4).map((item) => (
+          <ul className="min-h-[4.5rem] space-y-2.5 text-sm text-brand-ink-500">
+            {pkg.items.slice(0, 3).map((item) => (
               <li key={item.id} className="flex items-start justify-between gap-3">
-                <span className="flex gap-2">
+                <span className="flex min-w-0 gap-2">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-ink-300" aria-hidden="true" />
-                  {item.service?.name ?? 'خدمة'}
-                  {item.quantity > 1 ? ` × ${item.quantity}` : ''}
+                  <span className="line-clamp-1">
+                    {item.service?.name ?? 'خدمة'}
+                    {item.quantity > 1 ? ` × ${item.quantity}` : ''}
+                  </span>
                 </span>
                 {item.service ? (
                   <span className="shrink-0 text-xs text-brand-ink-300">
@@ -136,31 +114,13 @@ export function PackageCard({ pkg, open: openProp, onToggle }: PackageCardProps)
                 ) : null}
               </li>
             ))}
-            {pkg.items.length > 4 ? (
-              <li className="ps-4 text-xs text-brand-ink-300">+{pkg.items.length - 4} خدمات إضافية</li>
+            {pkg.items.length > 3 ? (
+              <li className="ps-4 text-xs text-brand-ink-300">+{pkg.items.length - 3} خدمات إضافية</li>
             ) : null}
           </ul>
         ) : (
           <p className="text-sm text-brand-ink-500">تُحدَّد الخدمات عند الطلب.</p>
         )}
-
-        <AnimatePresence initial={false}>
-          {open ? (
-            <motion.div
-              id={detailsId}
-              key="details"
-              initial={reduceMotion ? false : { opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="border-t border-brand-ink-100 pt-4">
-                <PackageDetails pkg={pkg} />
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
 
         <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row">
           <PackageOrderCta
@@ -177,16 +137,15 @@ export function PackageCard({ pkg, open: openProp, onToggle }: PackageCardProps)
           />
           <button
             type="button"
-            aria-expanded={open}
-            aria-controls={detailsId}
-            onClick={toggle}
+            onClick={() => setDetailsOpen(true)}
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-brand-ink-100 px-4 text-sm text-brand-ink-700 transition hover:border-brand-ink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cobalt-500"
           >
-            {open ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+            عرض التفاصيل
           </button>
         </div>
       </div>
       <MediaLightbox open={imageOpen} imageSrc={imageSrc} title={pkg.name} onClose={() => setImageOpen(false)} />
+      <PackageDetailsModal pkg={detailsOpen ? pkg : null} onClose={() => setDetailsOpen(false)} />
     </motion.article>
   )
 }

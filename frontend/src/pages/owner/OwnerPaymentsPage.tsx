@@ -125,7 +125,7 @@ export function OwnerPaymentsPage() {
       {!loading && list && list.items.length > 0 ? (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-start text-xs text-slate-500">
+            <thead className="bg-[#f4f6f8] text-start text-xs text-slate-500">
               <tr>
                 <th className="px-4 py-3 font-medium">العميل</th>
                 <th className="px-4 py-3 font-medium">الطلب</th>

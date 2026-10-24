@@ -6,7 +6,9 @@ import {
   DashboardPanelSkeleton,
   DashboardSection,
 } from '../../components/owner/DashboardSection'
+import { ownerPrimaryButtonClass, ownerTableHeadClass, ownerTableWrapClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   deleteOwnerCmsPage,
@@ -89,18 +91,15 @@ export function OwnerPagesPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">الصفحات</h1>
-          <p className="text-sm text-slate-600">إدارة صفحات المحتوى العامة والفوتر والسياسات.</p>
-        </div>
-        <Link
-          to="/owner/pages/new"
-          className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-5 text-sm text-white"
-        >
-          صفحة جديدة
-        </Link>
-      </header>
+      <OwnerPageHeader
+        title="الصفحات"
+        description="إدارة صفحات المحتوى العامة والفوتر والسياسات."
+        action={
+          <Link to="/owner/pages/new" className={ownerPrimaryButtonClass}>
+            صفحة جديدة
+          </Link>
+        }
+      />
 
       {message ? <FeedbackBanner kind="success">{message}</FeedbackBanner> : null}
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
@@ -113,9 +112,9 @@ export function OwnerPagesPage() {
           {pages.length === 0 ? (
             <DashboardEmptyState title="لا توجد صفحات" description="أنشئ أول صفحة محتوى للمنصة." />
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <div className={ownerTableWrapClass}>
               <table className="min-w-full text-start text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+                <thead className={ownerTableHeadClass}>
                   <tr>
                     <th className="px-4 py-3 font-medium">اسم</th>
                     <th className="px-4 py-3 font-medium">النوع</th>
@@ -131,17 +130,14 @@ export function OwnerPagesPage() {
                   {pages.map((page) => {
                     const busy = busyId === page.id
                     return (
-                      <tr key={page.id} className="border-t border-slate-100">
+                      <tr key={page.id} className="border-t border-slate-100 hover:bg-[#f4f6f8]">
                         <td className="px-4 py-3 font-medium">{page.title}</td>
                         <td className="px-4 py-3">{page.page_type_label || page.page_type}</td>
                         <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              page.is_published ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {page.is_published ? 'منشورة' : 'مسودة'}
-                          </span>
+                          <StatusBadge
+                            label={page.is_published ? 'منشورة' : 'مسودة'}
+                            tone={page.is_published ? 'success' : 'neutral'}
+                          />
                         </td>
                         <td className="hidden px-4 py-3 md:table-cell">{page.show_in_footer ? 'نعم' : 'لا'}</td>
                         <td className="hidden px-4 py-3 lg:table-cell">{page.footer_group || '—'}</td>

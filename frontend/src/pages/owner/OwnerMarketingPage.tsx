@@ -597,7 +597,7 @@ export function OwnerMarketingPage() {
                     </button>
                   </div>
                   {portfolioForm.media.map((row, index) => (
-                    <div key={row.id ?? `new-${index}`} className="space-y-2 rounded-lg bg-slate-50 p-3">
+                    <div key={row.id ?? `new-${index}`} className="space-y-2 rounded-lg bg-[#f4f6f8] p-3">
                       <div className="grid gap-2 sm:grid-cols-2">
                         <label className="block space-y-1 text-xs">
                           <span>النوع</span>

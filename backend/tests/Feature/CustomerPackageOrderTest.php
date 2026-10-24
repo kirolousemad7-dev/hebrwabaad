@@ -13,11 +13,13 @@ use App\Services\Payments\CardPaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\FakeCardPaymentGateway;
+use Tests\Support\SignsPayTabsCallbacks;
 use Tests\TestCase;
 
 class CustomerPackageOrderTest extends TestCase
 {
     use RefreshDatabase;
+    use SignsPayTabsCallbacks;
 
     private FakeCardPaymentGateway $cards;
 
@@ -182,7 +184,7 @@ class CustomerPackageOrderTest extends TestCase
             ]),
         ]);
 
-        $this->postJson('/api/webhooks/paytabs', [
+        $this->postPayTabsCallback('/api/webhooks/paytabs', [
             'tran_ref' => $stored->provider_transaction_id,
             'cart_id' => $stored->checkout_session_id,
         ])->assertOk();

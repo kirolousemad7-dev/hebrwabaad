@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom'
 import { usePlatformSettings } from '../../context/PlatformSettingsContext'
-import { BRAND_LOGO_MIN_PX, BRAND_LOGO_SRC, BRAND_MARK_MIN_PX, BRAND_MARK_SRC } from '../../utils/brand'
+import {
+  BRAND_LOGO_MIN_PX,
+  BRAND_LOGO_ON_DARK_SRC,
+  BRAND_LOGO_SRC,
+  BRAND_LOGO_TRANSPARENT_SRC,
+  BRAND_MARK_MIN_PX,
+  BRAND_MARK_SRC,
+} from '../../utils/brand'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const sizeClass = {
-  nav: 'h-11 sm:h-12 min-w-[8.75rem]',
+  nav: 'h-14 w-auto sm:h-16',
+  hero: 'h-20 w-auto sm:h-24',
+  footer: 'h-20 w-auto',
   sidebar: 'h-14 min-w-[8.75rem]',
   auth: 'h-24 sm:h-28 min-w-[8.75rem]',
   mark: 'h-16 sm:h-20',
@@ -15,22 +24,34 @@ type BrandLogoProps = {
   size?: keyof typeof sizeClass
   /** Use geometric mark only (collapsed sidebar / tight spaces). */
   markOnly?: boolean
+  /** Light wordmark for the dark footer. Stock logo only; custom uploads stay as provided. */
+  tone?: 'default' | 'on-dark'
   to?: string | null
   className?: string
+}
+
+function isStockWordmark(url: string): boolean {
+  return url === BRAND_LOGO_SRC || url.endsWith('/brand/logo.png')
 }
 
 export function BrandLogo({
   size = 'nav',
   markOnly = false,
+  tone = 'default',
   to = '/',
   className = '',
 }: BrandLogoProps) {
   const { settings } = usePlatformSettings()
-  const fallbackLogo = BRAND_LOGO_SRC
+  const fallbackLogo = tone === 'on-dark' ? BRAND_LOGO_ON_DARK_SRC : BRAND_LOGO_TRANSPARENT_SRC
   const fallbackMark = BRAND_MARK_SRC
-  const configuredLogo = resolveMediaUrl(settings.brand.logo_url) || fallbackLogo
+  const configuredLogo = resolveMediaUrl(settings.brand.logo_url) || BRAND_LOGO_SRC
   const configuredMark = resolveMediaUrl(settings.brand.mark_url) || fallbackMark
-  const src = markOnly || size === 'symbol' ? configuredMark : configuredLogo
+  const wordmark = isStockWordmark(configuredLogo)
+    ? tone === 'on-dark'
+      ? BRAND_LOGO_ON_DARK_SRC
+      : BRAND_LOGO_TRANSPARENT_SRC
+    : configuredLogo
+  const src = markOnly || size === 'symbol' ? configuredMark : wordmark
   const resolvedSize = markOnly && size === 'nav' ? 'symbol' : size
   const isMark = markOnly || size === 'symbol'
   const altName = settings.brand.name_ar || 'حبر وأبعاد'
@@ -45,7 +66,7 @@ export function BrandLogo({
       style={
         isMark
           ? { minWidth: BRAND_MARK_MIN_PX, minHeight: BRAND_MARK_MIN_PX }
-          : size === 'nav' || size === 'sidebar' || size === 'auth'
+          : size === 'sidebar' || size === 'auth'
             ? { minWidth: Math.min(BRAND_LOGO_MIN_PX, 140) }
             : undefined
       }

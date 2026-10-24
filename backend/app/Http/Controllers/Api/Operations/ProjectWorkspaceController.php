@@ -40,8 +40,19 @@ class ProjectWorkspaceController extends Controller
         $this->authorize('viewAny', Project::class);
 
         $page = $this->projects->paginateFor($user, $request->query());
+        $models = $page->getCollection();
+        $models->load('primaryMedia');
 
-        $items = collect($page->items())->map(function (Project $project) {
+        $visible = Project::query();
+        $this->projects->applyVisibleTo($visible, $user);
+        $byStatus = (clone $visible)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn ($count) => (int) $count)
+            ->all();
+
+        $items = $models->map(function (Project $project) {
             $health = $this->projects->health($project);
 
             return [
@@ -52,6 +63,7 @@ class ProjectWorkspaceController extends Controller
                     : $project->status,
                 'deadline' => $project->deadline?->toDateString(),
                 'progress' => $project->progress(),
+                'cover_url' => $project->publicCoverUrl(),
                 'health' => $health,
                 'account_manager' => $project->accountManager ? [
                     'id' => $project->accountManager->id,
@@ -66,6 +78,10 @@ class ProjectWorkspaceController extends Controller
 
         return ApiResponse::success([
             'items' => $items,
+            'summary' => [
+                'total' => array_sum($byStatus),
+                'by_status' => (object) $byStatus,
+            ],
             'meta' => [
                 'current_page' => $page->currentPage(),
                 'last_page' => $page->lastPage(),

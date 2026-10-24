@@ -1,4 +1,5 @@
 import { FileLibrary } from '../../components/files/FileLibrary'
+import { OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { getManagedOrders } from '../../services/orders'
@@ -28,10 +29,7 @@ export function WorkspaceFilesPage() {
 
   return (
     <section className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">{FILE_COPY.title}</h1>
-        <p className="mt-1 text-sm text-slate-600">الملفات المرتبطة بالمشاريع أو المهام المصرّح لك بها فقط.</p>
-      </header>
+      <OwnerPageHeader title={FILE_COPY.title} description="الملفات المرتبطة بالمشاريع أو المهام المصرّح لك بها فقط." />
       <FileLibrary
         scope="workspace"
         projects={state.status === 'ready' ? state.data.projects : []}

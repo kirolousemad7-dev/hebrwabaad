@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PackageCard } from '../components/catalog/PackageCard'
 import { PageHero } from '../components/marketing/PageHero'
@@ -9,7 +8,6 @@ import { PACKAGE_FAQS } from '../utils/catalogRoutes'
 
 export function PackagesPage() {
   const { state, reload } = useAsyncData(getPublicPackages)
-  const [openId, setOpenId] = useState<number | null>(null)
 
   return (
     <section className="space-y-12">
@@ -54,14 +52,10 @@ export function PackagesPage() {
       ) : null}
 
       {state.status === 'ready' && state.data.length > 0 ? (
-        <ul className="grid items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <ul className="mx-auto grid max-w-[1180px] items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {state.data.map((pkg) => (
             <li key={pkg.id} className="min-w-0">
-              <PackageCard
-                pkg={pkg}
-                open={openId === pkg.id}
-                onToggle={() => setOpenId((current) => (current === pkg.id ? null : pkg.id))}
-              />
+              <PackageCard pkg={pkg} />
             </li>
           ))}
         </ul>

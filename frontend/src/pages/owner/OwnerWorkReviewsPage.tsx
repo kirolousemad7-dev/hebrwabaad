@@ -98,7 +98,7 @@ export function OwnerWorkReviewsPage() {
       )}
 
       {preview ? (
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-[#f4f6f8] p-4">
           <h3 className="font-semibold">{preview.title}</h3>
           {preview.cover_url ? <img src={preview.cover_url} alt="" className="h-48 w-full rounded-xl object-cover" /> : null}
           <p className="text-sm leading-7 text-slate-700">{preview.description}</p>

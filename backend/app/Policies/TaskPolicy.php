@@ -51,6 +51,23 @@ class TaskPolicy
         return $task->assigned_to === $user->id;
     }
 
+    /**
+     * Assignees may add notes and link existing project references.
+     * Managers keep the same people who can already edit the task.
+     */
+    public function comment(User $user, Task $task): bool
+    {
+        if (! $user->is_active) {
+            return false;
+        }
+
+        if ($task->assigned_to === $user->id) {
+            return true;
+        }
+
+        return $this->manage($user, $task);
+    }
+
     public function manage(User $user, Task $task): bool
     {
         if (! $this->create($user)) {

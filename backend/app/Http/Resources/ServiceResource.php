@@ -34,6 +34,8 @@ class ServiceResource extends JsonResource
             'category' => $this->category->value,
             'subcategory' => $this->subcategory,
             'base_price' => $this->base_price,
+            'price_before_discount' => $this->price_before_discount,
+            'discount_amount' => $this->discountAmount(),
             'currency' => $this->currency,
             'pricing_mode' => $this->pricingMode()->value,
             'pricing_label' => $this->pricingMode()->label(),

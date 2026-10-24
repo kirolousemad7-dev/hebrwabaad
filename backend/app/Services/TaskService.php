@@ -70,6 +70,10 @@ class TaskService
     {
         $query = Task::query()
             ->with(['assignee', 'creator', 'project'])
+            ->withCount([
+                'notes as comments_count',
+                'files as attachments_count',
+            ])
             ->where('project_id', $projectId);
 
         $role = $user->role;

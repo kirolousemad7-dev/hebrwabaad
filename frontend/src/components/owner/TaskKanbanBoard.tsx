@@ -229,7 +229,7 @@ function KanbanColumn({
   const { setNodeRef, isOver } = useDroppable({ id: `column:${columnKey}` })
 
   return (
-    <section className="flex w-[300px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50/80">
+    <section className="flex w-[300px] shrink-0 flex-col rounded-xl border border-slate-200 bg-[#f4f6f8]/80">
       <header className="flex items-center justify-between px-3 py-2">
         <h3 className="text-sm font-semibold text-slate-800">{label}</h3>
         <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{items.length.toLocaleString('en-US')}</span>

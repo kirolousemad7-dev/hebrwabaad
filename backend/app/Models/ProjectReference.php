@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable([
     'project_id',
@@ -63,5 +64,13 @@ class ProjectReference extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsToMany<Task, $this>
+     */
+    public function tasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'project_reference_task')->withTimestamps();
     }
 }

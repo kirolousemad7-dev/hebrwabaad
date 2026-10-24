@@ -178,6 +178,70 @@ class ServiceManagementPhase9Test extends TestCase
             ->assertJsonMissingPath('data.department_id');
     }
 
+    public function test_owner_can_save_service_price_with_and_without_a_discount(): void
+    {
+        $created = $this->asRole(UserRole::Owner)
+            ->postJson('/api/admin/services', [
+                'name' => 'خدمة بسعر حالي',
+                'category' => ServiceCategory::Content->value,
+                'base_price' => 1800,
+                'pricing_mode' => 'FIXED',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.base_price', '1800.00')
+            ->assertJsonPath('data.price_before_discount', null)
+            ->assertJsonPath('data.discount_amount', '0.00')
+            ->json('data');
+
+        $this->asRole(UserRole::Owner)
+            ->putJson('/api/admin/services/'.$created['id'], [
+                'base_price' => 1800,
+                'price_before_discount' => 2200,
+                'discount_amount' => 400,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.base_price', '1800.00')
+            ->assertJsonPath('data.price_before_discount', '2200.00')
+            ->assertJsonPath('data.discount_amount', '400.00');
+
+        $this->asRole(UserRole::Owner)
+            ->putJson('/api/admin/services/'.$created['id'], [
+                'name' => 'خدمة بسعر حالي',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.price_before_discount', '2200.00')
+            ->assertJsonPath('data.discount_amount', '400.00');
+
+        $this->asRole(UserRole::Owner)
+            ->putJson('/api/admin/services/'.$created['id'], [
+                'price_before_discount' => null,
+                'discount_amount' => 0,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.base_price', '1800.00')
+            ->assertJsonPath('data.price_before_discount', null)
+            ->assertJsonPath('data.discount_amount', '0.00');
+
+        $this->getJson('/api/services/'.$created['slug'])
+            ->assertOk()
+            ->assertJsonPath('data.base_price', '1800.00')
+            ->assertJsonPath('data.discount_amount', '0.00');
+    }
+
+    public function test_service_discount_cannot_make_the_compare_price_lower_than_the_current_price(): void
+    {
+        $this->asRole(UserRole::Owner)
+            ->postJson('/api/admin/services', [
+                'name' => 'خدمة بخصم غير متسق',
+                'category' => ServiceCategory::Content->value,
+                'base_price' => 900,
+                'price_before_discount' => 700,
+                'pricing_mode' => 'FIXED',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['price_before_discount']);
+    }
+
     public function test_employee_cannot_manage_services(): void
     {
         $this->asRole(UserRole::WebDeveloper)

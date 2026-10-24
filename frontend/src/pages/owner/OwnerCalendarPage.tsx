@@ -486,7 +486,7 @@ export function OwnerCalendarPage() {
                   <button
                     type="button"
                     onClick={() => setModal({ kind: 'detail', item })}
-                    className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-start text-sm hover:bg-slate-50 ${
+                    className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-start text-sm hover:bg-[#f4f6f8] ${
                       item.status === 'OVERDUE'
                         ? 'border-red-300/80'
                         : item.status === 'COMPLETED'
@@ -759,7 +759,7 @@ export function OwnerCalendarPage() {
                   <div className="min-w-0 space-y-4">
                     {view === 'month' ? (
                       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-xs font-medium text-slate-600">
+                        <div className="grid grid-cols-7 border-b border-slate-100 bg-[#f4f6f8] text-center text-xs font-medium text-slate-600">
                           {CALENDAR_WEEKDAY_LABELS.map((label) => (
                             <div key={label} className="px-1 py-2">
                               {label}
@@ -792,7 +792,7 @@ export function OwnerCalendarPage() {
                                   if (item) void handleDropReschedule(item, day)
                                 }}
                                 className={`min-w-0 cursor-pointer border-b border-e border-slate-100 p-1.5 text-start align-top ${
-                                  inMonth ? 'bg-white' : 'bg-slate-50/70 text-slate-400'
+                                  inMonth ? 'bg-white' : 'bg-[#f4f6f8]/70 text-slate-400'
                                 } ${isToday ? 'bg-amber-50/80 ring-2 ring-inset ring-amber-400' : ''}`}
                               >
                                 <div className="mb-1 flex items-center justify-between gap-1">
@@ -840,7 +840,7 @@ export function OwnerCalendarPage() {
                             >
                               <button
                                 type="button"
-                                className="mb-2 w-full rounded-xl bg-slate-50 px-2 py-1 text-start text-xs font-semibold print:hidden"
+                                className="mb-2 w-full rounded-xl bg-[#f4f6f8] px-2 py-1 text-start text-xs font-semibold print:hidden"
                                 onClick={() => openCreateForDay(day)}
                               >
                                 {day.toLocaleDateString('ar-SA', { weekday: 'short', day: 'numeric' })}
@@ -888,7 +888,7 @@ export function OwnerCalendarPage() {
                             <button
                               type="button"
                               onClick={() => setModal({ kind: 'detail', item })}
-                              className="w-full rounded-xl border border-slate-100 px-3 py-2 text-start text-sm hover:bg-slate-50"
+                              className="w-full rounded-xl border border-slate-100 px-3 py-2 text-start text-sm hover:bg-[#f4f6f8]"
                             >
                               <p className="font-medium text-slate-900">{item.title}</p>
                               <p className="text-xs text-slate-500">

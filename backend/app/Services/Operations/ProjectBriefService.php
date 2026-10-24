@@ -75,7 +75,7 @@ class ProjectBriefService
     public function listReferences(Project $project, bool $clientVisibleOnly = false): array
     {
         $query = ProjectReference::query()
-            ->with(['file:id,original_name,disk,path', 'creator:id,name'])
+            ->with(['file:id,original_name,disk,path', 'creator:id,name', 'tasks:id'])
             ->where('project_id', $project->id)
             ->orderByDesc('id');
 
@@ -185,6 +185,9 @@ class ProjectBriefService
                 : null,
             'created_at' => $reference->created_at?->toIso8601String(),
             'updated_at' => $reference->updated_at?->toIso8601String(),
+            'linked_task_ids' => $reference->relationLoaded('tasks')
+                ? $reference->tasks->pluck('id')->map(fn ($id) => (int) $id)->values()->all()
+                : [],
         ];
     }
 

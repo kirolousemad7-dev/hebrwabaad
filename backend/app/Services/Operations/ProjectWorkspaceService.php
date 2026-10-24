@@ -162,6 +162,7 @@ class ProjectWorkspaceService
                     'id' => $project->accountManager->id,
                     'name' => $project->accountManager->name,
                 ] : null,
+                'cover_url' => $project->publicCoverUrl(),
             ],
             'brief' => $metadata['brief'],
             'client_profile' => $metadata['client_profile'],
@@ -448,12 +449,22 @@ class ProjectWorkspaceService
 
         if ($project->account_manager_id) {
             $userIds[] = (int) $project->account_manager_id;
-            $userIds = array_values(array_unique($userIds));
         }
+
+        $assigneeIds = Task::query()
+            ->where('project_id', $project->id)
+            ->whereNotNull('assigned_to')
+            ->distinct()
+            ->pluck('assigned_to')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $userIds = array_values(array_unique([...$userIds, ...$assigneeIds]));
 
         if ($userIds === []) {
             return [];
         }
+
+        $names = User::query()->whereIn('id', $userIds)->pluck('name', 'id');
 
         $tasks = Task::query()
             ->where('project_id', $project->id)
@@ -463,13 +474,14 @@ class ProjectWorkspaceService
         $today = now()->toDateString();
         $byAssignee = $tasks->groupBy('assigned_to');
 
-        return collect($userIds)->map(function (int $userId) use ($byAssignee, $members, $project, $today): array {
+        return collect($userIds)->map(function (int $userId) use ($byAssignee, $members, $names, $project, $today): array {
             $member = collect($members)->firstWhere('user_id', $userId);
             $name = $member['user']['name']
                 ?? ($project->account_manager_id === $userId ? $project->accountManager?->name : null)
+                ?? $names->get($userId)
                 ?? ('#'.$userId);
             $role = $member['role']
-                ?? ($project->account_manager_id === $userId ? 'account_manager' : 'member');
+                ?? ($project->account_manager_id === $userId ? 'account_manager' : 'assignee');
 
             $assigned = $byAssignee->get($userId) ?? collect();
             $completed = $assigned->filter(function (Task $task): bool {

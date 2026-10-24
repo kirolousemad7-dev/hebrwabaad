@@ -133,7 +133,7 @@ export function OwnerCatalogControlPage() {
         </p>
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-[#f4f6f8] text-slate-600">
               <tr>
                 <th className="px-3 py-2 text-start font-medium">النوع</th>
                 <th className="px-3 py-2 text-start font-medium">المعرّف</th>

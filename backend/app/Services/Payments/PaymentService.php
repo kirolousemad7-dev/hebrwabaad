@@ -167,8 +167,7 @@ class PaymentService
 
             if ($method === PaymentMethod::Card) {
                 if (! $this->cards->isConfigured()) {
-                    Log::warning('paytabs.not_configured', ['printing_quotation_id' => $locked->id]);
-                    throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+                    $this->rejectUnconfiguredCardCheckout(['printing_quotation_id' => $locked->id]);
                 }
 
                 $this->assertMethodEnabled($method);
@@ -240,8 +239,7 @@ class PaymentService
     public function createPublicPrintingCheckout(PrintingQuotation $quotation): array
     {
         if (! $this->cards->isConfigured()) {
-            Log::warning('paytabs.not_configured', ['printing_quotation_id' => $quotation->id]);
-            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            $this->rejectUnconfiguredCardCheckout(['printing_quotation_id' => $quotation->id]);
         }
 
         return DB::transaction(function () use ($quotation) {
@@ -358,8 +356,7 @@ class PaymentService
     public function createPublicCommercialCheckout(CommercialQuotation $quotation): array
     {
         if (! $this->cards->isConfigured()) {
-            Log::warning('paytabs.not_configured', ['commercial_quotation_id' => $quotation->id]);
-            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            $this->rejectUnconfiguredCardCheckout(['commercial_quotation_id' => $quotation->id]);
         }
 
         return DB::transaction(function () use ($quotation) {
@@ -795,7 +792,7 @@ class PaymentService
         }
 
         if (! $this->cards->isConfigured()) {
-            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            $this->rejectUnconfiguredCardCheckout(['payment_id' => $payment->id]);
         }
 
         $verifiedPayload = $this->paytabs->queryTransaction($tranRef);
@@ -1032,11 +1029,10 @@ class PaymentService
         $this->assertMethodEnabled(PaymentMethod::Card);
 
         if (! $this->cards->isConfigured()) {
-            Log::warning('paytabs.not_configured', ['payment_id' => $payment->id]);
-            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            $this->rejectUnconfiguredCardCheckout(['payment_id' => $payment->id]);
         }
 
-        $returnUrl = $this->paytabs->returnUrl();
+        $returnUrl = $this->paytabs->returnUrlForPayment($payment);
         $session = $this->cards->createCheckoutSession($payment, $returnUrl, $returnUrl);
 
         if (in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Cancelled], true)) {
@@ -1319,5 +1315,20 @@ class PaymentService
         $perPage = (int) ($filters['per_page'] ?? 15);
 
         return max(1, min($perPage, 50));
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function rejectUnconfiguredCardCheckout(array $context = []): never
+    {
+        $missing = $this->paytabs->missingHostedCredentials();
+        Log::warning('paytabs.not_configured', array_merge($context, ['missing' => $missing]));
+
+        if ($missing !== []) {
+            throw new HttpException(503, PayTabsClient::HOSTED_PAGE_REQUIRED);
+        }
+
+        throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
     }
 }

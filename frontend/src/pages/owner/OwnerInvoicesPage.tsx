@@ -104,7 +104,7 @@ export function OwnerInvoicesPage() {
       {!loading && items.length > 0 ? (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-[#f4f6f8] text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-right font-medium">الرقم</th>
                 <th className="px-4 py-3 text-right font-medium">العميل</th>

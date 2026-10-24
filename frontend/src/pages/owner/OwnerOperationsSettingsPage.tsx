@@ -456,6 +456,15 @@ export function OwnerOperationsSettingsPage() {
           >
             {settings?.paytabs_config ? (
               <div className="space-y-3 text-sm">
+                {settings.paytabs_config.hosted_page_message ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                    صفحة الدفع المستضافة تحتاج PAYTABS_PROFILE_ID و PAYTABS_SERVER_KEY. لا تُستخدم
+                    Merchant ID أو Public Key أو Secret Key مكانها.
+                    <span className="mt-1 block font-medium" dir="ltr">
+                      {settings.paytabs_config.hosted_page_message}
+                    </span>
+                  </p>
+                ) : null}
                 <dl className="grid gap-2 sm:grid-cols-2">
                   <div>
                     <dt className="text-xs text-slate-500">Configured</dt>
@@ -487,6 +496,23 @@ export function OwnerOperationsSettingsPage() {
                     <dt className="text-xs text-slate-500">Server key</dt>
                     <dd className="font-medium">
                       {settings.paytabs_config.has_server_key ? 'مضبوط' : 'غير مضبوط'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-500">Region / currency</dt>
+                    <dd className="font-medium" dir="ltr">
+                      {settings.paytabs_config.region ?? 'SAU'} / {settings.paytabs_config.currency ?? 'SAR'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-500">Merchant / public / secret</dt>
+                    <dd className="font-medium">
+                      {(settings.paytabs_config.has_merchant_id ? 'merchant موجود' : 'merchant غير موجود')}
+                      {' · '}
+                      {(settings.paytabs_config.has_public_key ? 'public موجود' : 'public غير موجود')}
+                      {' · '}
+                      {(settings.paytabs_config.has_secret_key ? 'secret موجود' : 'secret غير موجود')}
+                      {' — غير مستخدمة للدفع المستضاف'}
                     </dd>
                   </div>
                   <div>

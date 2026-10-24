@@ -5,6 +5,7 @@ import { EmployeeForm } from '../../components/employees/EmployeeForm'
 import { emptyEmployeeForm, formFromEmployee, type EmployeeFormState } from '../../components/employees/employeeFormState'
 import { EmployeeTable } from '../../components/employees/EmployeeTable'
 import { DashboardEmptyState, DashboardErrorState, DashboardPanelSkeleton } from '../../components/owner/DashboardSection'
+import { ownerPrimaryButtonClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import {
   createEmployee,
@@ -149,19 +150,15 @@ export function OwnerEmployeesPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">إدارة الموظفين</h1>
-          <p className="text-sm text-slate-600">إنشاء حسابات الفريق وتعيين الأدوار دون المساس بحساب المالك.</p>
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="min-h-11 rounded-lg bg-slate-900 px-4 text-sm text-white"
-        >
-          إضافة موظف
-        </button>
-      </header>
+      <OwnerPageHeader
+        title="الفريق"
+        description="إنشاء حسابات الفريق وتعيين الأدوار."
+        action={
+          <button type="button" onClick={openCreate} className={ownerPrimaryButtonClass}>
+            إضافة موظف
+          </button>
+        }
+      />
 
       <EmployeeFilters filters={filters} onChange={setFilters} />
 

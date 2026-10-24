@@ -77,7 +77,7 @@ export function OwnerWebsitePage() {
           </span>
           <Link
             to="/owner/website/media"
-            className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-800 hover:bg-slate-50"
+            className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-800 hover:bg-[#f4f6f8]"
           >
             مكتبة الصور
           </Link>
@@ -153,7 +153,7 @@ export function OwnerWebsitePage() {
                   </div>
 
                   {domain ? (
-                    <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    <div className="border-t border-slate-100 bg-[#f4f6f8] px-4 py-3 text-sm text-slate-600">
                       <p>{domain.description}</p>
                       <Link to={domain.href} className="mt-2 inline-flex text-sm font-medium text-slate-900 underline">
                         {domain.cta}
@@ -172,7 +172,7 @@ export function OwnerWebsitePage() {
                       type="button"
                       disabled={busy}
                       onClick={() => void toggleEnabled(section)}
-                      className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-4 text-sm text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+                      className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-4 text-sm text-slate-800 hover:bg-[#f4f6f8] disabled:opacity-60"
                     >
                       {section.is_enabled ? 'تعطيل' : 'تفعيل'}
                     </button>

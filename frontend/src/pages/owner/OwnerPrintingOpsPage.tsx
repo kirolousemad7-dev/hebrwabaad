@@ -45,7 +45,7 @@ function statusLabel(status: string): string {
 function categoryTone(category: string): string {
   if (category === 'overdue') return 'border-red-300 bg-red-50/70'
   if (category === 'today') return 'border-amber-300 bg-amber-50/60'
-  if (category === 'approaching') return 'border-slate-300 bg-slate-50'
+  if (category === 'approaching') return 'border-slate-300 bg-[#f4f6f8]'
   return 'border-slate-200 bg-white'
 }
 
@@ -340,7 +340,7 @@ export function OwnerPrintingOpsPage() {
       {!loading && tab === 'board' ? (
         <div className="grid gap-3 overflow-x-auto md:grid-cols-2 xl:grid-cols-5">
           {boardColumns.map((column) => (
-            <div key={column.key} className="min-w-[220px] rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+            <div key={column.key} className="min-w-[220px] rounded-2xl border border-slate-200 bg-[#f4f6f8]/60 p-3">
               <h3 className="mb-2 text-sm font-semibold text-slate-800">
                 {column.label}{' '}
                 <span className="text-xs font-normal text-slate-500">
@@ -401,7 +401,7 @@ export function OwnerPrintingOpsPage() {
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
             <table className="min-w-full text-sm">
-              <thead className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500">
+              <thead className="border-b border-slate-100 bg-[#f4f6f8] text-xs text-slate-500">
                 <tr>
                   <th className="px-3 py-2 text-start font-medium">المنتج</th>
                   <th className="px-3 py-2 text-start font-medium">الحالة</th>

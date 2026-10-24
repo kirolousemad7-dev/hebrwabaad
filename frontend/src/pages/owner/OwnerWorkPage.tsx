@@ -6,7 +6,9 @@ import {
   DashboardPanelSkeleton,
   DashboardSection,
 } from '../../components/owner/DashboardSection'
+import { ownerSecondaryButtonClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { getCalendarAssignees, type CalendarAssignee } from '../../services/calendar'
 import {
   completeWork,
@@ -79,17 +81,26 @@ function priorityLabel(priority: string): string {
   if (priority === 'HIGH') return 'مرتفع'
   if (priority === 'MEDIUM') return 'متوسط'
   if (priority === 'LOW') return 'منخفض'
-  return priority
+  return 'غير محددة'
 }
 
 function statusLabel(status: string): string {
-  if (status === 'open') return 'مفتوح'
+  if (status === 'open') return 'مفتوحة'
   if (status === 'in_progress') return 'قيد التنفيذ'
-  if (status === 'review') return 'مراجعة'
-  if (status === 'completed') return 'مكتمل'
-  if (status === 'cancelled') return 'ملغى'
-  if (status === 'overdue') return 'متأخر'
-  return status
+  if (status === 'review') return 'تحت المراجعة'
+  if (status === 'completed') return 'مكتملة'
+  if (status === 'cancelled') return 'ملغاة'
+  if (status === 'overdue') return 'متأخرة'
+  return 'حالة غير معروفة'
+}
+
+function statusTone(status: string): 'neutral' | 'progress' | 'review' | 'success' | 'danger' | 'warning' {
+  if (status === 'in_progress') return 'progress'
+  if (status === 'review') return 'review'
+  if (status === 'completed') return 'success'
+  if (status === 'cancelled') return 'danger'
+  if (status === 'overdue') return 'warning'
+  return 'neutral'
 }
 
 type OwnerWorkPageProps = {
@@ -373,7 +384,7 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
   function renderWorkRow(item: UnifiedWorkItem) {
     const href = item.href || (item.project_id ? `${basePath === '/owner' ? '/owner/projects' : '/workspace/projects'}/${item.project_id}` : null)
     return (
-      <li key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+      <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -384,18 +395,19 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
               ) : (
                 <h2 className="font-semibold text-slate-900">{item.title}</h2>
               )}
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+              <StatusBadge label={statusLabel(item.status)} status={item.status} tone={statusTone(item.status)} />
+              <span className="rounded-full bg-[#f4f6f8] px-2 py-0.5 text-[11px] text-slate-600">
+                {priorityLabel(item.priority)}
+              </span>
+              <span className="rounded-full bg-[#f4f6f8] px-2 py-0.5 text-[11px] text-slate-600">
                 {sourceBadgeLabel(item.source_badge)}
               </span>
-              {item.is_overdue ? (
-                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] text-red-800">
-                  متأخر
-                </span>
-              ) : null}
+              {item.is_overdue ? <StatusBadge label="متأخر" tone="danger" /> : null}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {statusLabel(item.status)} · {priorityLabel(item.priority)}
-              {item.due_at ? ` · استحقاق ${item.due_at}` : ''}
+            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+              {item.assignee_name ? <span>{item.assignee_name}</span> : null}
+              {item.project_title ? <span>{item.project_title}</span> : null}
+              {item.due_at ? <span>استحقاق {item.due_at}</span> : null}
             </p>
             {item.blocked_label ? <p className="mt-1 text-xs text-amber-800">{item.blocked_label}</p> : null}
           </div>
@@ -449,30 +461,30 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
 
   return (
     <section className="min-w-0 space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">العمل</h1>
-          <p className="mt-1 text-sm text-slate-600">عرض موحّد لمهام المشاريع والتقويم.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() =>
-            void exportOperationsCsv('work', {
-              department_id: filters.department_id || undefined,
-              project_id: filters.project_id || undefined,
-              priority: filters.priority || undefined,
-              source: filters.source || undefined,
-              status: filters.status || undefined,
-            }).then(
-              () => setNotice('تم تنزيل تصدير العمل.'),
-              (caught) => setError(describeApiError(caught, 'تعذر التصدير.')),
-            )
-          }
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        >
-          تصدير CSV
-        </button>
-      </header>
+      <OwnerPageHeader
+        title="المهام"
+        description="عرض موحّد لمهام المشاريع والتقويم."
+        action={
+          <button
+            type="button"
+            onClick={() =>
+              void exportOperationsCsv('work', {
+                department_id: filters.department_id || undefined,
+                project_id: filters.project_id || undefined,
+                priority: filters.priority || undefined,
+                source: filters.source || undefined,
+                status: filters.status || undefined,
+              }).then(
+                () => setNotice('تم تنزيل تصدير العمل.'),
+                (caught) => setError(describeApiError(caught, 'تعذر التصدير.')),
+              )
+            }
+            className={ownerSecondaryButtonClass}
+          >
+            تصدير CSV
+          </button>
+        }
+      />
 
       {notice ? <FeedbackBanner kind="success">{notice}</FeedbackBanner> : null}
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
@@ -484,7 +496,7 @@ export function OwnerWorkPage({ basePath }: OwnerWorkPageProps) {
             type="button"
             onClick={() => setBucket(tab.key)}
             className={`rounded-full px-3 py-1.5 text-sm ${
-              bucket === tab.key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white'
+              bucket === tab.key ? 'bg-brand-cobalt-500 text-white' : 'border border-slate-200 bg-white'
             }`}
           >
             {tab.label}

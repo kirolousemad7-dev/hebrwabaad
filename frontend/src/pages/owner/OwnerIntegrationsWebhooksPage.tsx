@@ -274,7 +274,7 @@ export function OwnerIntegrationsWebhooksPage() {
                       className={`rounded-full px-2 py-0.5 text-[11px] ${
                         item.is_active
                           ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
-                          : 'border border-slate-200 bg-slate-50 text-slate-600'
+                          : 'border border-slate-200 bg-[#f4f6f8] text-slate-600'
                       }`}
                     >
                       {item.is_active ? 'نشط' : 'متوقف'}

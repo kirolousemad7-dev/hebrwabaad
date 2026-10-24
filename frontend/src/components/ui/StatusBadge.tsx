@@ -22,7 +22,7 @@ export function StatusBadge({ status, label, tone }: StatusBadgeProps) {
   const resolved = tone ?? toneForStatus(status)
 
   return (
-    <span className={`inline-flex max-w-full items-center rounded-full px-3 py-1 text-xs font-medium ${TONE_CLASS[resolved]}`}>
+    <span className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${TONE_CLASS[resolved]}`}>
       <span className="truncate">{label}</span>
     </span>
   )

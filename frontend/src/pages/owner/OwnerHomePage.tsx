@@ -10,6 +10,7 @@ import {
 } from '../../components/owner/DashboardSection'
 import { DashboardStatCard } from '../../components/owner/DashboardStatCard'
 import { OwnerCommandCenter } from '../../components/owner/OwnerCommandCenter'
+import { OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { useAuth } from '../../context/AuthContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { getOwnerDashboard } from '../../services/ownerDashboard'
@@ -41,12 +42,10 @@ export function OwnerHomePage() {
 
   return (
     <section className="space-y-5">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">لوحة التحكم</h1>
-        <p className="text-slate-600">مرحباً {user?.name}. نظرة على النشاط الفعلي في المنصة.</p>
-      </header>
-
-      <OwnerCommandCenter />
+      <OwnerPageHeader
+        title="لوحة التحكم"
+        description={`مرحباً ${user?.name ?? ''}. ملخص التشغيل من البيانات المسجّلة في المنصة.`}
+      />
 
       {state.status === 'loading' ? <DashboardOverviewSkeleton /> : null}
 
@@ -142,17 +141,13 @@ export function OwnerHomePage() {
               }
             />
           </div>
+        </>
+      ) : null}
 
-          <DashboardSection
-            title="أداء النشاط الحالي"
-            description="ملخص مبني على طلبات الطباعة المسجّلة. لا يُعرض إيراد أو طلبات غير موجودة في النظام."
-          >
-            <DashboardBusinessOverview
-              requestActivity={state.data.request_activity}
-              pricingBreakdown={state.data.pricing_breakdown}
-            />
-          </DashboardSection>
+      <OwnerCommandCenter />
 
+      {state.status === 'ready' ? (
+        <>
           <div className="grid items-start gap-4 xl:grid-cols-5">
             <div className="xl:col-span-3">
               <DashboardSection title="النشاط الأخير">
@@ -175,6 +170,16 @@ export function OwnerHomePage() {
               </DashboardSection>
             </div>
           </div>
+
+          <DashboardSection
+            title="أداء النشاط الحالي"
+            description="ملخص مبني على طلبات الطباعة المسجّلة. لا يُعرض إيراد أو طلبات غير موجودة في النظام."
+          >
+            <DashboardBusinessOverview
+              requestActivity={state.data.request_activity}
+              pricingBreakdown={state.data.pricing_breakdown}
+            />
+          </DashboardSection>
         </>
       ) : null}
 

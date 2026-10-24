@@ -1,5 +1,11 @@
-/** Official full wordmark (Arabic + English + mark). */
+/** Official full wordmark (Arabic + English + mark). Opaque file kept for social/OG. */
 export const BRAND_LOGO_SRC = '/brand/logo.png'
+
+/** Same wordmark with the paper background removed, for UI on light surfaces. */
+export const BRAND_LOGO_TRANSPARENT_SRC = '/brand/logo-transparent.png'
+
+/** Transparent wordmark recolored for the dark footer. Blue stays; ink becomes white. */
+export const BRAND_LOGO_ON_DARK_SRC = '/brand/logo-on-dark.png'
 
 /** Geometric mark only — favicon, collapsed sidebar, watermark. */
 export const BRAND_MARK_SRC = '/brand/mark.png'

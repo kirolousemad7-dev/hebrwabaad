@@ -20,6 +20,7 @@ import {
 import { formatMoney } from '../../utils/catalog'
 import { isCrmManager } from '../../utils/crmNav'
 import { describeApiError } from '../../utils/errors'
+import { OwnerPageHeader } from '../../components/owner/ownerChrome'
 
 type PeriodKey = 'today' | 'week' | 'month' | 'quarter' | 'year'
 
@@ -62,7 +63,7 @@ function rangeForPeriod(period: PeriodKey): { from: string; to: string } {
 
 function KpiCard({ title, value, hint }: { title: string; value: string; hint?: string }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-xl border border-slate-200 bg-white p-4">
       <p className="text-sm text-slate-600">{title}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
@@ -127,28 +128,28 @@ export function CrmDashboardPage() {
 
   return (
     <section className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">لوحة المبيعات</h1>
-          <p className="text-slate-600">
-            {view === 'manager' ? 'نظرة المدير: الفريق، غير المعيّنين، والمتأخرين.' : 'نظرتك الشخصية: مهامك ومتابعاتك.'}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PERIODS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setPeriod(item.key)}
-              className={`min-h-10 rounded-xl px-3 text-sm ${
-                period === item.key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </header>
+      <OwnerPageHeader
+        title="لوحة المبيعات"
+        description={
+          view === 'manager' ? 'نظرة المدير: الفريق، غير المعيّنين، والمتأخرين.' : 'نظرتك الشخصية: مهامك ومتابعاتك.'
+        }
+        action={
+          <div className="flex flex-wrap gap-2">
+            {PERIODS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setPeriod(item.key)}
+                className={`min-h-10 rounded-lg px-3 text-sm ${
+                  period === item.key ? 'bg-brand-cobalt-500 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-[#f4f6f8]'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {loading ? <DashboardOverviewSkeleton /> : null}
       {error ? <DashboardErrorState message={error} onRetry={() => void load()} /> : null}
@@ -192,7 +193,7 @@ export function CrmDashboardPage() {
               ) : (
                 <div className="overflow-x-auto rounded-2xl border bg-white">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-slate-50 text-right">
+                    <thead className="bg-[#f4f6f8] text-right">
                       <tr>
                         <th className="px-3 py-2">المندوب</th>
                         <th className="px-3 py-2">مفتوح</th>
@@ -358,7 +359,7 @@ export function CrmDashboardPage() {
                 <li key={item.to}>
                   <Link
                     to={item.to}
-                    className="flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium shadow-sm hover:bg-slate-50"
+                    className="flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium shadow-sm hover:bg-[#f4f6f8]"
                   >
                     {item.label}
                   </Link>

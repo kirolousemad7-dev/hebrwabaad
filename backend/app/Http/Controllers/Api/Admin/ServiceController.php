@@ -147,6 +147,8 @@ class ServiceController extends Controller
             $validated['base_price'] = 0;
         }
 
+        $validated = $this->foldDiscount($validated, $service);
+
         if (array_key_exists('short_description', $validated)) {
             $validated['summary'] = $validated['short_description'];
             unset($validated['short_description']);
@@ -166,6 +168,49 @@ class ServiceController extends Controller
             $validated['name'] ?? $service?->name ?? '',
             $service?->id
         );
+
+        return $validated;
+    }
+
+    /**
+     * Store the compare price only. discount_amount is accepted from the form
+     * and folded in so an omitted update does not clear an existing discount.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function foldDiscount(array $validated, ?Service $service): array
+    {
+        $touchesDiscount = array_key_exists('price_before_discount', $validated)
+            || array_key_exists('discount_amount', $validated);
+
+        if (! $touchesDiscount) {
+            unset($validated['discount_amount']);
+
+            return $validated;
+        }
+
+        $current = array_key_exists('base_price', $validated)
+            ? (float) ($validated['base_price'] ?? 0)
+            : (float) ($service?->base_price ?? 0);
+        $sentBefore = array_key_exists('price_before_discount', $validated);
+        $sentDiscount = array_key_exists('discount_amount', $validated);
+        $beforeValue = ! $sentBefore || $validated['price_before_discount'] === null || $validated['price_before_discount'] === ''
+            ? null
+            : round((float) $validated['price_before_discount'], 2);
+        $discountValue = ! $sentDiscount || $validated['discount_amount'] === null || $validated['discount_amount'] === ''
+            ? null
+            : round((float) $validated['discount_amount'], 2);
+
+        if ($beforeValue !== null && $beforeValue > $current) {
+            $validated['price_before_discount'] = $beforeValue;
+        } elseif ($discountValue !== null && $discountValue > 0) {
+            $validated['price_before_discount'] = round($current + $discountValue, 2);
+        } else {
+            $validated['price_before_discount'] = null;
+        }
+
+        unset($validated['discount_amount']);
 
         return $validated;
     }

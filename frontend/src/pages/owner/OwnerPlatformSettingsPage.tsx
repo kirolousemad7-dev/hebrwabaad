@@ -241,7 +241,7 @@ export function OwnerPlatformSettingsPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               to="/owner/printing-catalog"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-[#f4f6f8]"
             >
               كتالوج الطباعة
             </Link>
@@ -324,7 +324,7 @@ export function OwnerPlatformSettingsPage() {
                 </label>
               ))}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-xl border border-slate-200 bg-[#f4f6f8] p-4">
               <p className="mb-3 text-sm font-medium text-slate-700">معاينة سريعة</p>
               <BrandLogo size="sidebar" to={null} />
               <p className="mt-3 text-lg font-semibold">{brandPreview?.name}</p>

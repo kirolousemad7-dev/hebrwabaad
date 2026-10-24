@@ -1,6 +1,9 @@
 import { FormEvent, useMemo, useState } from 'react'
+import { CatalogPriceFields } from '../../components/catalog/CatalogPriceFields'
 import { MediaUploader } from '../../components/files/MediaUploader'
+import { ownerInputClass, ownerPrimaryButtonClass, ownerSecondaryButtonClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 import { CameraImageInput } from '../../components/ui/CameraImageInput'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   createService,
@@ -12,7 +15,7 @@ import {
 } from '../../services/catalog'
 import { getDepartmentOptions } from '../../services/operations'
 import { PRICING_MODES, SERVICE_CATEGORIES, type PricingMode, type Service } from '../../types/api'
-import { PRICING_MODE_LABELS, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../../utils/catalog'
+import { PRICING_MODE_LABELS, resolveListPrice, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../../utils/catalog'
 import { describeApiError } from '../../utils/errors'
 
 type FormTab = 'commercial' | 'marketing' | 'seo' | 'operations'
@@ -26,6 +29,8 @@ type FormState = {
   category: ServiceInput['category']
   subcategory: string
   base_price: string
+  price_before_discount: string
+  discount_amount: string
   pricing_mode: PricingMode
   duration_days: string
   revision_rounds: string
@@ -66,6 +71,8 @@ const emptyForm: FormState = {
   category: 'STRATEGY',
   subcategory: '',
   base_price: '0',
+  price_before_discount: '',
+  discount_amount: '',
   pricing_mode: 'QUOTE',
   duration_days: '',
   revision_rounds: '',
@@ -107,6 +114,12 @@ function toFormState(service: Service): FormState {
     category: service.category,
     subcategory: service.subcategory ?? '',
     base_price: service.base_price,
+    price_before_discount:
+      service.price_before_discount && Number.parseFloat(service.price_before_discount) > Number.parseFloat(service.base_price)
+        ? service.price_before_discount
+        : '',
+    discount_amount:
+      service.discount_amount && Number.parseFloat(service.discount_amount) > 0 ? service.discount_amount : '',
     pricing_mode: service.pricing_mode,
     duration_days: service.duration_days === null ? '' : String(service.duration_days),
     revision_rounds: service.revision_rounds == null ? '' : String(service.revision_rounds),
@@ -180,15 +193,20 @@ export function OwnerServicesPage() {
       return
     }
 
-    const basePrice = Number.parseFloat(form.base_price)
-
     if (form.name.trim() === '') {
       setError('اسم الخدمة مطلوب.')
       return
     }
 
-    if (Number.isNaN(basePrice) || basePrice < 0) {
-      setError('السعر يجب أن يكون رقماً غير سالب.')
+    const prices = resolveListPrice({
+      current: form.base_price,
+      before: form.price_before_discount,
+      discount: form.discount_amount,
+      requireCurrent: form.pricing_mode !== 'QUOTE',
+    })
+
+    if (!prices.ok) {
+      setError(prices.message)
       return
     }
 
@@ -244,7 +262,9 @@ export function OwnerServicesPage() {
       description: form.description.trim() === '' ? null : form.description.trim(),
       category: form.category,
       subcategory: form.subcategory.trim() === '' ? null : form.subcategory.trim(),
-      base_price: basePrice,
+      base_price: prices.value.current,
+      price_before_discount: prices.value.discountAmount > 0 ? prices.value.price : null,
+      discount_amount: prices.value.discountAmount,
       pricing_mode: form.pricing_mode,
       duration_days: form.duration_days.trim() === '' ? null : Number.parseInt(form.duration_days, 10),
       revision_rounds: form.revision_rounds.trim() === '' ? null : Number.parseInt(form.revision_rounds, 10),
@@ -324,21 +344,15 @@ export function OwnerServicesPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">إدارة الخدمات</h1>
-          <p className="text-sm text-slate-600">
-            التسعير والنطاق التجاري منفصلان عن إعدادات التشغيل (القسم، قالب المهمة، الاعتماد).
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
-        >
-          خدمة جديدة
-        </button>
-      </header>
+      <OwnerPageHeader
+        title="الخدمات"
+        description="التسعير والنطاق التجاري منفصلان عن إعدادات التشغيل."
+        action={
+          <button type="button" onClick={openCreate} className={ownerPrimaryButtonClass}>
+            خدمة جديدة
+          </button>
+        }
+      />
 
       {notice ? (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
@@ -351,7 +365,7 @@ export function OwnerServicesPage() {
       ) : null}
 
       {form !== null ? (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+        <form onSubmit={handleSubmit} className="max-w-4xl space-y-4 rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">{form.id === null ? 'خدمة جديدة' : 'تعديل الخدمة'}</h2>
             <div className="flex flex-wrap gap-2 text-sm">
@@ -367,7 +381,7 @@ export function OwnerServicesPage() {
                   key={key}
                   type="button"
                   onClick={() => setTab(key)}
-                  className={`rounded-full px-3 py-1 ${tab === key ? 'bg-slate-900 text-white' : 'border border-slate-200'}`}
+                  className={`rounded-full px-3 py-1 text-sm ${tab === key ? 'bg-brand-cobalt-500 text-white' : 'border border-slate-200 bg-white'}`}
                 >
                   {label}
                 </button>
@@ -384,7 +398,7 @@ export function OwnerServicesPage() {
                     required
                     value={form.name}
                     onChange={(event) => patch({ name: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   />
                 </label>
 
@@ -393,7 +407,7 @@ export function OwnerServicesPage() {
                   <input
                     value={form.slug}
                     onChange={(event) => patch({ slug: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                     dir="ltr"
                   />
                 </label>
@@ -403,7 +417,7 @@ export function OwnerServicesPage() {
                   <select
                     value={form.category}
                     onChange={(event) => patch({ category: event.target.value as FormState['category'] })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   >
                     {SERVICE_CATEGORIES.map((category) => (
                       <option key={category} value={category}>
@@ -418,29 +432,30 @@ export function OwnerServicesPage() {
                   <input
                     value={form.subcategory}
                     onChange={(event) => patch({ subcategory: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   />
                 </label>
 
-                <label className="block space-y-1 text-sm">
-                  <span>السعر الأساسي (ريال)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    required
-                    value={form.base_price}
-                    onChange={(event) => patch({ base_price: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
-                  />
-                </label>
+                <CatalogPriceFields
+                  current={form.base_price}
+                  before={form.price_before_discount}
+                  discount={form.discount_amount}
+                  requireCurrent={form.pricing_mode !== 'QUOTE'}
+                  onChange={(next) =>
+                    patch({
+                      ...(next.current !== undefined ? { base_price: next.current } : {}),
+                      ...(next.before !== undefined ? { price_before_discount: next.before } : {}),
+                      ...(next.discount !== undefined ? { discount_amount: next.discount } : {}),
+                    })
+                  }
+                />
 
                 <label className="block space-y-1 text-sm">
                   <span>حالة السعر</span>
                   <select
                     value={form.pricing_mode}
                     onChange={(event) => patch({ pricing_mode: event.target.value as PricingMode })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   >
                     {PRICING_MODES.map((mode) => (
                       <option key={mode} value={mode}>
@@ -457,7 +472,7 @@ export function OwnerServicesPage() {
                     min={0}
                     value={form.duration_days}
                     onChange={(event) => patch({ duration_days: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   />
                 </label>
 
@@ -468,7 +483,7 @@ export function OwnerServicesPage() {
                     min={0}
                     value={form.revision_rounds}
                     onChange={(event) => patch({ revision_rounds: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                     placeholder="اتركه فارغاً إن لم يُحدَّد"
                   />
                 </label>
@@ -480,7 +495,7 @@ export function OwnerServicesPage() {
                     min={0}
                     value={form.sort_order}
                     onChange={(event) => patch({ sort_order: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   />
                 </label>
 
@@ -489,7 +504,7 @@ export function OwnerServicesPage() {
                   <input
                     value={form.summary}
                     onChange={(event) => patch({ summary: event.target.value })}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2"
+                    className={ownerInputClass}
                   />
                 </label>
               </div>
@@ -500,7 +515,7 @@ export function OwnerServicesPage() {
                   rows={3}
                   value={form.description}
                   onChange={(event) => patch({ description: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                 />
               </label>
 
@@ -540,7 +555,7 @@ export function OwnerServicesPage() {
                 <input
                   value={form.hero_image}
                   onChange={(event) => patch({ hero_image: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                   dir="ltr"
                 />
               </label>
@@ -552,11 +567,11 @@ export function OwnerServicesPage() {
               ) : null}
               <label className="block space-y-1 text-sm">
                 <span>لون الزر</span>
-                <input dir="ltr" value={form.button_color} placeholder="#315CFF" onChange={(event) => patch({ button_color: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <input dir="ltr" value={form.button_color} placeholder="#315CFF" onChange={(event) => patch({ button_color: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>أيقونة الخدمة</span>
-                <select value={form.icon_key} onChange={(event) => patch({ icon_key: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2">
+                <select value={form.icon_key} onChange={(event) => patch({ icon_key: event.target.value })} className={ownerInputClass}>
                   <option value="">افتراضي</option>
                   <option value="warranty">الضمان الذهبي</option>
                   <option value="speed">سرعة التنفيذ</option>
@@ -568,27 +583,27 @@ export function OwnerServicesPage() {
               </label>
               <label className="block space-y-1 text-sm">
                 <span>المعرض (رابط في كل سطر)</span>
-                <textarea rows={3} value={form.gallery} onChange={(event) => patch({ gallery: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+                <textarea rows={3} value={form.gallery} onChange={(event) => patch({ gallery: event.target.value })} className={ownerInputClass} dir="ltr" />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>المميزات (سطر لكل بند)</span>
-                <textarea rows={4} value={form.features} onChange={(event) => patch({ features: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <textarea rows={4} value={form.features} onChange={(event) => patch({ features: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>خطوات العمل (عنوان|وصف لكل سطر)</span>
-                <textarea rows={4} value={form.process_steps} onChange={(event) => patch({ process_steps: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" placeholder={'اكتشاف|جلسات فهم\nتنفيذ|تسليم'} />
+                <textarea rows={4} value={form.process_steps} onChange={(event) => patch({ process_steps: event.target.value })} className={ownerInputClass} placeholder={'اكتشاف|جلسات فهم\nتنفيذ|تسليم'} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>الأسئلة الشائعة (سؤال|جواب لكل سطر)</span>
-                <textarea rows={4} value={form.faq} onChange={(event) => patch({ faq: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <textarea rows={4} value={form.faq} onChange={(event) => patch({ faq: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>الوسوم (مفصولة بفواصل)</span>
-                <input value={form.tags} onChange={(event) => patch({ tags: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <input value={form.tags} onChange={(event) => patch({ tags: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>معرّفات الموردين المرتبطين (مفصولة بفواصل)</span>
-                <input value={form.supplier_ids} onChange={(event) => patch({ supplier_ids: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+                <input value={form.supplier_ids} onChange={(event) => patch({ supplier_ids: event.target.value })} className={ownerInputClass} dir="ltr" />
               </label>
               {form.id ? (
                 <>
@@ -608,31 +623,31 @@ export function OwnerServicesPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-1 text-sm sm:col-span-2">
                 <span>عنوان SEO</span>
-                <input value={form.seo_title} onChange={(event) => patch({ seo_title: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <input value={form.seo_title} onChange={(event) => patch({ seo_title: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm sm:col-span-2">
                 <span>وصف SEO</span>
-                <textarea rows={3} value={form.seo_description} onChange={(event) => patch({ seo_description: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <textarea rows={3} value={form.seo_description} onChange={(event) => patch({ seo_description: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>OG Title</span>
-                <input value={form.og_title} onChange={(event) => patch({ og_title: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <input value={form.og_title} onChange={(event) => patch({ og_title: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>OG Image</span>
-                <input value={form.og_image} onChange={(event) => patch({ og_image: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+                <input value={form.og_image} onChange={(event) => patch({ og_image: event.target.value })} className={ownerInputClass} dir="ltr" />
               </label>
               <label className="block space-y-1 text-sm sm:col-span-2">
                 <span>OG Description</span>
-                <textarea rows={2} value={form.og_description} onChange={(event) => patch({ og_description: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" />
+                <textarea rows={2} value={form.og_description} onChange={(event) => patch({ og_description: event.target.value })} className={ownerInputClass} />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>Canonical</span>
-                <input value={form.canonical_url} onChange={(event) => patch({ canonical_url: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+                <input value={form.canonical_url} onChange={(event) => patch({ canonical_url: event.target.value })} className={ownerInputClass} dir="ltr" />
               </label>
               <label className="block space-y-1 text-sm">
                 <span>Robots</span>
-                <input value={form.robots} onChange={(event) => patch({ robots: event.target.value })} className="w-full rounded-md border border-slate-300 px-3 py-2" dir="ltr" />
+                <input value={form.robots} onChange={(event) => patch({ robots: event.target.value })} className={ownerInputClass} dir="ltr" />
               </label>
             </div>
           ) : null}
@@ -644,7 +659,7 @@ export function OwnerServicesPage() {
                 <select
                   value={form.department_id}
                   onChange={(event) => patch({ department_id: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                 >
                   <option value="">— بدون تعيين —</option>
                   {departmentOptions.map((department) => (
@@ -660,7 +675,7 @@ export function OwnerServicesPage() {
                 <input
                   value={form.task_title_template}
                   onChange={(event) => patch({ task_title_template: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                   placeholder="مثال: إعداد :name أو تنفيذ :quantity × :name"
                 />
                 <span className="text-xs text-slate-500">المتغيرات: :name :service :quantity</span>
@@ -671,7 +686,7 @@ export function OwnerServicesPage() {
                 <select
                   value={form.default_task_priority}
                   onChange={(event) => patch({ default_task_priority: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                 >
                   <option value="">MEDIUM</option>
                   <option value="LOW">LOW</option>
@@ -706,7 +721,7 @@ export function OwnerServicesPage() {
                   rows={4}
                   value={form.checklist_template}
                   onChange={(event) => patch({ checklist_template: event.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2"
+                  className={ownerInputClass}
                   placeholder={'مراجعة الموجز\nتسليم المسودة'}
                 />
               </label>
@@ -717,14 +732,14 @@ export function OwnerServicesPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+              className={ownerPrimaryButtonClass}
             >
               {saving ? 'جاري الحفظ...' : 'حفظ'}
             </button>
             <button
               type="button"
               onClick={() => setForm(null)}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm"
+              className={ownerSecondaryButtonClass}
             >
               إلغاء
             </button>
@@ -732,7 +747,11 @@ export function OwnerServicesPage() {
         </form>
       ) : null}
 
-      {state.status === 'loading' ? <p className="text-sm text-slate-500">جاري التحميل...</p> : null}
+      {state.status === 'loading' ? (
+        <div className="h-24 animate-pulse rounded-xl bg-[#f4f6f8]" aria-busy="true">
+          <p className="sr-only">جاري تحميل الخدمات...</p>
+        </div>
+      ) : null}
 
       {state.status === 'error' ? (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -741,7 +760,7 @@ export function OwnerServicesPage() {
       ) : null}
 
       {state.status === 'ready' && state.data.length === 0 ? (
-        <p className="rounded-md border border-slate-200 bg-white px-3 py-6 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-600">
           لا توجد خدمات بعد.
         </p>
       ) : null}
@@ -751,7 +770,7 @@ export function OwnerServicesPage() {
           {state.data.map((service) => (
             <li
               key={service.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -759,15 +778,10 @@ export function OwnerServicesPage() {
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                     {SERVICE_CATEGORY_LABELS[service.category]}
                   </span>
-                  <span
-                    className={
-                      service.is_active
-                        ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800'
-                        : 'rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600'
-                    }
-                  >
-                    {service.is_active ? 'منشورة' : 'معطّلة'}
-                  </span>
+                  <StatusBadge
+                    label={service.is_active ? 'منشورة' : 'معطّلة'}
+                    tone={service.is_active ? 'success' : 'neutral'}
+                  />
                 </div>
                 <p className="text-sm text-slate-600">
                   {servicePriceLabel(service)}

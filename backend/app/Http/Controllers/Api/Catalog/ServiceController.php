@@ -76,6 +76,8 @@ class ServiceController extends Controller
             'summary' => $item->summary,
             'category' => $item->category->value,
             'base_price' => $item->base_price,
+            'price_before_discount' => $item->price_before_discount,
+            'discount_amount' => $item->discountAmount(),
             'currency' => $item->currency,
             'pricing_mode' => $item->pricingMode()->value,
             'pricing_label' => $item->pricingMode()->label(),

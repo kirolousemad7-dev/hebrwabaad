@@ -530,7 +530,7 @@ export function OwnerAutomationsPage() {
             <p className="mt-2 text-sm text-slate-600">
               سيتم تفعيل «{activateConfirm.name}».
             </p>
-            <ul className="mt-3 space-y-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <ul className="mt-3 space-y-1 rounded-xl border border-slate-100 bg-[#f4f6f8] px-3 py-2 text-sm text-slate-700">
               <li>المشغّل: {triggerLabel(String(activateConfirm.trigger))}</li>
               <li>
                 الشروط:{' '}

@@ -33,7 +33,7 @@ export function ProjectExecutionSummaryPanel({ summary }: Props) {
   return (
     <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {cells.map((cell) => (
-        <div key={cell.label} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+        <div key={cell.label} className="rounded-xl border border-slate-100 bg-[#f4f6f8] px-3 py-2">
           <dt className="text-xs text-slate-500">{cell.label}</dt>
           <dd className="mt-0.5 text-sm font-medium text-slate-900">{cell.value}</dd>
         </div>

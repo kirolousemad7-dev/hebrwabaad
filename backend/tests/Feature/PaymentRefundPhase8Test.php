@@ -302,10 +302,15 @@ class PaymentRefundPhase8Test extends TestCase
         $encoded = json_encode($status, JSON_UNESCAPED_UNICODE);
 
         $this->assertTrue($status['has_server_key']);
+        $this->assertTrue($status['has_profile_id']);
         $this->assertTrue($status['configured']);
+        $this->assertSame('hosted_payment_page', $status['integration']);
         $this->assertSame('4601', $status['profile_id_hint']);
+        $this->assertNull($status['hosted_page_message']);
         $this->assertStringNotContainsString(self::SERVER_KEY, (string) $encoded);
         $this->assertArrayNotHasKey('server_key', $status);
+        $this->assertArrayNotHasKey('secret_key', $status);
+        $this->assertArrayNotHasKey('public_key', $status);
 
         $capabilities = $this->asUser(User::factory()->owner()->create())
             ->getJson('/api/operations/payment-capabilities')

@@ -15,6 +15,14 @@ class PayTabsConfigurationValidator
      *     base_host: string|null,
      *     profile_id_hint: string|null,
      *     has_server_key: bool,
+     *     has_profile_id: bool,
+     *     has_merchant_id: bool,
+     *     has_public_key: bool,
+     *     has_secret_key: bool,
+     *     integration: string,
+     *     region: string,
+     *     currency: string,
+     *     hosted_page_message: string|null,
      *     callback_url_ok: bool,
      *     return_url_ok: bool,
      *     issues: list<string>
@@ -27,6 +35,11 @@ class PayTabsConfigurationValidator
         $serverKey = (string) config('payments.paytabs.server_key', '');
         $baseUrl = rtrim((string) config('payments.paytabs.base_url', ''), '/');
         $environment = strtolower((string) config('payments.paytabs.environment', 'test'));
+        $hasProfileId = $profileId !== '' && (int) $profileId > 0;
+        $hasServerKey = $serverKey !== '';
+        $hasMerchantId = $this->isPresent(config('payments.paytabs.merchant_id'));
+        $hasPublicKey = $this->isPresent(config('payments.paytabs.public_key'));
+        $hasSecretKey = $this->isPresent(config('payments.paytabs.secret_key'));
 
         $issues = [];
 
@@ -34,12 +47,20 @@ class PayTabsConfigurationValidator
             $issues[] = 'PayTabs is disabled via PAYTABS_ENABLED.';
         }
 
-        if ($profileId === '' || (int) $profileId <= 0) {
+        if (! $hasProfileId || ! $hasServerKey) {
+            $issues[] = PayTabsClient::HOSTED_PAGE_REQUIRED;
+        }
+
+        if (! $hasProfileId) {
             $issues[] = 'PAYTABS_PROFILE_ID is missing or invalid.';
         }
 
-        if ($serverKey === '') {
+        if (! $hasServerKey) {
             $issues[] = 'PAYTABS_SERVER_KEY is not set.';
+        }
+
+        if (($hasMerchantId || $hasPublicKey || $hasSecretKey) && (! $hasProfileId || ! $hasServerKey)) {
+            $issues[] = 'PAYTABS_MERCHANT_ID, PAYTABS_PUBLIC_KEY, and PAYTABS_SECRET_KEY are not used for Hosted Payment Page.';
         }
 
         $baseHost = null;
@@ -62,8 +83,8 @@ class PayTabsConfigurationValidator
             $issues[] = 'PAYTABS_ENVIRONMENT should be test or live.';
         }
 
-        $callbackUrl = rtrim((string) config('app.url'), '/').'/api/webhooks/paytabs';
-        $returnUrl = rtrim((string) config('app.url'), '/').'/api/payments/paytabs/return';
+        $callbackUrl = app(PayTabsClient::class)->callbackUrl();
+        $returnUrl = app(PayTabsClient::class)->returnUrl();
         $callbackOk = $this->urlLooksPublic($callbackUrl);
         $returnOk = $this->urlLooksPublic($returnUrl);
 
@@ -74,9 +95,8 @@ class PayTabsConfigurationValidator
             $issues[] = 'Return URL may be unreachable (check APP_URL).';
         }
 
-        $hasServerKey = $serverKey !== '';
         $configured = $enabled
-            && (int) $profileId > 0
+            && $hasProfileId
             && $hasServerKey
             && $baseUrl !== ''
             && is_string($baseHost);
@@ -84,14 +104,27 @@ class PayTabsConfigurationValidator
         return [
             'configured' => $configured,
             'enabled' => $enabled,
+            'integration' => 'hosted_payment_page',
             'environment' => $environment,
+            'region' => strtoupper((string) config('payments.paytabs.region', 'SAU')),
+            'currency' => strtoupper((string) config('payments.paytabs.currency', 'SAR')),
             'base_host' => $baseHost,
             'profile_id_hint' => $this->profileIdHint($profileId),
+            'has_profile_id' => $hasProfileId,
             'has_server_key' => $hasServerKey,
+            'has_merchant_id' => $hasMerchantId,
+            'has_public_key' => $hasPublicKey,
+            'has_secret_key' => $hasSecretKey,
+            'hosted_page_message' => ($hasProfileId && $hasServerKey) ? null : PayTabsClient::HOSTED_PAGE_REQUIRED,
             'callback_url_ok' => $callbackOk,
             'return_url_ok' => $returnOk,
             'issues' => $issues,
         ];
+    }
+
+    private function isPresent(mixed $value): bool
+    {
+        return is_string($value) && trim($value) !== '';
     }
 
     private function profileIdHint(string $profileId): ?string

@@ -12,7 +12,7 @@ function kindTone(kind: string) {
   if (kind === 'overdue') return 'border-red-200 bg-red-50 text-red-900'
   if (kind === 'due_soon') return 'border-amber-200 bg-amber-50 text-amber-950'
   if (kind === 'waiting') return 'border-sky-200 bg-sky-50 text-sky-950'
-  return 'border-slate-200 bg-slate-50 text-slate-800'
+  return 'border-slate-200 bg-[#f4f6f8] text-slate-800'
 }
 
 export function ProjectAttentionPanel({ attention, onSelectItem }: Props) {
@@ -56,7 +56,7 @@ export function ProjectAttentionPanel({ attention, onSelectItem }: Props) {
                   <button
                     type="button"
                     onClick={() => onSelectItem?.(item)}
-                    className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-start text-sm hover:bg-slate-50"
+                    className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-start text-sm hover:bg-[#f4f6f8]"
                   >
                     <span className="font-medium text-slate-900">{item.title}</span>
                     <span className="text-xs text-slate-500">

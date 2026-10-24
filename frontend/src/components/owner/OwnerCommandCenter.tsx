@@ -144,7 +144,7 @@ export function OwnerCommandCenter() {
   }
 
   if (loading) {
-    return <div className="h-48 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" aria-busy="true" />
+    return <div className="h-48 animate-pulse rounded-2xl border border-slate-200 bg-[#f4f6f8]" aria-busy="true" />
   }
 
   if (error && !data) {

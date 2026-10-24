@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'commercial_quotation_id',
     'calendar_item_id',
     'is_client_visible',
+    'category',
 ])]
 class ManagedFile extends Model
 {

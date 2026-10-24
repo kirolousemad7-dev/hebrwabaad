@@ -15,7 +15,7 @@ export function EmployeeTable({ employees, busyId, onView, onEdit, onToggleActiv
     <>
       <ul className="space-y-3 lg:hidden">
         {employees.map((employee) => (
-          <li key={employee.id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <li key={employee.id} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium">{employee.name}</p>
@@ -49,9 +49,9 @@ export function EmployeeTable({ employees, busyId, onView, onEdit, onToggleActiv
         ))}
       </ul>
 
-      <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white lg:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-start text-slate-600">
+          <thead className="border-b border-slate-200 bg-[#f4f6f8] text-start text-xs text-slate-500">
             <tr>
               <th className="px-4 py-3 font-medium">الموظف</th>
               <th className="px-4 py-3 font-medium">الدور</th>
@@ -63,7 +63,7 @@ export function EmployeeTable({ employees, busyId, onView, onEdit, onToggleActiv
           </thead>
           <tbody>
             {employees.map((employee) => (
-              <tr key={employee.id} className="border-t border-slate-100">
+              <tr key={employee.id} className="border-t border-slate-100 hover:bg-[#f4f6f8]">
                 <td className="px-4 py-3">
                   <p className="font-medium">{employee.name}</p>
                   <p className="text-xs text-slate-500" dir="ltr">

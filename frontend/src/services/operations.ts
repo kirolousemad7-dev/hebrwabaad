@@ -38,12 +38,24 @@ export type ProjectHealth = {
   days_to_deadline?: number | null
 }
 
+export type ProjectProgressCounts = {
+  total: number
+  todo: number
+  in_progress: number
+  review: number
+  revision: number
+  completed: number
+  overdue: number
+  percent: number
+}
+
 export type OperationsProjectListItem = {
   id: number
   title: string
   status: string
   deadline: string | null
-  progress: number
+  progress: ProjectProgressCounts
+  cover_url?: string | null
   health: ProjectHealth
   account_manager: { id: number; name: string } | null
   customer: { id: number; name: string } | null
@@ -145,6 +157,7 @@ export type ProjectReference = {
   creator?: { id: number; name: string } | null
   created_at?: string | null
   updated_at?: string | null
+  linked_task_ids?: number[]
 }
 
 export type ProjectTeamStat = {
@@ -167,6 +180,7 @@ export type ProjectWorkspace = {
     started_at: string | null
     customer: { id: number; name: string; email?: string | null } | null
     account_manager: { id: number; name: string } | null
+    cover_url?: string | null
   }
   brief: Record<string, unknown>
   client_profile: Record<string, unknown>
@@ -733,10 +747,18 @@ export type BusinessCalendarPayload = {
 export type PayTabsConfigStatus = {
   configured?: boolean
   enabled?: boolean
+  integration?: string | null
   environment?: string | null
+  region?: string | null
+  currency?: string | null
   base_host?: string | null
   profile_id_hint?: string | null
+  has_profile_id?: boolean
   has_server_key?: boolean
+  has_merchant_id?: boolean
+  has_public_key?: boolean
+  has_secret_key?: boolean
+  hosted_page_message?: string | null
   callback_url_ok?: boolean
   return_url_ok?: boolean
   issues?: string[]
@@ -1064,11 +1086,13 @@ export function assignEmployeeToDepartment(userId: number, departmentId: number 
   })
 }
 
-export function getOperationsProjects(page = 1) {
+export function getOperationsProjects(page: number | { page?: number; status?: string; q?: string } = 1) {
+  const params = typeof page === 'number' ? { page } : { page: page.page ?? 1, status: page.status, q: page.q }
   return apiGet<{
     items: OperationsProjectListItem[]
+    summary?: { total: number; by_status: Record<string, number> }
     meta: { current_page: number; last_page: number; per_page: number; total: number }
-  }>(`/api/operations/projects${queryString({ page })}`)
+  }>(`/api/operations/projects${queryString(params)}`)
 }
 
 export function getProjectWorkspace(projectId: number | string) {
@@ -1115,9 +1139,14 @@ export type ProjectWorkspaceTask = {
   calendar_item_id?: number | null
   is_client_visible?: boolean
   is_overdue?: boolean
+  comments_count?: number
+  attachments_count?: number
   assigned_to: number
   assignee?: { id: number; name: string; role?: string | null } | null
+  created_by?: number | null
+  creator?: { id: number; name: string } | null
   created_at?: string | null
+  updated_at?: string | null
 }
 
 export type ProjectWorkspaceTaskPayload = {
@@ -1194,6 +1223,34 @@ export function updateProjectReference(
   return apiPut<ProjectReference>(
     `/api/operations/projects/${projectId}/references/${referenceId}`,
     payload,
+  )
+}
+
+export type WorkspaceNote = {
+  id: number
+  project_id: number
+  task_id: number | null
+  body: string
+  author: { id: number; name: string } | null
+  created_at: string | null
+}
+
+export function getWorkspaceNotes(projectId: number | string, taskId?: number | null) {
+  const query = taskId ? `?task_id=${taskId}` : ''
+  return apiGet<{ items: WorkspaceNote[] }>(`/api/operations/projects/${projectId}/notes${query}`)
+}
+
+export function createWorkspaceNote(
+  projectId: number | string,
+  payload: { body: string; task_id?: number | null },
+) {
+  return apiPost<WorkspaceNote>(`/api/operations/projects/${projectId}/notes`, payload)
+}
+
+export function syncTaskReferences(projectId: number | string, taskId: number, referenceIds: number[]) {
+  return apiPut<{ task_id: number; reference_ids: number[] }>(
+    `/api/operations/projects/${projectId}/tasks/${taskId}/references`,
+    { reference_ids: referenceIds },
   )
 }
 

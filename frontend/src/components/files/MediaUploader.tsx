@@ -264,7 +264,7 @@ export function MediaUploader({
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           className={`rounded-xl border-2 border-dashed px-4 py-8 text-center transition ${
-            dragOver ? 'border-[#315CFF] bg-blue-50' : 'border-slate-300 bg-slate-50'
+            dragOver ? 'border-[#315CFF] bg-blue-50' : 'border-slate-300 bg-[#f4f6f8]'
           }`}
         >
           <p className="text-sm text-slate-700">اسحب الملفات هنا أو اختر من جهازك</p>
@@ -295,7 +295,7 @@ export function MediaUploader({
       {queue.length > 0 ? (
         <ul className="space-y-2">
           {queue.map((row) => (
-            <li key={row.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+            <li key={row.key} className="rounded-xl border border-slate-200 bg-[#f4f6f8] p-3 text-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-slate-900">{row.file.name}</p>

@@ -145,7 +145,7 @@ export function OwnerInvoiceDetailPage() {
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50">
+          <thead className="bg-[#f4f6f8]">
             <tr>
               <th className="px-4 py-3 text-right">الوصف</th>
               <th className="px-4 py-3 text-right">الكمية</th>

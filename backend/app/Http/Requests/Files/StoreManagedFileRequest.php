@@ -24,6 +24,7 @@ class StoreManagedFileRequest extends ApiFormRequest
             'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
             'calendar_item_id' => ['nullable', 'integer', 'exists:calendar_items,id'],
             'is_client_visible' => ['sometimes', 'boolean'],
+            'category' => ['nullable', 'string', 'in:CLIENT,REFERENCE,WORK,REVIEW,FINAL'],
         ];
     }
 

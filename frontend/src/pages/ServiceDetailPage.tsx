@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { CatalogPriceLine } from '../components/catalog/CatalogPriceLine'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PublicCta } from '../components/public/PublicCta'
 import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicService } from '../services/catalog'
 import type { Service } from '../types/api'
-import { formatDuration, formatMoney, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../utils/catalog'
+import { formatMoney, SERVICE_CATEGORY_LABELS } from '../utils/catalog'
 import { APP_NAME } from '../utils/constants'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 import { buildRequestQuotePath } from '../utils/quoteRequests'
@@ -125,11 +126,15 @@ export function ServiceDetailPage() {
           </div>
           <h1 className="text-3xl font-semibold text-[#111318]">{service.name}</h1>
           {service.summary ? <p className="max-w-3xl text-base leading-8 text-slate-600">{service.summary}</p> : null}
-          <div className="flex flex-wrap items-baseline gap-4">
-            <span className="text-2xl font-semibold">{servicePriceLabel(service)}</span>
-            {service.duration_days != null ? (
-              <span className="text-sm text-slate-500">{formatDuration(service.duration_days)}</span>
-            ) : null}
+          <div className="text-2xl">
+            <CatalogPriceLine
+              pricingMode={service.pricing_mode}
+              current={service.base_price}
+              before={service.price_before_discount}
+              currency={service.currency}
+              durationDays={service.duration_days}
+              chargeable={service.is_chargeable}
+            />
           </div>
           <div className="flex flex-wrap gap-3">
             <PublicCta to={ctaTo}>{service.is_chargeable ? 'اطلب الخدمة' : 'اطلب تسعير'}</PublicCta>
@@ -268,7 +273,16 @@ export function ServiceDetailPage() {
                   {item.name}
                 </Link>
                 {item.summary ? <p className="mt-1 text-sm text-slate-600">{item.summary}</p> : null}
-                <p className="mt-2 text-sm font-semibold">{servicePriceLabel(item)}</p>
+                <div className="mt-2 text-sm">
+                  <CatalogPriceLine
+                    pricingMode={item.pricing_mode}
+                    current={item.base_price}
+                    before={item.price_before_discount}
+                    currency={item.currency}
+                    durationDays={item.duration_days}
+                    chargeable={item.is_chargeable}
+                  />
+                </div>
               </li>
             ))}
           </ul>

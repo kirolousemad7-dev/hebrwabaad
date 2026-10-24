@@ -206,7 +206,8 @@ export function isSafeCheckoutRedirect(url: string | null | undefined): boolean 
 
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' && parsed.hostname.includes('paytabs.com')
+    const host = parsed.hostname.toLowerCase()
+    return parsed.protocol === 'https:' && (host === 'paytabs.com' || host.endsWith('.paytabs.com') || host === 'paytabs.sa' || host.endsWith('.paytabs.sa'))
   } catch {
     return false
   }

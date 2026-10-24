@@ -9,6 +9,8 @@ use Illuminate\Validation\Rule;
 
 class UpdateServiceRequest extends ApiFormRequest
 {
+    use ValidatesServiceDiscount;
+
     /**
      * @return array<string, mixed>
      */
@@ -43,6 +45,8 @@ class UpdateServiceRequest extends ApiFormRequest
             'category' => ['sometimes', 'required', Rule::in(ServiceCategory::values())],
             'subcategory' => ['sometimes', 'nullable', 'string', 'max:120'],
             'base_price' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'price_before_discount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'discount_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
             'pricing_mode' => ['sometimes', Rule::in(CatalogPricingMode::values())],
             'duration_days' => ['sometimes', 'nullable', 'integer', 'min:0'],

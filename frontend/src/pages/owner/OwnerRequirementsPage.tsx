@@ -133,7 +133,7 @@ function OwnerRequirementsListPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <tr key={item.id} className="border-b border-slate-100 hover:bg-[#f4f6f8]">
                     <td className="px-3 py-3">
                       <Link to={`/owner/requirements/${item.id}`} className="font-medium text-[#315CFF] underline">
                         {item.reference}

@@ -18,11 +18,13 @@ use App\Services\Payments\PayTabsCheckoutGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\SignsPayTabsCallbacks;
 use Tests\TestCase;
 
 class PrintingPayTabsPhase7Test extends TestCase
 {
     use RefreshDatabase;
+    use SignsPayTabsCallbacks;
 
     private const SERVER_KEY = 'hebr-test-paytabs-server-key';
 
@@ -52,6 +54,8 @@ class PrintingPayTabsPhase7Test extends TestCase
             'payments.paytabs.server_key' => self::SERVER_KEY,
             'payments.paytabs.base_url' => 'https://secure-egypt.paytabs.com',
             'payments.paytabs.environment' => 'test',
+            'payments.paytabs.callback_url' => null,
+            'payments.paytabs.return_url' => null,
             'payments.paytabs.timeout' => 15,
             'app.url' => 'http://127.0.0.1:8000',
             'app.frontend_url' => 'http://localhost:5173',
@@ -235,11 +239,11 @@ class PrintingPayTabsPhase7Test extends TestCase
         $this->fakeQuery($setup, 'A', '800.00', 'SAR', 154601);
         $payload = $this->callbackPayload($setup, 'A', '800.00');
 
-        $this->postJson('/api/webhooks/paytabs', $payload)
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $payload)
             ->assertOk()
             ->assertJsonPath('data.received', true);
 
-        $this->postJson('/api/webhooks/paytabs', $payload)->assertOk();
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $payload)->assertOk();
 
         $payment = Payment::query()->findOrFail($setup['id']);
         $this->assertSame(PaymentStatus::Paid, $payment->status);
@@ -258,7 +262,7 @@ class PrintingPayTabsPhase7Test extends TestCase
             'tran_ref' => $setup['tran_ref'],
             'cart_id' => $setup['cart_id'],
             'payment_result' => ['response_status' => 'A'],
-        ])->assertRedirect('http://localhost:5173/payment/result?payment_id='.$setup['id'].'&ref=printing');
+        ])->assertRedirect('http://localhost:5173/payment/return?payment='.$setup['id'].'&cart_id='.rawurlencode($setup['cart_id']));
 
         $this->assertSame(PaymentStatus::Processing, Payment::query()->find($setup['id'])?->status);
         $this->assertNull(Payment::query()->find($setup['id'])?->paid_at);
@@ -269,7 +273,7 @@ class PrintingPayTabsPhase7Test extends TestCase
         $setup = $this->startPublicCheckout('1000.00');
         $this->fakeQuery($setup, 'A', '1.00', 'SAR', 154601);
 
-        $this->postJson('/api/webhooks/paytabs', $this->callbackPayload($setup, 'A', '1.00'))
+        $this->postPayTabsCallback('/api/webhooks/paytabs', $this->callbackPayload($setup, 'A', '1.00'))
             ->assertOk();
 
         $payment = Payment::query()->findOrFail($setup['id']);

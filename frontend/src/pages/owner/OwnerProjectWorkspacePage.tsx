@@ -11,6 +11,8 @@ import { ProjectClosureReadiness } from '../../components/owner/project-workspac
 import { ProjectDeliverables } from '../../components/owner/project-workspace/ProjectDeliverables'
 import { ProjectExecutionSummaryPanel } from '../../components/owner/project-workspace/ProjectExecutionSummary'
 import { ProjectRecentActivity } from '../../components/owner/project-workspace/ProjectRecentActivity'
+import { ProjectNotesThread } from '../../components/owner/project-workspace/ProjectNotesThread'
+import { ProjectTaskBoard } from '../../components/owner/project-workspace/ProjectTaskBoard'
 import { ProjectTaskQuickEdit } from '../../components/owner/project-workspace/ProjectTaskQuickEdit'
 import { ProjectTimelineGantt } from '../../components/owner/project-workspace/ProjectTimelineGantt'
 import { ProjectWorkspaceHeader } from '../../components/owner/project-workspace/ProjectWorkspaceHeader'
@@ -34,6 +36,7 @@ import {
   getProjectWorkspaceTasks,
   linkProjectWorkspaceTaskCalendar,
   syncProjectMembers,
+  syncTaskReferences,
   updateProjectBrief,
   updateProjectMilestone,
   updateProjectPhase,
@@ -51,33 +54,102 @@ import { formatDateTimeShort, formatTimeShort } from '../../utils/calendarDates'
 import { calendarStatusLabel, calendarTypeLabel } from '../../utils/calendarLabels'
 import { describeApiError } from '../../utils/errors'
 import {
-  projectActivityLabel,
+  projectActivityHeadline,
   projectActivityMatchesFilter,
-  projectActivitySecondaryLine,
 } from '../../utils/projectActivityLabels'
+import { PROJECT_STATUS_LABELS, formatProjectDate, projectInitials } from '../../utils/workspaceProjects'
 
 type TabKey =
   | 'overview'
+  | 'client'
   | 'brief'
+  | 'references'
   | 'timeline'
   | 'tasks'
   | 'calendar'
   | 'milestones'
   | 'team'
   | 'files'
+  | 'notes'
   | 'activity'
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'overview', label: 'نظرة عامة' },
-  { key: 'brief', label: 'الموجز والمتطلبات' },
-  { key: 'timeline', label: 'الخط الزمني' },
+  { key: 'client', label: 'بيانات العميل' },
+  { key: 'brief', label: 'البريف' },
+  { key: 'references', label: 'الريفرنسات' },
   { key: 'tasks', label: 'المهام' },
+  { key: 'files', label: 'الملفات والمرفقات' },
+  { key: 'team', label: 'الفريق' },
+  { key: 'notes', label: 'الملاحظات' },
+  { key: 'activity', label: 'النشاط' },
+  { key: 'timeline', label: 'الخط الزمني' },
   { key: 'calendar', label: 'التقويم' },
   { key: 'milestones', label: 'المعالم' },
-  { key: 'team', label: 'الفريق' },
-  { key: 'files', label: 'الملفات' },
-  { key: 'activity', label: 'النشاط' },
 ]
+
+const BRIEF_FIELDS: Array<{ key: string; label: string }> = [
+  { key: 'client_request', label: 'طلب العميل' },
+  { key: 'target_audience', label: 'الجمهور المستهدف' },
+  { key: 'products_services', label: 'المنتجات / الخدمات' },
+  { key: 'market', label: 'السوق' },
+  { key: 'competitors', label: 'المنافسون' },
+  { key: 'usp', label: 'الميزة التنافسية' },
+  { key: 'positioning', label: 'تموضع العلامة' },
+  { key: 'brand_description', label: 'وصف العلامة' },
+  { key: 'personality', label: 'شخصية العلامة' },
+  { key: 'tone', label: 'نبرة الصوت' },
+  { key: 'colors', label: 'ألوان العلامة' },
+  { key: 'fonts', label: 'الخطوط' },
+  { key: 'likes', label: 'ما يعجب العميل' },
+  { key: 'dislikes', label: 'ما لا يعجب العميل' },
+  { key: 'platforms', label: 'المنصات' },
+  { key: 'content_goals', label: 'أهداف المحتوى' },
+  { key: 'deliverables', label: 'المخرجات المطلوبة' },
+  { key: 'preferred_style', label: 'الأسلوب المفضل' },
+  { key: 'formats', label: 'الصيغ والأبعاد' },
+  { key: 'sizes', label: 'المقاسات' },
+  { key: 'quantities', label: 'الكميات' },
+  { key: 'materials', label: 'الخامات' },
+  { key: 'finishing', label: 'التشطيب' },
+  { key: 'delivery', label: 'متطلبات التسليم' },
+]
+
+const PROFILE_FIELDS: Array<{ key: string; label: string }> = [
+  { key: 'phone', label: 'الهاتف' },
+  { key: 'whatsapp', label: 'واتساب' },
+  { key: 'website', label: 'الموقع' },
+  { key: 'city', label: 'المدينة / الدولة' },
+  { key: 'social_links', label: 'حسابات التواصل' },
+  { key: 'contact_person', label: 'جهة الاتصال' },
+  { key: 'notes', label: 'ملاحظات العميل' },
+]
+
+const REFERENCE_TYPES = [
+  { value: 'DESIGN', label: 'تصميم' },
+  { value: 'BRANDING', label: 'هوية' },
+  { value: 'CONTENT', label: 'محتوى' },
+  { value: 'WEBSITE', label: 'موقع' },
+  { value: 'VIDEO', label: 'فيديو' },
+  { value: 'OTHER', label: 'أخرى' },
+]
+
+function textMap(source: Record<string, unknown> | null | undefined, keys: string[]): Record<string, string> {
+  const next: Record<string, string> = {}
+  for (const key of keys) {
+    const value = source?.[key]
+    next[key] = typeof value === 'string' ? value : ''
+  }
+  return next
+}
+
+function teamRoleLabel(role: string): string {
+  if (role === 'account_manager') return 'مدير الحساب'
+  if (role === 'manager') return 'مدير المشروع'
+  if (role === 'assignee') return 'مكلّف بمهمة'
+  if (role === 'member') return 'عضو'
+  return role
+}
 
 const ACTIVITY_FILTERS = [
   { value: 'all', label: 'الكل' },
@@ -90,6 +162,105 @@ const ACTIVITY_FILTERS = [
 
 const fieldClass =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+
+function InfoCard({ title, rows }: { title: string; rows: Array<[string, string | null | undefined]> }) {
+  const visible = rows.filter(([, value]) => value && value.trim() !== '')
+  if (visible.length === 0) return null
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-4">
+      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      <dl className="mt-3 divide-y divide-slate-100">
+        {visible.map(([label, value]) => (
+          <div key={label} className="flex items-start justify-between gap-4 py-2 text-sm">
+            <dt className="text-slate-500">{label}</dt>
+            <dd className="max-w-[70%] text-end font-medium leading-6 text-slate-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
+
+const BRIEF_GROUPS: Array<{ title: string; keys: string[] }> = [
+  { title: 'نظرة عامة', keys: ['client_request'] },
+  { title: 'الجمهور والسوق', keys: ['target_audience', 'market', 'competitors', 'usp', 'products_services', 'positioning'] },
+  { title: 'البراند', keys: ['personality', 'tone', 'likes', 'dislikes', 'brand_description'] },
+  { title: 'التسليمات', keys: ['deliverables', 'platforms', 'formats', 'content_goals'] },
+  { title: 'التصميم', keys: ['preferred_style', 'colors', 'fonts'] },
+  { title: 'الطباعة / الإنتاج', keys: ['sizes', 'quantities', 'materials', 'finishing', 'delivery'] },
+]
+
+function BriefDocument({
+  objective,
+  outcome,
+  wants,
+  doesNotWant,
+  scopeIn,
+  scopeOut,
+  fields,
+}: {
+  objective: string
+  outcome: string
+  wants: string
+  doesNotWant: string
+  scopeIn: string
+  scopeOut: string
+  fields: Record<string, string>
+}) {
+  const extras: Record<string, Array<[string, string]>> = {
+    'نظرة عامة': [
+      ['هدف المشروع', objective],
+      ['النتيجة المرغوبة', outcome],
+      ['ضمن النطاق', scopeIn],
+      ['خارج النطاق', scopeOut],
+      ['ما يريده العميل', wants],
+      ['ما لا يريده العميل', doesNotWant],
+    ].filter((row): row is [string, string] => row[1].trim() !== ''),
+  }
+
+  const groups = BRIEF_GROUPS.map((group) => {
+    const rows = [
+      ...(extras[group.title] ?? []),
+      ...group.keys
+        .map((key) => {
+          const label = BRIEF_FIELDS.find((field) => field.key === key)?.label ?? key
+          return [label, fields[key] ?? ''] as [string, string]
+        })
+        .filter((row) => row[1].trim() !== ''),
+    ]
+    return { title: group.title, rows }
+  }).filter((group) => group.rows.length > 0)
+
+  if (groups.length === 0) {
+    return <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">لا يوجد بريف بعد.</p>
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {groups.map((group) => (
+        <section key={group.title} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">{group.title}</h3>
+          <dl className="mt-3 space-y-3">
+            {group.rows.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs text-slate-500">{label}</dt>
+                <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-800">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function referenceHost(url: string): string {
+  try {
+    return new URL(url).host
+  } catch {
+    return url
+  }
+}
 
 function rangeAroundToday() {
   const from = new Date()
@@ -112,8 +283,8 @@ function textValue(record: Record<string, unknown>, key: string): string {
 function ProgressBar({ percent }: { percent: number }) {
   const width = Math.min(100, Math.max(0, percent))
   return (
-    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-      <div className="h-full rounded-full bg-brand-primary/80" style={{ width: `${width}%` }} />
+    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" dir="ltr">
+      <div className="ms-auto h-full rounded-full bg-brand-primary/80" style={{ width: `${width}%` }} />
     </div>
   )
 }
@@ -140,7 +311,7 @@ function StructureTree({ structure }: { structure: ProjectStructure }) {
           <ProgressBar percent={phase.progress?.percent ?? 0} />
           <ul className="mt-3 space-y-2 border-r-2 border-slate-100 pr-3">
             {(phase.milestones ?? []).map((milestone) => (
-              <li key={`m-${milestone.id}`} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <li key={`m-${milestone.id}`} className="rounded-lg bg-[#f4f6f8] px-3 py-2 text-sm">
                 <p className="font-medium text-slate-900">◆ {milestone.title}</p>
                 <p className="text-xs text-slate-500">
                   معلم · {milestone.status}
@@ -201,6 +372,8 @@ export function OwnerProjectWorkspacePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [editingBrief, setEditingBrief] = useState(false)
+  const [editingClient, setEditingClient] = useState(false)
   const [savingTeam, setSavingTeam] = useState(false)
   const [savingBrief, setSavingBrief] = useState(false)
   const [milestoneTitle, setMilestoneTitle] = useState('')
@@ -211,6 +384,10 @@ export function OwnerProjectWorkspacePage() {
   const [phaseTitle, setPhaseTitle] = useState('')
   const [savingPhase, setSavingPhase] = useState(false)
   const [referenceTitle, setReferenceTitle] = useState('')
+  const [referenceType, setReferenceType] = useState('DESIGN')
+  const [referenceDescription, setReferenceDescription] = useState('')
+  const [briefDraft, setBriefDraft] = useState<Record<string, string>>({})
+  const [profileDraft, setProfileDraft] = useState<Record<string, string>>({})
   const [referenceUrl, setReferenceUrl] = useState('')
   const [savingReference, setSavingReference] = useState(false)
   const [briefObjective, setBriefObjective] = useState('')
@@ -261,6 +438,8 @@ export function OwnerProjectWorkspacePage() {
     setDoesNotWant(textValue(data.requirements ?? {}, 'does_not_want'))
     setScopeIn(textValue(data.scope ?? {}, 'in_scope'))
     setScopeOut(textValue(data.scope ?? {}, 'out_of_scope'))
+    setBriefDraft(textMap(data.brief, BRIEF_FIELDS.map((field) => field.key)))
+    setProfileDraft(textMap(data.client_profile, PROFILE_FIELDS.map((field) => field.key)))
   }
 
   async function loadTasks() {
@@ -370,11 +549,13 @@ export function OwnerProjectWorkspacePage() {
       await updateProjectBrief(projectId, {
         brief: {
           ...(workspace?.brief ?? {}),
+          ...Object.fromEntries(Object.entries(briefDraft).map(([key, value]) => [key, value.trim() || null])),
           objective: briefObjective.trim() || null,
           desired_outcome: briefOutcome.trim() || null,
         },
         client_profile: {
           ...(workspace?.client_profile ?? {}),
+          ...Object.fromEntries(Object.entries(profileDraft).map(([key, value]) => [key, value.trim() || null])),
           company_name: companyName.trim() || null,
           industry: industry.trim() || null,
         },
@@ -635,11 +816,13 @@ export function OwnerProjectWorkspacePage() {
     try {
       await createProjectReference(projectId, {
         title: referenceTitle.trim(),
+        description: referenceDescription.trim() || null,
         url: referenceUrl.trim() || null,
-        type: 'OTHER',
+        type: referenceType,
         is_client_visible: false,
       })
       setReferenceTitle('')
+      setReferenceDescription('')
       setReferenceUrl('')
       setNotice('تمت إضافة المرجع.')
       const refreshed = await getProjectWorkspace(projectId)
@@ -711,8 +894,8 @@ export function OwnerProjectWorkspacePage() {
   }
 
   const tasks = calendarItems.filter((item) => item.type === 'TASK')
-  const health = workspace.health
   const structure = workspace.structure
+  const taskTitles = Object.fromEntries(workspaceTasks.map((task) => [task.id, task.title]))
   const phases = workspace.phases ?? []
   const filteredWorkspaceTasks = taskFilterUserId
     ? workspaceTasks.filter((task) => task.assigned_to === taskFilterUserId)
@@ -733,14 +916,31 @@ export function OwnerProjectWorkspacePage() {
       {notice ? <FeedbackBanner kind="success">{notice}</FeedbackBanner> : null}
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
 
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {[
+          { label: 'إجمالي المهام', value: workspace.progress.total },
+          { label: 'مكتملة', value: workspace.progress.completed },
+          { label: 'قيد التنفيذ', value: workspace.progress.in_progress },
+          { label: 'تحت المراجعة', value: workspace.progress.review + workspace.progress.revision },
+          { label: 'متأخرة', value: workspace.progress.overdue },
+        ].map((item) => (
+          <div key={item.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300">
+            <p className="text-2xl font-semibold text-slate-900">{item.value.toLocaleString('en-US')}</p>
+            <p className="mt-1 text-xs text-slate-500">{item.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-200">
         {TABS.map((entry) => (
           <button
             key={entry.key}
             type="button"
             onClick={() => setTab(entry.key)}
-            className={`rounded-full px-3 py-1.5 text-sm ${
-              tab === entry.key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700'
+            className={`shrink-0 border-b-2 px-3 py-2 text-sm transition ${
+              tab === entry.key
+                ? 'border-brand-cobalt-500 font-medium text-brand-cobalt-700'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             {entry.label}
@@ -750,121 +950,179 @@ export function OwnerProjectWorkspacePage() {
 
       {tab === 'overview' ? (
         <div className="space-y-4">
-          <DashboardSection title="ملخص التنفيذ">
-            <ProjectExecutionSummaryPanel summary={workspace.execution_summary} />
-          </DashboardSection>
-
           <div className="grid gap-4 lg:grid-cols-2">
-            <DashboardSection title="ما يحتاج متابعة">
-              <ProjectAttentionPanel
-                attention={workspace.attention}
-                onSelectItem={(item) => {
-                  if (item.related_type === 'task') {
-                    setTab('tasks')
-                    const task = workspaceTasks.find((row) => row.id === item.related_id)
-                    if (task) setEditingTask(task)
-                  } else if (item.related_type === 'milestone') {
-                    setTab('milestones')
-                    setExpandedMilestoneId(item.related_id)
-                  }
-                }}
-              />
+            <DashboardSection title="ملخص المشروع">
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">الحالة</dt>
+                  <dd className="font-medium text-slate-900">{PROJECT_STATUS_LABELS[workspace.project.status] ?? workspace.project.status}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">التقدم</dt>
+                  <dd className="font-medium text-slate-900">
+                    {Math.round(workspace.progress.percent).toLocaleString('en-US')}% ·{' '}
+                    {workspace.progress.completed.toLocaleString('en-US')} من {workspace.progress.total.toLocaleString('en-US')}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">التسليم</dt>
+                  <dd className="font-medium text-slate-900">{formatProjectDate(workspace.project.deadline)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">مدير الحساب</dt>
+                  <dd className="font-medium text-slate-900">{workspace.project.account_manager?.name ?? '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">الفريق</dt>
+                  <dd className="font-medium text-slate-900">{(workspace.team_stats?.length ?? workspace.members.length).toLocaleString('en-US')}</dd>
+                </div>
+              </dl>
             </DashboardSection>
-            <DashboardSection title="جاهزية الإغلاق">
-              <ProjectClosureReadiness
-                closure={workspace.closure_readiness ?? workspace.execution_summary?.closure}
-              />
-              <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  صحة المشروع
-                </p>
-                <p className="text-sm">{health.label}</p>
-                {health.days_to_deadline != null ? (
-                  <p className="mt-1 text-xs text-slate-500">
-                    أيام حتى الموعد: {health.days_to_deadline.toLocaleString('ar-SA')}
-                  </p>
-                ) : null}
+            <DashboardSection title="الموعد التالي">
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">أقرب موعد</dt>
+                  <dd className="font-medium text-slate-900">
+                    {formatProjectDate(workspace.execution_summary?.next_deadline ?? workspace.next_deadline ?? workspace.next_task?.deadline)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">المهمة</dt>
+                  <dd className="font-medium text-slate-900">{workspace.next_task?.title ?? '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">المعلم</dt>
+                  <dd className="font-medium text-slate-900">
+                    {workspace.execution_summary?.active_milestone?.title ?? workspace.next_milestone?.title ?? '—'}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => setTab('tasks')} className="text-sm text-brand-cobalt-700 underline">
+                  المهام
+                </button>
+                <button type="button" onClick={() => setTab('milestones')} className="text-sm text-brand-cobalt-700 underline">
+                  المعالم
+                </button>
+                <button type="button" onClick={() => setTab('timeline')} className="text-sm text-brand-cobalt-700 underline">
+                  الخط الزمني
+                </button>
               </div>
             </DashboardSection>
           </div>
 
-          <DashboardSection
-            title="التسليمات"
-            description="مشتقة من خدمات الحزمة والمراجع — بدون نموذج تسليم منفصل."
-          >
-            <ProjectDeliverables
-              deliverables={workspace.deliverables}
-              onOpenTask={(taskId) => {
-                setTab('tasks')
-                const task = workspaceTasks.find((row) => row.id === taskId)
-                if (task) setEditingTask(task)
-              }}
-            />
-          </DashboardSection>
-
-          {(workspace.pending_approvals?.length ?? 0) > 0 ? (
-            <DashboardSection title="موافقات معلّقة">
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
-                {workspace.pending_approvals?.map((row) => (
-                  <li key={row.id} className="px-3 py-2.5 text-sm">
-                    <p className="font-medium text-slate-900">{row.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {row.type}
-                      {row.assigned_to ? ` · ${row.assigned_to.name}` : ''}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </DashboardSection>
-          ) : null}
-
-          <DashboardSection title="أحدث التحديثات">
-            <ProjectRecentActivity
-              activities={recentActivities}
-              loading={recentActivityLoading}
-              error={recentActivityError}
-            />
+          <DashboardSection title="من البريف">
+            <div className="space-y-2 text-sm leading-6 text-slate-700">
+              <p>{briefObjective || 'لم يُكتب هدف بعد.'}</p>
+              {briefDraft.target_audience ? <p className="text-slate-500">الجمهور: {briefDraft.target_audience}</p> : null}
+              {briefDraft.tone ? <p className="text-slate-500">النبرة: {briefDraft.tone}</p> : null}
+            </div>
+            <button type="button" onClick={() => setTab('brief')} className="mt-3 text-sm text-brand-cobalt-700 underline">
+              فتح البريف
+            </button>
           </DashboardSection>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <DashboardSection title="المسؤوليات">
-              <ul className="space-y-2 text-sm text-slate-700">
-                <li>
-                  <span className="text-slate-500">المالك:</span> صلاحية إشراف كاملة (دور المالك)
-                </li>
-                <li>
-                  <span className="text-slate-500">مدير الحساب:</span>{' '}
-                  {workspace.project.account_manager?.name ?? '—'}
-                </li>
-                <li>
-                  <span className="text-slate-500">الفريق:</span>{' '}
-                  {workspace.members.length === 0
-                    ? 'لا أعضاء'
-                    : workspace.members
-                        .map((member) => member.user?.name)
-                        .filter(Boolean)
-                        .join(' · ')}
-                </li>
-              </ul>
+            <DashboardSection title="ملاحظات حديثة">
+              <ProjectNotesThread
+                projectId={workspace.project.id}
+                limit={3}
+                canWrite={false}
+                onShowAll={() => setTab('notes')}
+              />
             </DashboardSection>
-            <DashboardSection title="التقدم والمهام">
-              <ul className="space-y-1 text-sm text-slate-700">
-                <li>مكتمل: {workspace.progress.completed.toLocaleString('ar-SA')}</li>
-                <li>قيد التنفيذ: {workspace.progress.in_progress.toLocaleString('ar-SA')}</li>
-                <li>معلّق: {workspace.progress.todo.toLocaleString('ar-SA')}</li>
-                <li>متأخر: {workspace.progress.overdue.toLocaleString('ar-SA')}</li>
-              </ul>
+            <DashboardSection title="آخر النشاط">
+              <ProjectRecentActivity
+                activities={recentActivities}
+                loading={recentActivityLoading}
+                error={recentActivityError}
+                limit={5}
+                taskTitles={taskTitles}
+              />
+              <button type="button" onClick={() => setTab('activity')} className="mt-3 text-sm text-brand-cobalt-700 underline">
+                كل النشاط
+              </button>
             </DashboardSection>
           </div>
 
-          <DashboardSection title="لمحة الخط الزمني">
-            <StructureTree structure={structure} />
-          </DashboardSection>
+          <details className="rounded-2xl border border-slate-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-900">تفاصيل إضافية</summary>
+            <div className="mt-4 space-y-4">
+              <DashboardSection title="ملخص التنفيذ">
+                <ProjectExecutionSummaryPanel summary={workspace.execution_summary} />
+              </DashboardSection>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <DashboardSection title="ما يحتاج متابعة">
+                  <ProjectAttentionPanel
+                    attention={workspace.attention}
+                    onSelectItem={(item) => {
+                      if (item.related_type === 'task') {
+                        setTab('tasks')
+                        const task = workspaceTasks.find((row) => row.id === item.related_id)
+                        if (task) setEditingTask(task)
+                      } else if (item.related_type === 'milestone') {
+                        setTab('milestones')
+                        setExpandedMilestoneId(item.related_id)
+                      }
+                    }}
+                  />
+                </DashboardSection>
+                <DashboardSection title="جاهزية الإغلاق">
+                  <ProjectClosureReadiness
+                    closure={workspace.closure_readiness ?? workspace.execution_summary?.closure}
+                  />
+                </DashboardSection>
+              </div>
+              <DashboardSection title="التسليمات" description="مشتقة من خدمات الحزمة والمراجع — بدون نموذج تسليم منفصل.">
+                <ProjectDeliverables
+                  deliverables={workspace.deliverables}
+                  onOpenTask={(taskId) => {
+                    setTab('tasks')
+                    const task = workspaceTasks.find((row) => row.id === taskId)
+                    if (task) setEditingTask(task)
+                  }}
+                />
+              </DashboardSection>
+              {(workspace.pending_approvals?.length ?? 0) > 0 ? (
+                <DashboardSection title="موافقات معلّقة">
+                  <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+                    {workspace.pending_approvals?.map((row) => (
+                      <li key={row.id} className="px-3 py-2.5 text-sm">
+                        <p className="font-medium text-slate-900">{row.title}</p>
+                        <p className="text-xs text-slate-500">
+                          {row.type}
+                          {row.assigned_to ? ` · ${row.assigned_to.name}` : ''}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </DashboardSection>
+              ) : null}
+              <DashboardSection title="لمحة الخط الزمني">
+                <StructureTree structure={structure} />
+                <button type="button" onClick={() => setTab('timeline')} className="mt-3 text-sm text-brand-cobalt-700 underline">
+                  فتح الخط الزمني
+                </button>
+              </DashboardSection>
+            </div>
+          </details>
         </div>
       ) : null}
 
       {tab === 'brief' ? (
         <div className="space-y-4">
+          {!editingBrief ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setEditingBrief(true)}
+                className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800"
+              >
+                تعديل
+              </button>
+            </div>
+          ) : null}
+          {editingBrief ? (
           <DashboardSection title="ملف العميل والموجز">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
@@ -920,69 +1178,248 @@ export function OwnerProjectWorkspacePage() {
                 />
               </label>
             </div>
-            <button
-              type="button"
-              disabled={savingBrief}
-              onClick={() => void saveBrief()}
-              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-            >
-              حفظ الموجز
-            </button>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {BRIEF_FIELDS.map((field) => (
+                <label key={field.key} className="space-y-1 text-sm">
+                  <span className="text-slate-600">{field.label}</span>
+                  <textarea
+                    className={fieldClass}
+                    rows={2}
+                    value={briefDraft[field.key] ?? ''}
+                    onChange={(event) =>
+                      setBriefDraft((current) => ({ ...current, [field.key]: event.target.value }))
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={savingBrief}
+                onClick={() => void saveBrief()}
+                className="inline-flex min-h-10 items-center rounded-lg bg-brand-cobalt-500 px-4 text-sm font-medium text-white disabled:opacity-50"
+              >
+                حفظ الموجز
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingBrief(false)}
+                className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-800"
+              >
+                عرض
+              </button>
+            </div>
           </DashboardSection>
+          ) : (
+            <BriefDocument
+              objective={briefObjective}
+              outcome={briefOutcome}
+              wants={wants}
+              doesNotWant={doesNotWant}
+              scopeIn={scopeIn}
+              scopeOut={scopeOut}
+              fields={briefDraft}
+            />
+          )}
+        </div>
+      ) : null}
 
-          <DashboardSection title="المراجع والأمثلة">
-            <div className="mb-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+      {tab === 'client' ? (
+        <DashboardSection title="بيانات العميل" description="بيانات الحساب مرتبطة بسجل العميل. الحقول الإضافية خاصة بهذا المشروع.">
+          {!editingClient ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <InfoCard
+                  title="بيانات أساسية"
+                  rows={[
+                    ['الاسم', workspace.project.customer?.name],
+                    ['الشركة', companyName],
+                    ['الهاتف', profileDraft.phone],
+                    ['البريد', workspace.project.customer?.email],
+                    ['واتساب', profileDraft.whatsapp],
+                  ]}
+                />
+                <InfoCard
+                  title="معلومات إضافية"
+                  rows={[
+                    ['الموقع', profileDraft.website],
+                    ['المجال', industry],
+                    ['المدينة / الدولة', profileDraft.city],
+                    ['جهة الاتصال', profileDraft.contact_person],
+                  ]}
+                />
+              </div>
+              <InfoCard
+                title="قنوات التواصل"
+                rows={[
+                  ['Website', profileDraft.website],
+                  ['Social', profileDraft.social_links],
+                  ['ملاحظات', profileDraft.notes],
+                ]}
+              />
+              <button
+                type="button"
+                onClick={() => setEditingClient(true)}
+                className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800"
+              >
+                تعديل
+              </button>
+            </div>
+          ) : (
+            <>
+          <dl className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-slate-500">اسم العميل</dt>
+              <dd className="text-sm font-medium">{workspace.project.customer?.name ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-500">البريد</dt>
+              <dd className="text-sm font-medium">{workspace.project.customer?.email ?? '—'}</dd>
+            </div>
+            <label className="space-y-1 text-sm">
+              <span className="text-slate-600">اسم الشركة</span>
+              <input className={fieldClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+            </label>
+            <label className="space-y-1 text-sm">
+              <span className="text-slate-600">القطاع</span>
+              <input className={fieldClass} value={industry} onChange={(e) => setIndustry(e.target.value)} />
+            </label>
+            {PROFILE_FIELDS.map((field) => (
+              <label key={field.key} className="space-y-1 text-sm">
+                <span className="text-slate-600">{field.label}</span>
+                <input
+                  className={fieldClass}
+                  value={profileDraft[field.key] ?? ''}
+                  onChange={(event) =>
+                    setProfileDraft((current) => ({ ...current, [field.key]: event.target.value }))
+                  }
+                />
+              </label>
+            ))}
+          </dl>
+          <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={savingBrief}
+            onClick={() => void saveBrief()}
+            className="inline-flex min-h-10 items-center rounded-lg bg-brand-cobalt-500 px-4 text-sm font-medium text-white disabled:opacity-50"
+          >
+            حفظ بيانات العميل
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingClient(false)}
+            className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-800"
+          >
+            عرض
+          </button>
+          </div>
+            </>
+          )}
+        </DashboardSection>
+      ) : null}
+
+      {tab === 'references' ? (
+        <DashboardSection title="الريفرنسات">
+            <div className="mb-3 grid gap-2 sm:grid-cols-2">
               <input
                 className={fieldClass}
                 placeholder="عنوان المرجع"
                 value={referenceTitle}
                 onChange={(e) => setReferenceTitle(e.target.value)}
               />
+              <select className={fieldClass} value={referenceType} onChange={(e) => setReferenceType(e.target.value)}>
+                {REFERENCE_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
               <input
                 className={fieldClass}
-                placeholder="رابط (اختياري)"
+                placeholder="رابط داخلي أو وصف المسار"
                 value={referenceUrl}
                 onChange={(e) => setReferenceUrl(e.target.value)}
+              />
+              <input
+                className={fieldClass}
+                placeholder="وصف اختياري"
+                value={referenceDescription}
+                onChange={(e) => setReferenceDescription(e.target.value)}
               />
               <button
                 type="button"
                 disabled={savingReference}
                 onClick={() => void saveReference()}
-                className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-cobalt-500 px-3 text-sm font-medium text-white disabled:opacity-50"
               >
-                إضافة
+                إضافة مرجع
               </button>
             </div>
             {(workspace.references?.length ?? 0) === 0 ? (
-              <p className="text-sm text-slate-500">لا مراجع بعد.</p>
+              <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">لا توجد مراجع بعد</p>
             ) : (
-              <ul className="space-y-2">
-                {workspace.references.map((reference) => (
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {workspace.references.map((reference) => {
+                  const image = reference.url && /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(reference.url)
+                  const linked = workspaceTasks.filter((task) => reference.linked_task_ids?.includes(task.id))
+                  return (
                   <li
                     key={reference.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm"
+                    className="flex flex-col rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-slate-300"
                   >
-                    <div>
-                      <p className="font-medium">{reference.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {reference.type}
-                        {reference.is_client_visible ? ' · ظاهر للعميل' : ' · داخلي'}
-                        {reference.url ? ` · ${reference.url}` : ''}
-                      </p>
+                    {image && reference.url ? (
+                      <img src={reference.url} alt="" className="mb-3 h-28 w-full rounded-xl object-cover" />
+                    ) : (
+                      <div className="mb-3 flex h-16 items-center justify-center rounded-xl bg-[#f4f6f8] text-xs font-medium text-slate-500">
+                        {reference.url ? referenceHost(reference.url) : (reference.type || 'FILE')}
+                      </div>
+                    )}
+                    <p className="font-medium text-slate-900">{reference.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {REFERENCE_TYPES.find((type) => type.value === reference.type)?.label ?? reference.type}
+                    </p>
+                    {reference.description ? <p className="mt-2 text-sm leading-6 text-slate-700">{reference.description}</p> : null}
+                    <p className="mt-2 text-xs text-slate-500">
+                      {reference.creator?.name ?? '—'}
+                      {reference.created_at ? ` · ${reference.created_at.slice(0, 10)}` : ''}
+                    </p>
+                    {linked.length > 0 ? (
+                      <p className="mt-1 text-xs text-slate-600">مهمة: {linked.map((task) => task.title).join(' · ')}</p>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {reference.url ? (
+                        <a href={reference.url} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center rounded-lg border border-slate-200 px-2.5 text-xs text-slate-800">
+                          فتح
+                        </a>
+                      ) : null}
+                      {reference.url ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void navigator.clipboard?.writeText(reference.url ?? '')
+                            setNotice('تم نسخ الرابط')
+                          }}
+                          className="inline-flex min-h-9 items-center rounded-lg border border-slate-200 px-2.5 text-xs text-slate-800"
+                        >
+                          نسخ الرابط
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void removeReference(reference)}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-red-200 px-2.5 text-xs text-red-700"
+                      >
+                        حذف
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void removeReference(reference)}
-                      className="rounded border border-red-200 px-2 py-1 text-xs text-red-800"
-                    >
-                      حذف
-                    </button>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
-          </DashboardSection>
-        </div>
+        </DashboardSection>
       ) : null}
 
       {tab === 'timeline' ? (
@@ -1091,7 +1528,7 @@ export function OwnerProjectWorkspacePage() {
           {taskCreateError ? <p className="mb-2 text-xs text-red-700">{taskCreateError}</p> : null}
           {tasksError ? <p className="mb-2 text-xs text-red-700">{tasksError}</p> : null}
           {showTaskForm ? (
-            <div className="mb-4 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+            <div className="mb-4 grid gap-2 rounded-xl border border-slate-200 bg-[#f4f6f8] p-3 sm:grid-cols-2">
               <input
                 className={fieldClass}
                 placeholder="عنوان المهمة"
@@ -1201,36 +1638,7 @@ export function OwnerProjectWorkspacePage() {
           {filteredWorkspaceTasks.length === 0 ? (
             <p className="text-sm text-slate-500">لا مهام مساحة عمل لهذا المشروع بعد.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <ul className="min-w-[28rem] space-y-2 sm:min-w-0">
-                {filteredWorkspaceTasks.map((task) => (
-                  <li key={task.id}>
-                    <button
-                      type="button"
-                      onClick={() => setEditingTask(task)}
-                      className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-start text-sm ${
-                        task.is_overdue
-                          ? 'border-red-200 bg-red-50'
-                          : 'border-slate-100 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-medium text-slate-900">{task.title}</p>
-                        <p className="text-xs text-slate-500">
-                          {task.status}
-                          {task.assignee ? ` · ${task.assignee.name}` : ''}
-                          {task.deadline ? ` · ${task.deadline}` : ''}
-                          {task.calendar_item_id ? ' · مربوط بالتقويم' : ''}
-                          {task.is_client_visible ? ' · ظاهر للعميل' : ''}
-                          {task.is_overdue ? ' · متأخر' : ''}
-                        </p>
-                      </div>
-                      <span className="text-xs text-slate-500">تعديل</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ProjectTaskBoard tasks={filteredWorkspaceTasks} onOpen={setEditingTask} />
           )}
           <div className="mt-4 border-t border-slate-100 pt-3">
             <p className="mb-2 text-xs font-medium text-slate-600">عناصر تقويم مرتبطة (نفس الفترة)</p>
@@ -1420,11 +1828,10 @@ export function OwnerProjectWorkspacePage() {
 
       {tab === 'team' ? (
         <DashboardSection title="الفريق" description="مزامنة أعضاء المشروع وإحصاءات المهام.">
-          <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            مدير الحساب: {workspace.project.account_manager?.name ?? '—'}
-          </div>
-          {(workspace.team_stats?.length ?? 0) > 0 ? (
-            <ul className="mb-4 grid gap-2 sm:grid-cols-2">
+          {(workspace.team_stats?.length ?? 0) === 0 ? (
+            <p className="mb-4 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">لا يوجد أعضاء فريق بعد</p>
+          ) : (
+            <ul className="mb-4 grid gap-3 sm:grid-cols-2">
               {workspace.team_stats?.map((row) => (
                 <li key={row.user_id}>
                   <button
@@ -1433,18 +1840,25 @@ export function OwnerProjectWorkspacePage() {
                       setTaskFilterUserId(row.user_id)
                       setTab('tasks')
                     }}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-start text-sm hover:border-slate-400"
+                    className={`flex w-full items-start gap-3 rounded-2xl border bg-white px-3 py-3 text-start text-sm transition hover:border-slate-300 ${
+                      row.role === 'account_manager' ? 'border-brand-cobalt-300' : 'border-slate-200'
+                    }`}
                   >
-                    <p className="font-medium text-slate-900">{row.name}</p>
-                    <p className="text-xs text-slate-500">{row.role}</p>
-                    <p className="mt-2 text-xs text-slate-600">
-                      معيّن {row.assigned} · مكتمل {row.completed} · مفتوح {row.open} · متأخر {row.overdue}
-                    </p>
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f4f6f8] text-xs font-semibold text-slate-700">
+                      {projectInitials(row.name)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-medium text-slate-900">{row.name}</span>
+                      <span className="text-xs text-slate-500">{teamRoleLabel(row.role)}</span>
+                      <span className="mt-2 block text-xs text-slate-600">
+                        مهام مفتوحة {row.open.toLocaleString('en-US')} · مكتملة {row.completed.toLocaleString('en-US')}
+                      </span>
+                    </span>
                   </button>
                 </li>
               ))}
             </ul>
-          ) : null}
+          )}
           <div className="grid gap-2 sm:grid-cols-2">
             {assignees.map((person) => {
               const checked = selectedMemberIds.includes(person.id)
@@ -1471,6 +1885,12 @@ export function OwnerProjectWorkspacePage() {
           >
             حفظ الفريق
           </button>
+        </DashboardSection>
+      ) : null}
+
+      {tab === 'notes' ? (
+        <DashboardSection title="ملاحظات المشروع">
+          <ProjectNotesThread projectId={workspace.project.id} canWrite />
         </DashboardSection>
       ) : null}
 
@@ -1516,21 +1936,23 @@ export function OwnerProjectWorkspacePage() {
             </div>
           ) : null}
           {!activityLoading && activity.filter((row) => projectActivityMatchesFilter(row, activityFilter)).length === 0 ? (
-            <p className="text-sm text-slate-500">
-              {activityError ? 'تعذر عرض النشاط حالياً.' : 'لا أحداث في هذا الفلتر.'}
+            <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+              {activityError ? 'تعذر عرض النشاط حالياً.' : 'لا يوجد نشاط بعد'}
             </p>
           ) : null}
           {!activityLoading && activity.filter((row) => projectActivityMatchesFilter(row, activityFilter)).length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-0 border-s border-slate-200 ps-4">
               {activity
                 .filter((row) => projectActivityMatchesFilter(row, activityFilter))
                 .map((event) => (
-                  <li key={event.id} className="rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                    <p className="font-medium text-slate-900">
-                      {event.description?.trim() || projectActivityLabel(event.action)}
+                  <li key={event.id} className="relative pb-4 text-sm">
+                    <span className="absolute -start-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-brand-cobalt-500" />
+                    <p className="font-medium leading-6 text-slate-900">
+                      {projectActivityHeadline(event, taskTitles)}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {projectActivitySecondaryLine(event)} · {formatDateTimeShort(event.created_at)}
+                      {event.actor?.name ? `${event.actor.name} · ` : ''}
+                      {formatDateTimeShort(event.created_at)}
                     </p>
                   </li>
                 ))}
@@ -1568,7 +1990,54 @@ export function OwnerProjectWorkspacePage() {
           onClose={() => setEditingTask(null)}
           onSave={(payload) => void saveTaskEdit(payload)}
           onLinkCalendar={() => void linkEditingTaskCalendar()}
-        />
+        >
+          <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 text-sm">
+            <p>
+              <span className="text-slate-500">المشروع: </span>
+              {workspace.project.title}
+            </p>
+            <p>
+              <span className="text-slate-500">العميل: </span>
+              {workspace.project.customer?.name ?? '—'}
+            </p>
+            <p>
+              <span className="text-slate-500">أنشأها: </span>
+              {editingTask.creator?.name ?? '—'}
+              {editingTask.created_at ? ` · ${editingTask.created_at.slice(0, 10)}` : ''}
+            </p>
+            {editingTask.is_overdue ? <p className="text-xs font-medium text-red-700">متأخرة</p> : null}
+            <div className="space-y-1">
+              <p className="text-xs text-slate-500">مراجع المشروع المرتبطة</p>
+              {(workspace.references ?? []).length === 0 ? (
+                <p className="text-xs text-slate-500">لا مراجع على المشروع.</p>
+              ) : (
+                workspace.references.map((reference) => {
+                  const linked = (reference.linked_task_ids ?? []).includes(editingTask.id)
+                  return (
+                    <label key={reference.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={linked}
+                        onChange={() => {
+                          const nextIds = (workspace.references ?? [])
+                            .filter((item) =>
+                              item.id === reference.id
+                                ? !linked
+                                : (item.linked_task_ids ?? []).includes(editingTask.id),
+                            )
+                            .map((item) => item.id)
+                          void syncTaskReferences(workspace.project.id, editingTask.id, nextIds).then(() => load())
+                        }}
+                      />
+                      <span>{reference.title}</span>
+                    </label>
+                  )
+                })
+              )}
+            </div>
+            <ProjectNotesThread projectId={workspace.project.id} taskId={editingTask.id} canWrite title="ملاحظات المهمة" />
+          </div>
+        </ProjectTaskQuickEdit>
       ) : null}
     </section>
   )

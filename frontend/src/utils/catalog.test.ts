@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { Package, PackageTier, Service } from '../types/api'
 import {
   PRICING_MODE_LABELS,
+  discountPresentation,
   packagePriceLabel,
+  resolveListPrice,
   servicePriceLabel,
   tierPriceLabel,
 } from './catalog'
@@ -104,5 +106,34 @@ describe('catalog pricing labels', () => {
     expect(servicePriceLabel(service({ pricing_mode: 'STARTING_FROM', base_price: '2500.00' }))).toContain(
       'يبدأ من',
     )
+  })
+
+  it('uses a percent label only when the discount is a whole percent', () => {
+    expect(discountPresentation(1000, 800)).toEqual({ amount: 200, percent: 20 })
+    expect(discountPresentation(990, 840)?.percent).toBeNull()
+    expect(discountPresentation(1000, 1000)).toBeNull()
+  })
+
+  it('stores the current price when no discount is entered', () => {
+    expect(
+      resolveListPrice({ current: '2500', before: '', discount: '', requireCurrent: true }),
+    ).toEqual({ ok: true, value: { current: 2500, price: 2500, discountAmount: 0 } })
+  })
+
+  it('derives the list price from the current price and discount', () => {
+    expect(
+      resolveListPrice({ current: '800', before: '', discount: '200', requireCurrent: true }),
+    ).toEqual({ ok: true, value: { current: 800, price: 1000, discountAmount: 200 } })
+  })
+
+  it('rejects a compare price below the current price', () => {
+    const result = resolveListPrice({ current: '900', before: '800', discount: '', requireCurrent: true })
+    expect(result.ok).toBe(false)
+  })
+
+  it('clears the discount when the optional fields are empty', () => {
+    expect(
+      resolveListPrice({ current: '9500', before: '', discount: '', requireCurrent: true }),
+    ).toEqual({ ok: true, value: { current: 9500, price: 9500, discountAmount: 0 } })
   })
 })

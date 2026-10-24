@@ -8,7 +8,7 @@ import { getPublicPackages } from '../../services/catalog'
 import { getPublicSectors } from '../../services/sectors'
 import type { Package } from '../../types/api'
 import { buttonColorStyle } from '../../utils/buttonColor'
-import { packageHasDiscount } from '../../utils/catalog'
+import { discountPresentation, packageHasDiscount } from '../../utils/catalog'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 const FALLBACKS = [
@@ -164,6 +164,9 @@ function PackageCompareCard({
   const excluded = new Set(pkg.excluded_service_names ?? [])
   const rows = names.length > 0 ? names : [...included]
   const discounted = packageHasDiscount(pkg)
+  const offer = discounted
+    ? discountPresentation(Number.parseFloat(pkg.price), Number.parseFloat(pkg.final_price))
+    : null
   const duration = durationLabel(pkg.duration_days)
   const image = resolveMediaUrl(pkg.image_url)
   const style = buttonColorStyle(pkg.button_color)
@@ -184,9 +187,15 @@ function PackageCompareCard({
           <SarAmount amount={pkg.final_price} className="text-lg font-bold text-brand-ink-900" />
         )}
         {discounted && !quote ? <SarAmount amount={pkg.price} struck /> : null}
-        {discounted ? (
+        {offer ? (
           <span className="text-red-600">
-            خصم <SarAmount amount={pkg.discount_amount} className="text-red-600" />
+            {offer.percent !== null ? (
+              `خصم ${offer.percent}%`
+            ) : (
+              <>
+                خصم <SarAmount amount={offer.amount} className="text-red-600" />
+              </>
+            )}
           </span>
         ) : null}
         {duration ? <span className="text-brand-ink-500">{duration}</span> : null}

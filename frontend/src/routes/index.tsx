@@ -100,6 +100,7 @@ import { OwnerPlatformSettingsPage } from '../pages/owner/OwnerPlatformSettingsP
 import { OwnerPrintingCatalogPage } from '../pages/owner/OwnerPrintingCatalogPage'
 import { CustomerPortalPage } from '../pages/CustomerPortalPage'
 import { PaymentResultPage } from '../pages/PaymentResultPage'
+import { PaymentReturnPage } from '../pages/PaymentReturnPage'
 import { PublicPrintingQuotePage } from '../pages/PublicPrintingQuotePage'
 import { PublicPrintingTrackPage } from '../pages/PublicPrintingTrackPage'
 import { PublicCommercialQuotationPage } from '../pages/public/PublicCommercialQuotationPage'
@@ -261,6 +262,7 @@ export function AppRoutes() {
       <Route path="/track/:token" element={<PublicPrintingTrackPage />} />
       <Route path="/portal/:token" element={<CustomerPortalPage />} />
       <Route path="/payment/result" element={<PaymentResultPage />} />
+      <Route path="/payment/return" element={<PaymentReturnPage />} />
       <Route path="/crm/q/:token" element={<PublicQuotationPage />} />
 
       <Route element={<RoleProtectedRoute roles={['CUSTOMER']} />}>

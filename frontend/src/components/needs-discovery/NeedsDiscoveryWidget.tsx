@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useFooterClearance } from '../../hooks/useFooterClearance'
 import { ApiRequestError } from '../../services/api'
 import {
   getNeedsDiscoverySteps,
@@ -46,6 +47,7 @@ export function NeedsDiscoveryWidget() {
   const [done, setDone] = useState<NeedsDiscoverySubmitResult | null>(null)
   const threadRef = useRef<HTMLDivElement>(null)
   const bootstrapped = useRef(false)
+  const footerClearance = useFooterClearance()
 
   const currentStep = steps[stepIndex] ?? null
 
@@ -242,7 +244,10 @@ export function NeedsDiscoveryWidget() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-start p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-start p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6"
+      style={{ transform: footerClearance > 0 ? `translateY(-${footerClearance}px)` : undefined }}
+    >
       <div className="pointer-events-auto flex max-w-full flex-col items-start gap-3">
         {open ? (
           <section

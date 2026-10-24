@@ -142,7 +142,7 @@ export function DashboardStatCard({
   const unavailableCopy = metric.reason ? UNAVAILABLE_METRIC_COPY[metric.reason] : undefined
 
   return (
-    <article className="flex min-h-[104px] min-w-0 flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="flex min-h-[104px] min-w-0 flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-medium">{title}</h3>
         <span className="rounded-lg bg-slate-100 p-2 text-slate-700">

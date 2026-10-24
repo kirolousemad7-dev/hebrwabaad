@@ -183,7 +183,7 @@ export function OwnerRoleDashboardAccessPage() {
           </select>
         </div>
 
-        <div className="space-y-6 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <div className="space-y-6 rounded-xl border border-slate-200 bg-[#f4f6f8]/60 p-4">
           <p className="text-sm text-slate-600">
             اختر ما يمكن لهذا الدور رؤيته في لوحة التحكم. صلاحيات الإجراءات التفصيلية تبقى كما هي.
           </p>

@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'faq',
     'tags',
     'base_price',
+    'price_before_discount',
     'currency',
     'pricing_mode',
     'duration_days',
@@ -88,6 +89,7 @@ class Service extends Model
             'faq' => 'array',
             'tags' => 'array',
             'base_price' => 'decimal:2',
+            'price_before_discount' => 'decimal:2',
             'duration_days' => 'integer',
             'revision_rounds' => 'integer',
             'is_active' => 'boolean',
@@ -192,6 +194,21 @@ class Service extends Model
     public function isChargeable(): bool
     {
         return $this->pricingMode()->isChargeable() && (float) $this->base_price > 0;
+    }
+
+    /**
+     * Difference between the optional compare price and the chargeable price.
+     */
+    public function discountAmount(): string
+    {
+        $before = (float) ($this->price_before_discount ?? 0);
+        $current = (float) $this->base_price;
+
+        if ($before <= $current) {
+            return '0.00';
+        }
+
+        return number_format($before - $current, 2, '.', '');
     }
 
     /**

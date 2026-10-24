@@ -10,6 +10,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PayTabsClient
 {
+    public const HOSTED_PAGE_REQUIRED = 'PayTabs Profile ID and Server Key are required for Hosted Payment Page.';
+
     public function isConfigured(): bool
     {
         if (! (bool) config('payments.enabled', true)) {
@@ -47,6 +49,8 @@ class PayTabsClient
             $payload['customer_details'] = $customerDetails;
         }
 
+        $this->assertHttpsInProduction($payload['callback'], $returnUrl);
+
         try {
             $response = Http::timeout($this->timeout())
                 ->acceptJson()
@@ -75,6 +79,18 @@ class PayTabsClient
         }
 
         return new CardCheckoutSession($cartId, $redirectUrl, $tranRef);
+    }
+
+    public function isGenuineCallback(string $rawBody, string $signature): bool
+    {
+        $serverKey = $this->serverKey();
+        $signature = trim($signature);
+
+        if ($serverKey === '' || $rawBody === '' || $signature === '') {
+            return false;
+        }
+
+        return hash_equals(hash_hmac('sha256', $rawBody, $serverKey), $signature);
     }
 
     /**
@@ -207,12 +223,30 @@ class PayTabsClient
 
     public function callbackUrl(): string
     {
-        return rtrim((string) config('app.url'), '/').'/api/webhooks/paytabs';
+        $configured = trim((string) config('payments.paytabs.callback_url', ''));
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return rtrim((string) config('app.url'), '/').'/api/payments/paytabs/callback';
     }
 
     public function returnUrl(): string
     {
-        return rtrim((string) config('app.url'), '/').'/api/payments/paytabs/return';
+        $configured = trim((string) config('payments.paytabs.return_url', ''));
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return rtrim((string) config('app.frontend_url', config('app.url')), '/').'/payment/return';
+    }
+
+    public function returnUrlForPayment(Payment $payment): string
+    {
+        $base = $this->returnUrl();
+        $separator = str_contains($base, '?') ? '&' : '?';
+
+        return $base.$separator.'payment='.$payment->id.'&cart_id='.rawurlencode($this->cartId($payment));
     }
 
     public function paymentRequestUrl(): string
@@ -225,12 +259,36 @@ class PayTabsClient
         return $this->baseUrl().'/payment/query';
     }
 
+    /**
+     * @return list<string>
+     */
+    public function missingHostedCredentials(): array
+    {
+        $missing = [];
+        if ($this->profileId() <= 0) {
+            $missing[] = 'PAYTABS_PROFILE_ID';
+        }
+        if ($this->serverKey() === '') {
+            $missing[] = 'PAYTABS_SERVER_KEY';
+        }
+
+        return $missing;
+    }
+
     private function assertConfigured(): void
     {
-        if (! $this->isConfigured()) {
-            Log::warning('paytabs.not_configured');
-            throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+        if ($this->isConfigured()) {
+            return;
         }
+
+        $missing = $this->missingHostedCredentials();
+        Log::warning('paytabs.not_configured', ['missing' => $missing]);
+
+        if ($missing !== []) {
+            throw new HttpException(503, self::HOSTED_PAGE_REQUIRED);
+        }
+
+        throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
     }
 
     /**
@@ -286,5 +344,19 @@ class PayTabsClient
     private function timeout(): int
     {
         return max(3, (int) config('payments.paytabs.timeout', 15));
+    }
+
+    private function assertHttpsInProduction(string $callbackUrl, string $returnUrl): void
+    {
+        if (! app()->environment('production')) {
+            return;
+        }
+
+        foreach ([$callbackUrl, $returnUrl] as $url) {
+            if (! str_starts_with($url, 'https://')) {
+                Log::warning('paytabs.insecure_url');
+                throw new HttpException(503, 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
+            }
+        }
     }
 }

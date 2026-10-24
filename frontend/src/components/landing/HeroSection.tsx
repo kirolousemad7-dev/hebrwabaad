@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { BrandLogo } from '../brand/BrandLogo'
 import { MediaLightbox } from '../ui/MediaLightbox'
@@ -11,7 +12,6 @@ import {
   motionOrReduced,
   staggerContainer,
 } from '../../utils/marketingMotion'
-import { BrandVisual } from '../marketing/BrandVisual'
 import { LandingCta } from './LandingCta'
 
 function scrollToId(id: string) {
@@ -44,17 +44,17 @@ export function HeroSection() {
   const eyebrow = taglineDuplicatesHeading ? `${brandName} للطباعة والتصميم` : rawTagline || null
   const heroVisual = resolveVisual('hero', 'visual_image', marketingVisuals.hero)
   const heroVideo = resolveContent('hero', 'visual_video', '').trim()
-  const aspect = resolveContent('hero', 'visual_aspect', '4:3')
-  const width = Number.parseInt(resolveContent('hero', 'visual_width', ''), 10)
-  const height = Number.parseInt(resolveContent('hero', 'visual_height', ''), 10)
-  const aspectClass =
-    aspect === '1:1' ? 'aspect-square' : aspect === '16:9' ? 'aspect-video' : aspect === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'
+  const discoveryLabel = settings.homepage.hero_primary_cta_label || 'اكتشف احتياجك'
+  const staticHeroImage = marketingVisuals.hero.image
+  const customImage =
+    heroVisual.image && !heroVisual.image.endsWith(staticHeroImage) ? heroVisual.image : ''
+  const hasMedia = Boolean(heroVideo || customImage)
 
   return (
     <section id="home" className="relative overflow-hidden bg-brand-paper text-brand-ink-900">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_8%,rgba(49,92,255,0.04),transparent_34%)]" />
 
-      <div className="marketing-container relative grid items-center gap-8 py-10 sm:gap-10 sm:py-14 lg:min-h-[calc(100svh-4.5rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14 lg:py-20">
+      <div className="marketing-container relative grid items-center gap-8 py-10 sm:gap-10 sm:py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.72fr)] lg:gap-12 lg:py-16">
         <motion.div
           className="relative z-10 space-y-5 sm:space-y-6"
           variants={motionOrReduced(reduceMotion, staggerContainer)}
@@ -62,7 +62,7 @@ export function HeroSection() {
           animate="show"
         >
           <motion.div variants={motionOrReduced(reduceMotion, fadeUp)} className="hidden sm:block">
-            <BrandLogo size="mark" to="/" />
+            <BrandLogo size="hero" to="/" className="!p-0" />
           </motion.div>
           {eyebrow ? (
             <motion.p
@@ -98,49 +98,47 @@ export function HeroSection() {
         </motion.div>
 
         <motion.div
-          className="relative z-10 w-full max-w-xs justify-self-center sm:max-w-sm"
+          className="relative z-10 w-full max-w-[18.5rem] justify-self-center lg:max-w-[20rem] lg:justify-self-end"
           variants={motionOrReduced(reduceMotion, imageReveal)}
           initial="hidden"
           animate="show"
-          style={Number.isFinite(width) && width > 0 ? { maxWidth: `${width}px` } : undefined}
         >
-          <div className="group relative">
+          {hasMedia ? (
             <button
               type="button"
-              onClick={() => {
-                if (heroVideo || heroVisual.image) {
-                  setLightboxOpen(true)
-                }
-              }}
-              className="block w-full text-start"
+              onClick={() => setLightboxOpen(true)}
+              className="block w-full rounded-[1.5rem] border border-brand-ink-100 bg-white p-3 text-start shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)]"
               aria-label="فتح صورة اكتشف احتياجك"
             >
-              <div
-                className={`relative overflow-hidden rounded-[1.5rem] border border-brand-ink-100 shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)] ${aspectClass}`}
-                style={Number.isFinite(height) && height > 0 ? { height: `${height}px` } : undefined}
-              >
+              <div className="flex min-h-40 items-center justify-center overflow-hidden rounded-2xl bg-brand-paper">
                 {heroVideo && !heroVideo.includes('youtube') && !heroVideo.includes('youtu.be') && !heroVideo.includes('vimeo') ? (
-                  <video src={heroVideo} className="h-full w-full object-cover" muted playsInline loop autoPlay />
+                  <video src={heroVideo} className="max-h-64 w-full object-contain sm:max-h-72" muted playsInline loop autoPlay />
                 ) : (
-                  <BrandVisual visual={heroVisual} priority zoomable />
+                  <img
+                    src={customImage}
+                    alt={heroVisual.alt || discoveryLabel}
+                    className="max-h-64 w-full object-contain sm:max-h-72"
+                    decoding="async"
+                  />
                 )}
-                <span className="absolute inset-x-3 bottom-3 rounded-full bg-brand-ink-900/80 px-3 py-1 text-center text-xs text-white">
-                  اكتشف احتياجك
-                </span>
               </div>
+              <span className="mt-3 block px-1 text-sm font-semibold text-brand-ink-900">{discoveryLabel}</span>
+              <span className="mt-1 block px-1 text-xs leading-6 text-brand-ink-500">طباعة · هوية · تسويق · فعاليات</span>
             </button>
-            {!reduceMotion ? (
-              <motion.div
-                aria-hidden="true"
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -bottom-4 inset-inline-start-3 hidden max-w-[13rem] rounded-2xl border border-brand-ink-100 bg-white/95 px-3.5 py-2.5 text-xs leading-6 text-brand-ink-700 shadow-card backdrop-blur sm:block"
-              >
-                <span className="mb-0.5 block text-[0.65rem] font-medium text-brand-ink-500">فرع المنصة</span>
-                طباعة · هوية · تسويق · فعاليات
-              </motion.div>
-            ) : null}
-          </div>
+          ) : (
+            <Link
+              to={primaryPath}
+              className="block rounded-[1.5rem] border border-brand-ink-100 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(17,19,24,0.45)] transition hover:-translate-y-0.5"
+            >
+              <p className="text-xs font-medium text-brand-ink-500">فرع المنصة</p>
+              <p className="mt-2 text-2xl font-bold leading-snug text-brand-ink-900">{discoveryLabel}</p>
+              <p className="mt-3 line-clamp-4 text-sm leading-7 text-brand-ink-500">{sub}</p>
+              <p className="mt-4 text-sm text-brand-ink-700">طباعة · هوية · تسويق · فعاليات</p>
+              <span className="mt-5 inline-flex min-h-10 items-center rounded-xl bg-brand-ink-900 px-4 text-sm font-medium text-white">
+                {discoveryLabel}
+              </span>
+            </Link>
+          )}
         </motion.div>
       </div>
 
@@ -159,7 +157,7 @@ export function HeroSection() {
       <MediaLightbox
         open={lightboxOpen}
         title="اكتشف احتياجك"
-        imageSrc={heroVideo ? null : heroVisual.image}
+        imageSrc={heroVideo ? null : customImage || null}
         videoSrc={heroVideo || null}
         onClose={() => setLightboxOpen(false)}
       />

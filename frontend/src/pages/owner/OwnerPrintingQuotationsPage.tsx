@@ -440,7 +440,7 @@ export function OwnerPrintingQuotationsPage() {
               </span>
             ) : null}
             {detail.payment_policy ? (
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs">
+              <span className="rounded-full border border-slate-200 bg-[#f4f6f8] px-3 py-1 text-xs">
                 {printingPaymentPolicyLabel(detail.payment_policy)}
               </span>
             ) : null}

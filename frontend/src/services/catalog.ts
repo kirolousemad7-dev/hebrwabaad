@@ -20,6 +20,8 @@ export type ServiceInput = {
   category: ServiceCategory
   subcategory?: string | null
   base_price: number
+  price_before_discount?: number | null
+  discount_amount?: number | null
   currency?: string
   pricing_mode?: PricingMode
   duration_days?: number | null

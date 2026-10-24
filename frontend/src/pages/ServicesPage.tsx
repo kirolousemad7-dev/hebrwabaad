@@ -1,10 +1,38 @@
+import { useState } from 'react'
+import { CatalogPriceLine } from '../components/catalog/CatalogPriceLine'
 import { CatalogEmptyState, CatalogErrorState, CatalogSkeleton } from '../components/catalog/CatalogStatus'
 import { PublicCta } from '../components/public/PublicCta'
 import { PublicBreadcrumbs } from '../components/seo/PublicBreadcrumbs'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { getPublicServices } from '../services/catalog'
-import { formatDuration, servicePriceLabel, SERVICE_CATEGORY_LABELS } from '../utils/catalog'
+import type { Service } from '../types/api'
+import { SERVICE_CATEGORY_LABELS } from '../utils/catalog'
+import { resolveMediaUrl } from '../utils/mediaUrl'
 import { buildRequestQuotePath } from '../utils/quoteRequests'
+
+function ServiceCover({ service }: { service: Service }) {
+  const image = resolveMediaUrl(service.hero_image)
+  const [failed, setFailed] = useState(false)
+  const mark = SERVICE_CATEGORY_LABELS[service.category].slice(0, 1)
+
+  if (!image || failed) {
+    return (
+      <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-ink-900 text-xs font-medium text-white">
+        {mark}
+      </span>
+    )
+  }
+
+  return (
+    <img
+      src={image}
+      alt=""
+      className="mb-3 h-28 w-full rounded-xl object-cover"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 export function ServicesPage() {
   const { state, reload } = useAsyncData(getPublicServices)
@@ -54,9 +82,10 @@ export function ServicesPage() {
       ) : null}
 
       {state.status === 'ready' && state.data.length > 0 ? (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {state.data.map((service) => (
-            <li key={service.id} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <li key={service.id} className="flex h-full min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <ServiceCover service={service} />
               <div className="flex items-start justify-between gap-3">
                 <h2 className="font-semibold">{service.name}</h2>
                 <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
@@ -64,14 +93,18 @@ export function ServicesPage() {
                 </span>
               </div>
 
-              {service.summary ? <p className="flex-1 text-sm leading-7 text-slate-600">{service.summary}</p> : null}
+              <p className="line-clamp-3 min-h-16 flex-1 text-sm leading-7 text-slate-600">{service.summary || ' '}</p>
 
               <div className="mt-auto space-y-3 border-t border-slate-100 pt-3">
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="whitespace-nowrap text-xl font-semibold">{servicePriceLabel(service)}</span>
-                  {service.duration_days !== null ? (
-                    <span className="text-sm text-slate-500">{formatDuration(service.duration_days)}</span>
-                  ) : null}
+                  <CatalogPriceLine
+                    pricingMode={service.pricing_mode}
+                    current={service.base_price}
+                    before={service.price_before_discount}
+                    currency={service.currency}
+                    durationDays={service.duration_days}
+                    chargeable={service.is_chargeable}
+                  />
                   {service.is_featured ? (
                     <span className="rounded-full bg-brand-primary-soft px-2 py-0.5 text-xs text-brand-primary">مميّزة</span>
                   ) : null}

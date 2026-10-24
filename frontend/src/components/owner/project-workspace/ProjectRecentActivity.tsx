@@ -1,15 +1,14 @@
 import type { ProjectActivity } from '../../../types/api'
 import { formatDateTimeShort } from '../../../utils/calendarDates'
-import {
-  projectActivityLabel,
-  projectActivitySecondaryLine,
-} from '../../../utils/projectActivityLabels'
+import { projectActivityHeadline } from '../../../utils/projectActivityLabels'
 
 type Props = {
   activities: ProjectActivity[] | null | undefined
   emptyLabel?: string
   loading?: boolean
   error?: string | null
+  limit?: number
+  taskTitles?: Record<number, string>
 }
 
 export function ProjectRecentActivity({
@@ -17,6 +16,8 @@ export function ProjectRecentActivity({
   emptyLabel = 'لا تحديثات حديثة.',
   loading = false,
   error = null,
+  limit = 5,
+  taskTitles,
 }: Props) {
   if (loading) {
     return (
@@ -40,14 +41,12 @@ export function ProjectRecentActivity({
 
   return (
     <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
-      {rows.slice(0, 12).map((activity) => (
+      {rows.slice(0, limit).map((activity) => (
         <li key={activity.id} className="px-3 py-2.5 text-sm">
-          <p className="font-medium text-slate-900">
-            {activity.description?.trim() || projectActivityLabel(activity.action)}
-          </p>
+          <p className="font-medium leading-6 text-slate-900">{projectActivityHeadline(activity, taskTitles)}</p>
           <p className="text-xs text-slate-500">
-            {projectActivitySecondaryLine(activity)}
-            {activity.created_at ? ` · ${formatDateTimeShort(activity.created_at)}` : ''}
+            {activity.actor?.name ? `${activity.actor.name} · ` : ''}
+            {activity.created_at ? formatDateTimeShort(activity.created_at) : ''}
           </p>
         </li>
       ))}

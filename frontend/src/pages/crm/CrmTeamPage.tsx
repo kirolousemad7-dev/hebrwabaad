@@ -31,7 +31,7 @@ export function CrmTeamPage() {
       {items.length > 0 ? (
         <div className="overflow-x-auto rounded-2xl border bg-white">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-right">
+            <thead className="bg-[#f4f6f8] text-right">
               <tr>
                 <th className="px-3 py-2">الاسم</th>
                 <th className="px-3 py-2">البريد</th>

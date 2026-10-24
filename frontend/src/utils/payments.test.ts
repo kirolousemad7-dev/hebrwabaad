@@ -136,6 +136,8 @@ describe('payments', () => {
 
   it('only follows PayTabs hosted checkout URLs', () => {
     expect(isSafeCheckoutRedirect('https://secure-egypt.paytabs.com/payment/page/abc')).toBe(true)
+    expect(isSafeCheckoutRedirect('https://secure.paytabs.sa/payment/page/abc')).toBe(true)
+    expect(isSafeCheckoutRedirect('https://evilpaytabs.com/payment/page/abc')).toBe(false)
     expect(isSafeCheckoutRedirect('https://evil.example/phish')).toBe(false)
     expect(isSafeCheckoutRedirect('javascript:alert(1)')).toBe(false)
     expect(isSafeCheckoutRedirect(null)).toBe(false)

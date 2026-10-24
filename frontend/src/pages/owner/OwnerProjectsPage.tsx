@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   DashboardEmptyState,
   DashboardErrorState,
   DashboardPanelSkeleton,
 } from '../../components/owner/DashboardSection'
+import { ProjectWorkflowCard } from '../../components/owner/ProjectWorkflowCard'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { AddCustomerModal } from '../../components/workspace/AddCustomerModal'
 import { useToast } from '../../context/ToastContext'
@@ -16,41 +16,33 @@ import {
   getProjectCustomers,
 } from '../../services/workspaceProjects'
 import { describeApiError } from '../../utils/errors'
-import { PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
+import { PROJECT_STATUS_FILTERS, PROJECT_STATUS_LABELS } from '../../utils/workspaceProjects'
+import { ownerInputClass, ownerPrimaryButtonClass, OwnerPageHeader } from '../../components/owner/ownerChrome'
 
-const fieldClass =
-  'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+const fieldClass = `mt-1 ${ownerInputClass}`
 
 type Option = { id: number; name: string }
-
-function healthBadge(status: string, label: string) {
-  const tone =
-    status === 'overdue'
-      ? 'border-red-300 bg-red-50 text-red-900'
-      : status === 'needs_attention'
-        ? 'border-amber-300 bg-amber-50 text-amber-900'
-        : 'border-slate-200 bg-slate-50 text-slate-700'
-  return (
-    <span className={`rounded-full border px-2 py-0.5 text-xs ${tone}`}>{label || status}</span>
-  )
-}
 
 export function OwnerProjectsPage() {
   const toast = useToast()
   const [items, setItems] = useState<OperationsProjectListItem[]>([])
+  const [summary, setSummary] = useState<{ total: number; by_status: Record<string, number> }>({ total: 0, by_status: {} })
   const [page, setPage] = useState(1)
   const [lastPage, setLastPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
 
-  async function load(nextPage = page) {
+  async function load(nextPage = page, filters = { status: statusFilter, q: query }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await getOperationsProjects(nextPage)
+      const response = await getOperationsProjects({ page: nextPage, status: filters.status, q: filters.q })
       setItems(response.data.items ?? [])
+      setSummary(response.data.summary ?? { total: 0, by_status: {} })
       setLastPage(response.data.meta?.last_page ?? 1)
       setPage(response.data.meta?.current_page ?? nextPage)
     } catch (caught) {
@@ -61,28 +53,76 @@ export function OwnerProjectsPage() {
   }
 
   useEffect(() => {
-    void load(1)
+    const handle = window.setTimeout(() => {
+      void load(1, { status: statusFilter, q: query })
+    }, query.trim() === '' ? 0 : 300)
+    return () => window.clearTimeout(handle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [statusFilter, query])
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">المشاريع</h1>
-          <p className="mt-1 text-sm text-slate-600">مساحة عمل المشاريع مع صحة التقدم والمهام.</p>
+      <OwnerPageHeader
+        title="المشاريع"
+        description="إدارة ومتابعة المشاريع الحالية."
+        action={
+          <button
+            type="button"
+            onClick={() => {
+              setNotice(null)
+              setFormOpen((open) => !open)
+            }}
+            className={ownerPrimaryButtonClass}
+          >
+            {formOpen ? 'إغلاق النموذج' : 'إضافة مشروع'}
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          { label: 'كل المشاريع', value: summary.total },
+          { label: 'تخطيط', value: summary.by_status.PLANNING ?? 0 },
+          { label: 'قيد التنفيذ', value: summary.by_status.IN_PROGRESS ?? 0 },
+          { label: 'مراجعة', value: summary.by_status.REVIEW ?? 0 },
+          { label: 'مكتملة', value: summary.by_status.COMPLETED ?? 0 },
+          { label: 'ملغاة', value: summary.by_status.CANCELLED ?? 0 },
+        ].map((item) => (
+          <div key={item.label} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+            <p className="text-xs text-slate-500">{item.label}</p>
+            <p className="text-lg font-semibold text-slate-900">{item.value.toLocaleString('en-US')}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {PROJECT_STATUS_FILTERS.map((filter) => {
+            const active = statusFilter === filter.value
+            return (
+              <button
+                key={filter.label}
+                type="button"
+                onClick={() => setStatusFilter(filter.value)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-sm ${
+                  active ? 'border-brand-cobalt-500 bg-brand-cobalt-500 text-white' : 'border-slate-200 bg-white text-slate-700'
+                }`}
+              >
+                {filter.label}
+              </button>
+            )
+          })}
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setNotice(null)
-            setFormOpen((open) => !open)
-          }}
-          className="inline-flex min-h-11 items-center rounded-lg bg-slate-900 px-4 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-        >
-          {formOpen ? 'إغلاق النموذج' : 'إضافة مشروع'}
-        </button>
-      </header>
+        <label className="block min-w-0 lg:w-64">
+          <span className="sr-only">بحث</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="ابحث عن مشروع"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
 
       {notice ? <FeedbackBanner kind="success">{notice}</FeedbackBanner> : null}
       {error ? <FeedbackBanner kind="error">{error}</FeedbackBanner> : null}
@@ -108,37 +148,9 @@ export function OwnerProjectsPage() {
       ) : null}
 
       {!loading && items.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {items.map((project) => (
-            <Link
-              key={project.id}
-              to={`/owner/projects/${project.id}`}
-              className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-amber-300"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="font-semibold text-slate-900">{project.title}</h2>
-                {healthBadge(project.health?.status ?? 'on_track', project.health?.label ?? 'على المسار')}
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                {project.customer?.name ?? 'بدون عميل'}
-                {project.account_manager ? ` · ${project.account_manager.name}` : ''}
-              </p>
-              <div className="mt-3">
-                <div className="mb-1 flex justify-between text-xs text-slate-500">
-                  <span>التقدم</span>
-                  <span>{Math.round(project.progress ?? 0).toLocaleString('ar-SA')}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className="h-full rounded-full bg-amber-500/80"
-                    style={{ width: `${Math.min(100, Math.max(0, project.progress ?? 0))}%` }}
-                  />
-                </div>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                الموعد: {project.deadline ?? '—'} · الحالة: {project.status}
-              </p>
-            </Link>
+            <ProjectWorkflowCard key={project.id} project={project} />
           ))}
         </div>
       ) : null}

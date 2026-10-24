@@ -27,8 +27,8 @@ describe('customerProjectActivity', () => {
   })
 
   it('falls back to Arabic action labels instead of raw action keys', () => {
-    expect(customerProjectActivityPrimary({ ...base, description: null })).toBe('إكمال مهمة')
-    expect(customerProjectActivityPrimary({ ...base, description: '   ' })).toBe('إكمال مهمة')
+    expect(customerProjectActivityPrimary({ ...base, description: null })).toBe('تم إكمال المهمة')
+    expect(customerProjectActivityPrimary({ ...base, description: '   ' })).toBe('تم إكمال المهمة')
   })
 
   it('uses a generic Arabic fallback for unknown actions without description', () => {
