@@ -28,7 +28,7 @@ class OrderService
      */
     public function eagerLoad(): array
     {
-        return ['customer', 'accountManager', 'project', 'service', 'package', 'packageTier', 'items.service', 'items.addons.addon', 'addons.addon', 'statusHistory.changedBy'];
+        return ['customer', 'accountManager', 'project', 'service', 'package', 'packageTier', 'items.service', 'items.addons.addon', 'addons.addon', 'statusHistory.changedBy', 'otoShipment'];
     }
 
     /**

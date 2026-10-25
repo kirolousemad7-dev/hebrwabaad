@@ -12,8 +12,10 @@ use App\Enums\UserRole;
 use App\Models\CommercialQuotation;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PaymentAccount;
 use App\Models\PaymentAttempt;
 use App\Models\PaymentSetting;
+use App\Models\PaymentVerificationEvent;
 use App\Models\PrintingQuotation;
 use App\Models\User;
 use App\Services\PlatformNotifier;
@@ -22,8 +24,11 @@ use App\Services\Quotes\CommercialQuotationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -38,6 +43,7 @@ class PaymentService
         private readonly CommercialQuotationService $commercialQuotations,
         private readonly PaymentStatusTransitionService $statusTransitions,
         private readonly PayTabsCallbackMetrics $callbackMetrics,
+        private readonly PaymentAccountService $accounts,
     ) {}
 
     /**
@@ -65,8 +71,17 @@ class PaymentService
     public function customerSettings(): array
     {
         $settings = PaymentSetting::current();
-        $instapayVisible = $settings->instapayReady();
-        $bankVisible = $settings->bankTransferReady();
+        $accounts = PaymentAccount::query()
+            ->whereIn('method', [PaymentMethod::Instapay->value, PaymentMethod::BankTransfer->value])
+            ->where('is_active', true)
+            ->whereNull('archived_at')
+            ->orderByDesc('is_default')
+            ->orderByDesc('id')
+            ->get();
+        $instapayAccount = $accounts->first(fn (PaymentAccount $account) => $this->accountMethod($account) === PaymentMethod::Instapay);
+        $bankAccount = $accounts->first(fn (PaymentAccount $account) => $this->accountMethod($account) === PaymentMethod::BankTransfer);
+        $instapayVisible = $instapayAccount !== null || (! PaymentAccount::query()->where('method', PaymentMethod::Instapay->value)->exists() && $settings->instapayReady());
+        $bankVisible = $bankAccount !== null || (! PaymentAccount::query()->where('method', PaymentMethod::BankTransfer->value)->exists() && $settings->bankTransferReady());
 
         return [
             'card' => [
@@ -74,29 +89,40 @@ class PaymentService
                 'configured' => $this->cards->isConfigured(),
             ],
             'instapay' => [
-                'enabled' => $settings->instapay_enabled,
+                'enabled' => $instapayAccount !== null || (bool) $settings->instapay_enabled,
                 'ready' => $instapayVisible,
-                'account_name' => $instapayVisible ? $settings->instapay_account_name : null,
+                'account_name' => $instapayAccount?->account_holder_name ?? ($instapayVisible ? $settings->instapay_account_name : null),
                 'bank_name' => $instapayVisible ? $settings->instapay_bank_name : null,
                 'account_number' => $instapayVisible ? $settings->instapay_account_number : null,
-                'handle' => $instapayVisible ? $settings->instapay_handle : null,
-                'phone' => $instapayVisible ? $settings->instapay_phone : null,
-                'instructions' => $instapayVisible ? $settings->instapay_instructions : null,
+                'handle' => $instapayAccount?->instapay_address ?? ($instapayVisible ? $settings->instapay_handle : null),
+                'phone' => $instapayAccount?->mobile_number ?? ($instapayVisible ? $settings->instapay_phone : null),
+                'instructions' => $instapayAccount?->instructions ?? ($instapayVisible ? $settings->instapay_instructions : null),
                 'notes' => $instapayVisible ? $settings->instapay_notes : null,
             ],
             'bank_transfer' => [
-                'enabled' => $settings->bank_transfer_enabled,
+                'enabled' => $bankAccount !== null || (bool) $settings->bank_transfer_enabled,
                 'ready' => $bankVisible,
-                'bank_name' => $bankVisible ? $settings->bank_name : null,
-                'account_name' => $bankVisible ? $settings->bank_account_name : null,
-                'account_number' => $bankVisible ? $settings->bank_account_number : null,
-                'iban' => $bankVisible ? $settings->bank_iban : null,
+                'bank_name' => $bankAccount?->bank_name ?? ($bankVisible ? $settings->bank_name : null),
+                'account_name' => $bankAccount?->account_holder_name ?? ($bankVisible ? $settings->bank_account_name : null),
+                'account_number' => $bankAccount?->account_number ?? ($bankVisible ? $settings->bank_account_number : null),
+                'iban' => $bankAccount?->iban ?? ($bankVisible ? $settings->bank_iban : null),
                 'swift' => $bankVisible ? $settings->bank_swift : null,
-                'branch' => $bankVisible ? $settings->bank_branch : null,
-                'instructions' => $bankVisible ? $settings->bank_instructions : null,
+                'branch' => $bankAccount?->branch_name ?? ($bankVisible ? $settings->bank_branch : null),
+                'instructions' => $bankAccount?->instructions ?? ($bankVisible ? $settings->bank_instructions : null),
                 'notes' => $bankVisible ? $settings->bank_notes : null,
             ],
+            'accounts' => $accounts
+                ->map(fn (PaymentAccount $account) => $this->accounts->publicPayload($account))
+                ->values()
+                ->all(),
         ];
+    }
+
+    private function accountMethod(PaymentAccount $account): PaymentMethod
+    {
+        return $account->method instanceof PaymentMethod
+            ? $account->method
+            : PaymentMethod::from((string) $account->method);
     }
 
     /**
@@ -590,41 +616,77 @@ class PaymentService
 
     /**
      * Customer-declared transfer details for a manual method (InstaPay / bank transfer).
+     * A payment screenshot is required and never auto-approves the payment.
+     *
+     * @param  array{reference_number: string, payer_name?: string|null, notes?: string|null, payment_account_id?: int|null}  $input
      */
-    public function submitManualTransfer(User $customer, Payment $payment, string $reference, ?string $payerName = null, ?string $notes = null): Payment
+    public function submitManualTransfer(User $customer, Payment $payment, array $input, UploadedFile $proof): Payment
     {
-        if ($payment->customer_id !== $customer->id) {
-            throw ValidationException::withMessages([
-                'payment' => ['You cannot pay this order.'],
+        $fresh = DB::transaction(function () use ($customer, $payment, $input, $proof) {
+            /** @var Payment $locked */
+            $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->customer_id !== $customer->id) {
+                throw ValidationException::withMessages([
+                    'payment' => ['You cannot pay this order.'],
+                ]);
+            }
+
+            $method = $locked->payment_method;
+
+            if (! $method instanceof PaymentMethod || ! $method->isManual()) {
+                throw ValidationException::withMessages([
+                    'payment' => ['This payment is not a manual transfer.'],
+                ]);
+            }
+
+            $status = $locked->status instanceof PaymentStatus
+                ? $locked->status
+                : PaymentStatus::from((string) $locked->status);
+
+            if (! in_array($status, [PaymentStatus::Pending, PaymentStatus::Rejected], true)) {
+                throw ValidationException::withMessages([
+                    'payment' => ['لا يمكن إرسال إثبات إلا أثناء انتظار الدفع أو بعد الرفض.'],
+                ]);
+            }
+
+            $this->assertMethodEnabled($method);
+            $account = $this->accounts->resolve($method, isset($input['payment_account_id']) ? (int) $input['payment_account_id'] : null);
+
+            if (filled($locked->proof_path)) {
+                Storage::disk($locked->proof_disk ?: 'local')->delete($locked->proof_path);
+            }
+
+            $path = $proof->store('payment-proofs/'.$locked->id, 'local');
+            $action = $status === PaymentStatus::Rejected ? 'resubmitted' : 'submitted';
+            $this->transition($locked, PaymentStatus::PendingVerification);
+
+            $locked->update([
+                'status' => PaymentStatus::PendingVerification,
+                'payment_account_id' => $account->id,
+                'reference_number' => $input['reference_number'],
+                'payer_name' => $input['payer_name'] ?? null,
+                'notes' => $input['notes'] ?? null,
+                'failure_reason' => null,
+                'proof_disk' => 'local',
+                'proof_path' => $path,
+                'proof_original_name' => $proof->getClientOriginalName(),
+                'proof_mime' => $proof->getMimeType(),
+                'proof_size' => $proof->getSize(),
+                'verified_at' => null,
+                'verified_by' => null,
             ]);
-        }
 
-        $method = $payment->payment_method;
-
-        if (! $method instanceof PaymentMethod || ! $method->isManual()) {
-            throw ValidationException::withMessages([
-                'payment' => ['This payment is not a manual transfer.'],
+            PaymentVerificationEvent::query()->create([
+                'payment_id' => $locked->id,
+                'actor_id' => $customer->id,
+                'action' => $action,
+                'reason' => null,
             ]);
-        }
 
-        if (! in_array($payment->status, [PaymentStatus::Pending], true)) {
-            throw ValidationException::withMessages([
-                'payment' => ['Transfer details can only be submitted while pending.'],
-            ]);
-        }
+            return $this->load($locked->fresh() ?? $locked);
+        });
 
-        $this->assertMethodEnabled($method);
-        $this->transition($payment, PaymentStatus::PendingVerification);
-
-        $payment->update([
-            'status' => PaymentStatus::PendingVerification,
-            'reference_number' => $reference,
-            'payer_name' => $payerName,
-            'notes' => $notes,
-            'failure_reason' => null,
-        ]);
-
-        $fresh = $this->load($payment->fresh());
         $this->notifier->manualTransferSubmitted($fresh);
 
         return $fresh;
@@ -632,27 +694,50 @@ class PaymentService
 
     public function approve(User $owner, Payment $payment): Payment
     {
-        if (! $this->isManualPayment($payment)) {
-            throw ValidationException::withMessages([
-                'payment' => ['Only manual transfers can be verified manually.'],
+        $result = DB::transaction(function () use ($owner, $payment) {
+            /** @var Payment $locked */
+            $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if (! $this->isManualPayment($locked)) {
+                throw ValidationException::withMessages([
+                    'payment' => ['Only manual transfers can be verified manually.'],
+                ]);
+            }
+
+            $status = $locked->status instanceof PaymentStatus
+                ? $locked->status
+                : PaymentStatus::from((string) $locked->status);
+
+            if ($status === PaymentStatus::Paid) {
+                return ['payment' => $this->load($locked), 'newly_paid' => false];
+            }
+
+            $this->transition($locked, PaymentStatus::Paid);
+
+            $locked->update([
+                'status' => PaymentStatus::Paid,
+                'paid_at' => $locked->paid_at ?? now(),
+                'verified_at' => now(),
+                'verified_by' => $owner->id,
+                'failure_reason' => null,
             ]);
+
+            PaymentVerificationEvent::query()->create([
+                'payment_id' => $locked->id,
+                'actor_id' => $owner->id,
+                'action' => 'approved',
+                'reason' => null,
+            ]);
+
+            return ['payment' => $this->load($locked->fresh() ?? $locked), 'newly_paid' => true];
+        });
+
+        if ($result['newly_paid']) {
+            $this->notifier->paymentPaid($result['payment']);
+            $this->afterPrintingPaymentPaidFromPayment($result['payment'], $owner);
         }
 
-        $this->transition($payment, PaymentStatus::Paid);
-
-        $payment->update([
-            'status' => PaymentStatus::Paid,
-            'paid_at' => now(),
-            'verified_at' => now(),
-            'verified_by' => $owner->id,
-            'failure_reason' => null,
-        ]);
-
-        $fresh = $this->load($payment->fresh());
-        $this->notifier->paymentPaid($fresh);
-        $this->afterPrintingPaymentPaidFromPayment($fresh, $owner);
-
-        return $fresh;
+        return $result['payment'];
     }
 
     /**
@@ -711,25 +796,48 @@ class PaymentService
 
     public function reject(User $owner, Payment $payment, string $reason): Payment
     {
-        if (! $this->isManualPayment($payment)) {
-            throw ValidationException::withMessages([
-                'payment' => ['Only manual transfers can be rejected manually.'],
+        $fresh = DB::transaction(function () use ($owner, $payment, $reason) {
+            /** @var Payment $locked */
+            $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if (! $this->isManualPayment($locked)) {
+                throw ValidationException::withMessages([
+                    'payment' => ['Only manual transfers can be rejected manually.'],
+                ]);
+            }
+
+            $status = $locked->status instanceof PaymentStatus
+                ? $locked->status
+                : PaymentStatus::from((string) $locked->status);
+
+            if ($status === PaymentStatus::Rejected) {
+                return ['payment' => $this->load($locked), 'newly_rejected' => false];
+            }
+
+            $this->transition($locked, PaymentStatus::Rejected);
+
+            $locked->update([
+                'status' => PaymentStatus::Rejected,
+                'verified_at' => now(),
+                'verified_by' => $owner->id,
+                'failure_reason' => $reason,
             ]);
+
+            PaymentVerificationEvent::query()->create([
+                'payment_id' => $locked->id,
+                'actor_id' => $owner->id,
+                'action' => 'rejected',
+                'reason' => $reason,
+            ]);
+
+            return ['payment' => $this->load($locked->fresh() ?? $locked), 'newly_rejected' => true];
+        });
+
+        if ($fresh['newly_rejected']) {
+            $this->notifier->manualTransferRejected($fresh['payment']);
         }
 
-        $this->transition($payment, PaymentStatus::Rejected);
-
-        $payment->update([
-            'status' => PaymentStatus::Rejected,
-            'verified_at' => now(),
-            'verified_by' => $owner->id,
-            'failure_reason' => $reason,
-        ]);
-
-        $fresh = $this->load($payment->fresh());
-        $this->notifier->manualTransferRejected($fresh);
-
-        return $fresh;
+        return $fresh['payment'];
     }
 
     /**
@@ -1008,6 +1116,24 @@ class PaymentService
         ];
     }
 
+    public function proofResponse(Payment $payment): StreamedResponse
+    {
+        if (blank($payment->proof_path)) {
+            throw new HttpException(404, 'لا يوجد إثبات دفع.');
+        }
+
+        $disk = Storage::disk($payment->proof_disk ?: 'local');
+        if (! $disk->exists($payment->proof_path)) {
+            throw new HttpException(404, 'لا يوجد إثبات دفع.');
+        }
+
+        return $disk->response($payment->proof_path, $payment->proof_original_name ?: 'proof', [
+            'Content-Type' => $payment->proof_mime ?: 'application/octet-stream',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function load(Payment $payment): Payment
     {
         return $payment->load($this->eagerLoad());
@@ -1018,7 +1144,7 @@ class PaymentService
      */
     public function eagerLoad(): array
     {
-        return ['customer', 'order.project', 'order.package', 'order.packageTier', 'order.service', 'verifier', 'printingQuotation'];
+        return ['customer', 'order.project', 'order.package', 'order.packageTier', 'order.service', 'verifier', 'printingQuotation', 'paymentAccount', 'verificationEvents.actor'];
     }
 
     /**
@@ -1171,13 +1297,13 @@ class PaymentService
             ]);
         }
 
-        if ($method === PaymentMethod::Instapay && ! $settings->instapayReady()) {
+        if ($method === PaymentMethod::Instapay && ! $this->accounts->methodAvailable($method)) {
             throw ValidationException::withMessages([
                 'method' => ['InstaPay is not available yet.'],
             ]);
         }
 
-        if ($method === PaymentMethod::BankTransfer && ! $settings->bankTransferReady()) {
+        if ($method === PaymentMethod::BankTransfer && ! $this->accounts->methodAvailable($method)) {
             throw ValidationException::withMessages([
                 'method' => ['Bank transfer is not available yet.'],
             ]);

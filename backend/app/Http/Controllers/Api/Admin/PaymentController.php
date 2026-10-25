@@ -14,6 +14,7 @@ use App\Services\Payments\PaymentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PaymentController extends Controller
@@ -60,6 +61,13 @@ class PaymentController extends Controller
         return ApiResponse::success(
             (new PaymentResource($this->payments->load($payment), true))->resolve($request)
         );
+    }
+
+    public function proof(Payment $payment): StreamedResponse
+    {
+        $this->authorize('view', $payment);
+
+        return $this->payments->proofResponse($payment);
     }
 
     public function verify(Request $request, Payment $payment): JsonResponse

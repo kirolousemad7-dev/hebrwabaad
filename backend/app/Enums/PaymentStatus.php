@@ -15,13 +15,13 @@ enum PaymentStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'بانتظار الدفع',
+            self::Pending => 'في انتظار الدفع',
             self::Processing => 'قيد المعالجة',
-            self::Paid => 'مدفوع',
+            self::Paid => 'تم تأكيد الدفع',
             self::Failed => 'فشل الدفع',
             self::Cancelled => 'ملغى',
-            self::PendingVerification => 'بانتظار التحقق',
-            self::Rejected => 'مرفوض',
+            self::PendingVerification => 'في انتظار مراجعة التحويل',
+            self::Rejected => 'تم رفض إثبات الدفع',
         };
     }
 
@@ -50,7 +50,8 @@ enum PaymentStatus: string
             self::Processing => [self::Paid, self::Failed, self::Cancelled],
             self::PendingVerification => [self::Paid, self::Rejected],
             self::Failed, self::Cancelled => [self::Processing],
-            self::Paid, self::Rejected => [],
+            self::Rejected => [self::PendingVerification],
+            self::Paid => [],
         };
     }
 

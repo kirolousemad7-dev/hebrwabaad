@@ -16,7 +16,6 @@ export function PublicRoute() {
       location.pathname === '/forgot-password'
       || location.pathname === '/reset-password'
       || location.pathname === '/verify-email'
-      || location.pathname === '/login/code'
 
     if (!allowWhileAuthenticated) {
       const from = (location.state as { from?: string } | null)?.from

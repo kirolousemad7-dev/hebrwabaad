@@ -868,6 +868,7 @@ export type CommandCenterData = {
     open_work?: number
     in_progress_work?: number
     sla_breached?: number
+    pending_manual_payments?: number
   }
   attention: AttentionItem[]
   today_timeline: CalendarItem[]

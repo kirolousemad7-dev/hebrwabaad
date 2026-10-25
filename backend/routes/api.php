@@ -14,7 +14,9 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\EmployeeController;
 use App\Http\Controllers\Api\Admin\EventRequestAdminController;
 use App\Http\Controllers\Api\Admin\EventTypeAdminController;
+use App\Http\Controllers\Api\Admin\OtoShipmentController;
 use App\Http\Controllers\Api\Admin\PackageController as AdminPackageController;
+use App\Http\Controllers\Api\Admin\PaymentAccountController;
 use App\Http\Controllers\Api\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Api\Admin\PlatformSettingController;
 use App\Http\Controllers\Api\Admin\PortfolioItemController as AdminPortfolioItemController;
@@ -151,6 +153,7 @@ use App\Http\Controllers\Api\Supplier\SupplierSourcingController;
 use App\Http\Controllers\Api\Supplier\SupplierWorkspaceController;
 use App\Http\Controllers\Api\SupportConversationController;
 use App\Http\Controllers\Api\Webhooks\InboundWebhookController;
+use App\Http\Controllers\Api\Webhooks\OtoWebhookController;
 use App\Http\Controllers\Api\Webhooks\PayTabsWebhookController;
 use App\Http\Controllers\Api\Workspace\StaffCustomerController;
 use App\Http\Controllers\Api\WorkspaceController;
@@ -166,6 +169,8 @@ Route::get('/google-calendar/callback', [GoogleCalendarOAuthController::class, '
     ->middleware('throttle:hebr-login');
 
 Route::post('/webhooks/paytabs', [PayTabsWebhookController::class, 'handle']);
+Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])
+    ->middleware('throttle:hebr-inbound-webhooks');
 Route::post('/payments/paytabs/callback', [PayTabsWebhookController::class, 'handle']);
 Route::get('/payments/paytabs/{payment}/status', [PayTabsCheckoutController::class, 'status']);
 Route::post('/webhooks/inbound/{inboundWebhook}', [InboundWebhookController::class, 'handle'])
@@ -902,6 +907,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'role:CUSTOMER'])->group(fu
     Route::get('/customer/payments/settings', [CustomerPaymentController::class, 'settings']);
     Route::post('/customer/payments', [CustomerPaymentController::class, 'store'])->middleware('throttle:hebr-payments');
     Route::get('/customer/payments/{payment}', [CustomerPaymentController::class, 'show']);
+    Route::get('/customer/payments/{payment}/proof', [CustomerPaymentController::class, 'proof']);
     Route::post('/customer/payments/{payment}/card', [CustomerPaymentController::class, 'card'])->middleware('throttle:hebr-payments');
     Route::post('/payments/paytabs/checkout', [PayTabsCheckoutController::class, 'store'])->middleware('throttle:hebr-payments');
     Route::post('/customer/payments/{payment}/manual-transfer', [CustomerPaymentController::class, 'manualTransfer'])->middleware('throttle:hebr-payments');
@@ -934,11 +940,26 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'account.active'])->group(fu
         Route::put('/role-dashboard-access/{role}', [RoleDashboardAccessController::class, 'update']);
         Route::get('/consultant', [ConsultantSettingsController::class, 'show']);
         Route::patch('/consultant', [ConsultantSettingsController::class, 'update']);
+        Route::get('/shipping/oto', [OtoShipmentController::class, 'index']);
+        Route::get('/orders/{order}/oto', [OtoShipmentController::class, 'show']);
+        Route::post('/orders/{order}/oto/quote', [OtoShipmentController::class, 'quote']);
+        Route::post('/orders/{order}/oto/order', [OtoShipmentController::class, 'storeOrder']);
+        Route::post('/orders/{order}/oto/shipment', [OtoShipmentController::class, 'storeShipment']);
+        Route::post('/orders/{order}/oto/sync', [OtoShipmentController::class, 'sync']);
+        Route::post('/orders/{order}/oto/retry', [OtoShipmentController::class, 'retry']);
+        Route::get('/orders/{order}/oto/label', [OtoShipmentController::class, 'label']);
+
         Route::get('/payments', [AdminPaymentController::class, 'index']);
         Route::get('/payments/revenue', [AdminPaymentController::class, 'revenue']);
+        Route::get('/payment-accounts', [PaymentAccountController::class, 'index']);
+        Route::post('/payment-accounts', [PaymentAccountController::class, 'store']);
+        Route::patch('/payment-accounts/{paymentAccount}', [PaymentAccountController::class, 'update']);
+        Route::post('/payment-accounts/{paymentAccount}/default', [PaymentAccountController::class, 'makeDefault']);
+        Route::post('/payment-accounts/{paymentAccount}/archive', [PaymentAccountController::class, 'archive']);
         Route::get('/payments/settings', [AdminPaymentController::class, 'settings']);
         Route::patch('/payments/settings', [AdminPaymentController::class, 'updateSettings']);
         Route::get('/payments/{payment}', [AdminPaymentController::class, 'show']);
+        Route::get('/payments/{payment}/proof', [AdminPaymentController::class, 'proof']);
         Route::post('/payments/{payment}/verify', [AdminPaymentController::class, 'verify']);
         Route::post('/payments/{payment}/reject', [AdminPaymentController::class, 'reject']);
         Route::post('/payments/{payment}/reconcile', [AdminPaymentController::class, 'reconcile']);

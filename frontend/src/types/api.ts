@@ -440,6 +440,14 @@ export type CustomerOrder = {
   account_manager: { id: number; name: string } | null
   payable?: OrderPayable
   latest_payment?: CustomerPayment | null
+  shipment?: {
+    status: string
+    status_label: string
+    carrier: string | null
+    tracking_number: string | null
+    tracking_url: string | null
+    delivered_at: string | null
+  } | null
   timeline: OrderTimelineStep[]
 }
 
@@ -997,14 +1005,33 @@ export type CustomerPayment = {
   created_at: string | null
   updated_at: string | null
   checkout_url?: string | null
+  has_proof?: boolean
+  receiving_account?: {
+    id: number
+    method: string
+    account_holder_name: string
+    instapay_address?: string | null
+    bank_name?: string | null
+    account_number?: string | null
+    iban?: string | null
+  } | null
   order?: PaymentOrderSummary | null
   customer?: { id: number; name: string; email?: string } | null
+}
+
+export type PaymentVerificationEvent = {
+  id: number
+  action: string
+  reason?: string | null
+  actor?: string | null
+  created_at?: string | null
 }
 
 export type OwnerPayment = CustomerPayment & {
   notes?: string | null
   verified_by?: { id: number; name: string } | null
   customer?: { id: number; name: string; email?: string } | null
+  verification_events?: PaymentVerificationEvent[]
   printing_quotation_id?: number | null
   refundable_amount?: string | number | null
   net_paid?: string | number | null
@@ -1061,10 +1088,31 @@ export type CustomerBankTransferSettings = {
   notes: string | null
 }
 
+export type CustomerPaymentAccount = {
+  id: number
+  method: PaymentMethod | string
+  account_holder_name: string
+  instapay_address: string | null
+  mobile_number: string | null
+  bank_name: string | null
+  account_number: string | null
+  iban: string | null
+  branch_name: string | null
+  instructions: string
+  is_default: boolean
+}
+
+export type OwnerPaymentAccount = CustomerPaymentAccount & {
+  is_active: boolean
+  archived_at: string | null
+  payments_count: number
+}
+
 export type CustomerPaymentSettings = {
   card: { enabled: boolean; configured: boolean }
   instapay: CustomerInstapaySettings
   bank_transfer: CustomerBankTransferSettings
+  accounts?: CustomerPaymentAccount[]
 }
 
 /**

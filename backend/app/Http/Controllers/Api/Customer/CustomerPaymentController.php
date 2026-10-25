@@ -13,6 +13,8 @@ use App\Services\Payments\PaymentService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CustomerPaymentController extends Controller
@@ -81,6 +83,13 @@ class CustomerPaymentController extends Controller
         return ApiResponse::success($this->paymentResponse($request, $result));
     }
 
+    public function proof(Payment $payment): StreamedResponse
+    {
+        $this->authorize('viewOwned', $payment);
+
+        return $this->payments->proofResponse($payment);
+    }
+
     public function manualTransfer(SubmitManualTransferRequest $request, Payment $payment): JsonResponse
     {
         $this->authorize('viewOwned', $payment);
@@ -88,9 +97,17 @@ class CustomerPaymentController extends Controller
         $payment = $this->payments->submitManualTransfer(
             $request->user(),
             $payment,
-            $request->validated('reference_number'),
-            $request->validated('payer_name'),
-            $request->validated('notes'),
+            [
+                'reference_number' => $request->validated('reference_number'),
+                'payer_name' => $request->validated('payer_name'),
+                'notes' => $request->validated('notes'),
+                'payment_account_id' => $request->validated('payment_account_id'),
+            ],
+            $request->file('proof') instanceof UploadedFile
+                ? $request->file('proof')
+                : throw \Illuminate\Validation\ValidationException::withMessages([
+                    'proof' => ['صورة إثبات الدفع مطلوبة.'],
+                ]),
         );
 
         return ApiResponse::success(

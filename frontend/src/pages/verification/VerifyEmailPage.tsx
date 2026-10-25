@@ -113,8 +113,6 @@ export function VerifyEmailPage() {
       {!isAuthenticated ? (
         <p className="text-center text-sm">
           <Link className="underline" to="/supplier/login">دخول المورد</Link>
-          {' · '}
-          <Link className="underline" to="/login/code">دخول برمز لمرة واحدة</Link>
         </p>
       ) : null}
     </VerificationScreen>

@@ -45,6 +45,24 @@ export function CustomerOrderDetailPage() {
 
       {order.description ? <p className="max-w-2xl text-sm leading-7 text-slate-600">{order.description}</p> : null}
 
+      {order.shipment ? (
+        <article className="space-y-2 rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="font-semibold">الشحن</h2>
+          <p className="text-sm text-slate-600">الحالة: {order.shipment.status_label}</p>
+          {order.shipment.carrier ? <p className="text-sm text-slate-600">شركة الشحن: {order.shipment.carrier}</p> : null}
+          {order.shipment.tracking_number ? (
+            <p className="text-sm text-slate-600">
+              رقم التتبع: <span dir="ltr">{order.shipment.tracking_number}</span>
+            </p>
+          ) : null}
+          {order.shipment.tracking_url ? (
+            <a className="inline-block text-sm underline" href={order.shipment.tracking_url} target="_blank" rel="noreferrer">
+              متابعة الشحنة
+            </a>
+          ) : null}
+        </article>
+      ) : null}
+
       {orderNeedsPayment(order) ? (
         <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

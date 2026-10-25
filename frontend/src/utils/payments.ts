@@ -24,8 +24,10 @@ export const PAYMENT_COPY = {
   success: 'نجحت عملية الدفع',
   failed: 'عملية الدفع لم تكتمل',
   cancelled: 'تم إلغاء عملية الدفع',
-  pendingVerification: 'تم استلام بيانات التحويل وهي قيد التحقق.',
-  rejected: 'رُفض التحويل.',
+  pendingVerification: 'في انتظار مراجعة التحويل',
+  rejected: 'تم رفض إثبات الدفع',
+  proofRequired: 'صورة إثبات الدفع مطلوبة قبل إرسال الطلب للمراجعة.',
+  proofInvalid: 'صيغة الإثبات يجب أن تكون JPG أو PNG أو WebP، وبحد أقصى 5 ميجابايت.',
   emptyOwner: 'لا توجد مدفوعات بعد',
   emptyOwnerDescription: 'ستظهر هنا المدفوعات الحقيقية بعد إتمام العملاء للدفع.',
   amountDue: 'المبلغ المستحق',
@@ -35,13 +37,13 @@ export const PAYMENT_COPY = {
 } as const
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  PENDING: 'بانتظار الدفع',
+  PENDING: 'في انتظار الدفع',
   PROCESSING: 'قيد المعالجة',
-  PAID: 'مدفوع',
+  PAID: 'تم تأكيد الدفع',
   FAILED: 'فشل الدفع',
   CANCELLED: 'ملغى',
-  PENDING_VERIFICATION: 'بانتظار التحقق',
-  REJECTED: 'مرفوض',
+  PENDING_VERIFICATION: 'في انتظار مراجعة التحويل',
+  REJECTED: 'تم رفض إثبات الدفع',
 }
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

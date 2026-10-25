@@ -13,7 +13,7 @@ import {
   startCustomerCardPayment,
   submitCustomerManualTransfer,
 } from '../../services/payments'
-import type { CustomerPayment, PaymentMethod } from '../../types/api'
+import type { CustomerPayment, CustomerPaymentAccount, PaymentMethod } from '../../types/api'
 import { describeApiError } from '../../utils/errors'
 import { describeOrderLoadError } from '../../utils/orderTracking'
 import {
@@ -28,6 +28,42 @@ import {
   selectedPaymentMethod,
 } from '../../utils/payments'
 
+function proofError(file: File): string | null {
+  const name = file.name.toLowerCase()
+  const allowed = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.webp')
+  if (!allowed) return PAYMENT_COPY.proofInvalid
+  if (file.size > 5 * 1024 * 1024) return PAYMENT_COPY.proofInvalid
+  return null
+}
+
+function accountRows(account: CustomerPaymentAccount, method: string | undefined) {
+  if (method === 'BANK_TRANSFER') {
+    return {
+      title: PAYMENT_COPY.bankTransfer,
+      rows: [
+        { label: 'اسم البنك', value: account.bank_name, copy: false },
+        { label: 'اسم صاحب الحساب', value: account.account_holder_name, copy: false },
+        { label: 'رقم الحساب', value: account.account_number, copy: true },
+        { label: 'IBAN', value: account.iban, copy: true },
+        { label: 'الفرع', value: account.branch_name, copy: false },
+      ],
+      instructions: account.instructions,
+      referenceLabel: 'رقم الحوالة',
+    }
+  }
+
+  return {
+    title: PAYMENT_COPY.instapay,
+    rows: [
+      { label: 'اسم صاحب الحساب', value: account.account_holder_name, copy: false },
+      { label: 'عنوان إنستاباي', value: account.instapay_address, copy: true },
+      { label: 'رقم الجوال', value: account.mobile_number, copy: true },
+    ],
+    instructions: account.instructions,
+    referenceLabel: 'رقم العملية',
+  }
+}
+
 export function CustomerPayPage() {
   const { orderId } = useParams()
   const [searchParams] = useSearchParams()
@@ -40,7 +76,16 @@ export function CustomerPayPage() {
   const [error, setError] = useState<string | null>(null)
   const [reference, setReference] = useState('')
   const [payerName, setPayerName] = useState('')
+  const [accountId, setAccountId] = useState<number | null>(null)
+  const [proof, setProof] = useState<File | null>(null)
+  const [proofPreview, setProofPreview] = useState<string | null>(null)
   const [localPayment, setLocalPayment] = useState<CustomerPayment | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (proofPreview) URL.revokeObjectURL(proofPreview)
+    }
+  }, [proofPreview])
   const [retrying, setRetrying] = useState(false)
 
   const checkoutFlag = searchParams.get('checkout')
@@ -129,34 +174,39 @@ export function CustomerPayPage() {
     Boolean(order.payable?.available) &&
     payment?.status !== 'PENDING' &&
     view !== 'verifying'
-  const manualPending = isManualPaymentMethod(payment?.payment_method) && payment?.status === 'PENDING'
-  const manualAccount =
-    payment?.payment_method === 'BANK_TRANSFER'
+  const manualOpen =
+    isManualPaymentMethod(payment?.payment_method) &&
+    (payment?.status === 'PENDING' || payment?.status === 'REJECTED')
+  const methodAccounts = (settings.accounts ?? []).filter((account) => account.method === payment?.payment_method)
+  const selectedAccount =
+    methodAccounts.find((account) => account.id === accountId) ??
+    methodAccounts.find((account) => account.is_default) ??
+    methodAccounts[0] ??
+    null
+  const manualAccount = selectedAccount
+    ? accountRows(selectedAccount, payment?.payment_method)
+    : payment?.payment_method === 'BANK_TRANSFER'
       ? {
           title: PAYMENT_COPY.bankTransfer,
           rows: [
-            { label: 'اسم البنك', value: settings.bank_transfer.bank_name },
-            { label: 'اسم صاحب الحساب', value: settings.bank_transfer.account_name },
-            { label: 'رقم الحساب', value: settings.bank_transfer.account_number },
-            { label: 'IBAN', value: settings.bank_transfer.iban },
-            { label: 'SWIFT/BIC', value: settings.bank_transfer.swift },
-            { label: 'الفرع', value: settings.bank_transfer.branch },
+            { label: 'اسم البنك', value: settings.bank_transfer.bank_name, copy: false },
+            { label: 'اسم صاحب الحساب', value: settings.bank_transfer.account_name, copy: false },
+            { label: 'رقم الحساب', value: settings.bank_transfer.account_number, copy: true },
+            { label: 'IBAN', value: settings.bank_transfer.iban, copy: true },
+            { label: 'SWIFT/BIC', value: settings.bank_transfer.swift, copy: true },
+            { label: 'الفرع', value: settings.bank_transfer.branch, copy: false },
           ],
           instructions: settings.bank_transfer.instructions,
-          notes: settings.bank_transfer.notes,
           referenceLabel: 'رقم الحوالة',
         }
       : {
           title: PAYMENT_COPY.instapay,
           rows: [
-            { label: 'اسم الحساب', value: settings.instapay.account_name },
-            { label: 'البنك', value: settings.instapay.bank_name },
-            { label: 'رقم الحساب / IBAN', value: settings.instapay.account_number },
-            { label: 'معرّف إنستاباي', value: settings.instapay.handle },
-            { label: 'رقم الهاتف المرتبط', value: settings.instapay.phone },
+            { label: 'اسم الحساب', value: settings.instapay.account_name, copy: false },
+            { label: 'عنوان إنستاباي', value: settings.instapay.handle, copy: true },
+            { label: 'رقم الجوال', value: settings.instapay.phone, copy: true },
           ],
           instructions: settings.instapay.instructions,
-          notes: settings.instapay.notes,
           referenceLabel: 'رقم العملية',
         }
 
@@ -199,9 +249,14 @@ export function CustomerPayPage() {
 
     try {
       const created = await createCustomerPayment({ order_id: order.id, method: selected })
+      const preferred = (settings.accounts ?? []).find((account) => account.method === selected && account.is_default)
+        ?? (settings.accounts ?? []).find((account) => account.method === selected)
       setLocalPayment(created.data)
       setMethod(selected)
+      setAccountId(preferred?.id ?? null)
       setReference('')
+      setProof(null)
+      setProofPreview(null)
     } catch (caught) {
       setError(describeApiError(caught, PAYMENT_COPY.failed))
     } finally {
@@ -216,6 +271,17 @@ export function CustomerPayPage() {
       return
     }
 
+    if (!proof) {
+      setError(PAYMENT_COPY.proofRequired)
+      return
+    }
+
+    const invalid = proofError(proof)
+    if (invalid) {
+      setError(invalid)
+      return
+    }
+
     setBusy(true)
     setError(null)
 
@@ -223,9 +289,13 @@ export function CustomerPayPage() {
       const submitted = await submitCustomerManualTransfer(payment.id, {
         reference_number: reference.trim(),
         payer_name: payerName.trim() || undefined,
+        payment_account_id: selectedAccount?.id,
+        proof,
       })
       setLocalPayment(submitted.data)
-      toast.success(PAYMENT_COPY.pendingVerification)
+      setProof(null)
+      setProofPreview(null)
+      toast.success('تم إرسال إثبات الدفع. الحالة: في انتظار مراجعة التحويل.')
     } catch (caught) {
       setError(describeApiError(caught, PAYMENT_COPY.failed))
     } finally {
@@ -330,22 +400,59 @@ export function CustomerPayPage() {
         </div>
       ) : null}
 
-      {manualPending ? (
+      {manualOpen ? (
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="font-semibold">تعليمات {manualAccount.title}</h2>
+          <p className="text-sm text-slate-600">
+            المبلغ المطلوب: <span className="font-semibold">{formatPaymentAmount(payment?.amount ?? amount ?? null, payment?.currency ?? currency)}</span>
+          </p>
+          {methodAccounts.length > 1 ? (
+            <div className="grid gap-2">
+              {methodAccounts.map((account) => (
+                <label key={account.id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                  <input
+                    type="radio"
+                    name="receiving-account"
+                    checked={(selectedAccount?.id ?? null) === account.id}
+                    onChange={() => setAccountId(account.id)}
+                  />
+                  <span>{account.account_holder_name}</span>
+                  <span dir="ltr" className="text-slate-500">{account.instapay_address || account.iban || account.account_number}</span>
+                </label>
+              ))}
+            </div>
+          ) : null}
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             {manualAccount.rows
               .filter((row) => Boolean(row.value))
               .map((row) => (
                 <div key={row.label}>
                   <dt className="text-xs text-slate-500">{row.label}</dt>
-                  <dd dir="auto">{row.value}</dd>
+                  <dd className="flex flex-wrap items-center gap-2" dir="auto">
+                    <span>{row.value}</span>
+                    {row.copy && row.value ? (
+                      <button
+                        type="button"
+                        className="rounded-md border border-slate-200 px-2 py-1 text-xs"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(row.value ?? '').then(
+                            () => toast.success('تم النسخ.'),
+                            () => setError('تعذر نسخ البيانات.'),
+                          )
+                        }}
+                      >
+                        نسخ
+                      </button>
+                    ) : null}
+                  </dd>
                 </div>
               ))}
           </dl>
-          <p className="text-sm leading-7 text-slate-600">{manualAccount.instructions}</p>
-          {manualAccount.notes ? (
-            <p className="text-xs leading-6 text-slate-500">{manualAccount.notes}</p>
+          {manualAccount.instructions ? (
+            <p className="text-sm leading-7 text-slate-600">{manualAccount.instructions}</p>
+          ) : null}
+          {payment?.status === 'REJECTED' && payment.failure_reason ? (
+            <FeedbackBanner kind="error">سبب الرفض: {payment.failure_reason}</FeedbackBanner>
           ) : null}
           <form className="space-y-3" onSubmit={(event) => void submitManualTransfer(event)}>
             <label className="block space-y-1 text-sm">
@@ -365,12 +472,43 @@ export function CustomerPayPage() {
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               />
             </label>
+            <label className="block space-y-1 text-sm">
+              <span>صورة إثبات الدفع</span>
+              <input
+                required
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null
+                  if (proofPreview) URL.revokeObjectURL(proofPreview)
+                  if (!file) {
+                    setProof(null)
+                    setProofPreview(null)
+                    return
+                  }
+                  const invalid = proofError(file)
+                  if (invalid) {
+                    setProof(null)
+                    setProofPreview(null)
+                    setError(invalid)
+                    return
+                  }
+                  setError(null)
+                  setProof(file)
+                  setProofPreview(URL.createObjectURL(file))
+                }}
+                className="w-full text-sm"
+              />
+            </label>
+            {proofPreview ? (
+              <img src={proofPreview} alt="معاينة إثبات الدفع" className="max-h-56 rounded-lg border border-slate-200 object-contain" />
+            ) : null}
             <button
               type="submit"
-              disabled={busy || reference.trim() === ''}
+              disabled={busy || reference.trim() === '' || proof === null}
               className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
             >
-              إرسال للمراجعة
+              {payment?.status === 'REJECTED' ? 'إعادة إرسال الإثبات' : 'إرسال للمراجعة'}
             </button>
           </form>
         </div>

@@ -6,6 +6,8 @@ use App\Enums\CalendarItemType;
 use App\Enums\UserRole;
 use App\Enums\WorkflowRunStatus;
 use App\Models\CalendarItem;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\WebhookDelivery;
@@ -114,6 +116,7 @@ class OperationsCommandCenterService
                 'in_progress_work' => $workSummary['in_progress'],
                 'sla_breached' => $slaBreached,
                 'printing_overdue' => $printingOverdue,
+                'pending_manual_payments' => Payment::query()->where('status', PaymentStatus::PendingVerification)->count(),
             ],
             'attention' => $attention,
             'today_timeline' => $timeline->limit(40)->get()->map(

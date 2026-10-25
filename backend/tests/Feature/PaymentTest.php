@@ -11,7 +11,9 @@ use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\User;
 use App\Services\Payments\CardPaymentGateway;
+use App\Services\Payments\PayTabsClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\Support\FakeCardPaymentGateway;
 use Tests\TestCase;
 
@@ -254,10 +256,11 @@ class PaymentTest extends TestCase
         $paymentId = $created['id'];
 
         $this->asUser($setup['customer'])
-            ->postJson('/api/customer/payments/'.$paymentId.'/manual-transfer', [
+            ->post('/api/customer/payments/'.$paymentId.'/manual-transfer', [
                 'reference_number' => 'IP-998877',
                 'payer_name' => 'منى',
-            ])
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertOk()
             ->assertJsonPath('data.status', PaymentStatus::PendingVerification->value)
             ->assertJsonPath('data.reference_number', 'IP-998877');
@@ -292,9 +295,10 @@ class PaymentTest extends TestCase
             ->json('data');
 
         $this->asUser($setup['customer'])
-            ->postJson('/api/customer/payments/'.$second['id'].'/manual-transfer', [
+            ->post('/api/customer/payments/'.$second['id'].'/manual-transfer', [
                 'reference_number' => 'IP-112233',
-            ])
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertOk();
 
         $this->asUser($owner)
@@ -317,6 +321,20 @@ class PaymentTest extends TestCase
             ])
             ->assertStatus(503)
             ->assertJsonPath('success', false)
+            ->assertJsonPath('message', PayTabsClient::HOSTED_PAGE_REQUIRED);
+
+        config([
+            'payments.paytabs.profile_id' => 154601,
+            'payments.paytabs.server_key' => 'test-server-key',
+            'payments.paytabs.base_url' => 'https://secure-egypt.paytabs.com',
+        ]);
+
+        $this->asUser($setup['customer'])
+            ->postJson('/api/customer/payments', [
+                'order_id' => $setup['order']->id,
+                'method' => 'CARD',
+            ])
+            ->assertStatus(503)
             ->assertJsonPath('message', 'الدفع بالبطاقة غير متاح حاليًا، برجاء المحاولة لاحقًا.');
 
         $this->gateway->configured = true;

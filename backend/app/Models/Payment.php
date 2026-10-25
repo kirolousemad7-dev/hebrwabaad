@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'amount',
     'currency',
     'payment_method',
+    'payment_account_id',
     'status',
     'provider',
     'provider_status',
@@ -36,6 +37,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'reference_number',
     'payer_name',
     'notes',
+    'proof_disk',
+    'proof_path',
+    'proof_original_name',
+    'proof_mime',
+    'proof_size',
     'failure_reason',
     'paid_at',
     'verified_at',
@@ -64,6 +70,22 @@ class Payment extends Model
             'last_reconciled_at' => 'datetime',
             'dispute_metadata' => 'array',
         ];
+    }
+
+    /**
+     * @return BelongsTo<PaymentAccount, $this>
+     */
+    public function paymentAccount(): BelongsTo
+    {
+        return $this->belongsTo(PaymentAccount::class);
+    }
+
+    /**
+     * @return HasMany<PaymentVerificationEvent, $this>
+     */
+    public function verificationEvents(): HasMany
+    {
+        return $this->hasMany(PaymentVerificationEvent::class);
     }
 
     /**

@@ -71,6 +71,15 @@ export function ManagedOrderDetail({ listPath, projectPath }: ManagedOrderDetail
 
       {order.description ? <p className="max-w-2xl text-sm leading-7 text-slate-600">{order.description}</p> : null}
 
+      {listPath === '/owner/orders' ? (
+        <p>
+          <Link to={`/owner/shipping?order=${order.id}`} className="text-sm underline">
+            إدارة الشحن
+            {order.shipment?.status_label ? ` — ${order.shipment.status_label}` : ''}
+          </Link>
+        </p>
+      ) : null}
+
       {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
 
       {order.allowed_transitions.length > 0 ? (

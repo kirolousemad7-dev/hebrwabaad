@@ -156,7 +156,7 @@ export function OwnerCommandCenter() {
   }
 
   const slaBreached = data.summary.sla_breached ?? 0
-  const summaryCards = [
+  const summaryCards: Array<{ label: string; value: number; danger?: boolean; warn?: boolean; href?: string }> = [
     { label: 'مهام اليوم', value: data.summary.today_tasks },
     { label: 'المتأخر', value: data.summary.overdue, danger: data.summary.overdue > 0 },
     { label: 'اجتماعات اليوم', value: data.summary.today_meetings },
@@ -168,6 +168,14 @@ export function OwnerCommandCenter() {
     },
     ...(typeof data.summary.sla_breached === 'number'
       ? [{ label: 'خرق SLA', value: slaBreached, danger: slaBreached > 0 }]
+      : []),
+    ...(typeof data.summary.pending_manual_payments === 'number'
+      ? [{
+          label: 'مدفوعات بانتظار التأكيد',
+          value: data.summary.pending_manual_payments,
+          warn: data.summary.pending_manual_payments > 0,
+          href: '/owner/payments',
+        }]
       : []),
   ]
 
@@ -284,27 +292,36 @@ export function OwnerCommandCenter() {
       {searchSlot ? createPortal(searchPanel, searchSlot) : <div className="mb-3">{searchPanel}</div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((chip) => (
-          <div
-            key={chip.label}
-            className={`flex min-h-[104px] flex-col justify-center gap-2 rounded-xl border px-4 py-4 ${
-              chip.danger
-                ? 'border-red-300 bg-red-50/70'
-                : chip.warn
-                  ? 'border-amber-200 bg-amber-50/50'
-                  : 'border-slate-200 bg-white'
-            }`}
-          >
-            <p className="text-xs text-slate-500">{chip.label}</p>
-            <p
-              className={`text-xl font-semibold ${
-                chip.danger ? 'text-red-900' : chip.warn ? 'text-amber-900' : 'text-slate-900'
-              }`}
-            >
-              {chip.value.toLocaleString('ar-SA')}
-            </p>
-          </div>
-        ))}
+        {summaryCards.map((chip) => {
+          const className = `flex min-h-[104px] flex-col justify-center gap-2 rounded-xl border px-4 py-4 ${
+            chip.danger
+              ? 'border-red-300 bg-red-50/70'
+              : chip.warn
+                ? 'border-amber-200 bg-amber-50/50'
+                : 'border-slate-200 bg-white'
+          }`
+          const body = (
+            <>
+              <p className="text-xs text-slate-500">{chip.label}</p>
+              <p
+                className={`text-xl font-semibold ${
+                  chip.danger ? 'text-red-900' : chip.warn ? 'text-amber-900' : 'text-slate-900'
+                }`}
+              >
+                {chip.value.toLocaleString('ar-SA')}
+              </p>
+            </>
+          )
+          return chip.href ? (
+            <Link key={chip.label} to={chip.href} className={className}>
+              {body}
+            </Link>
+          ) : (
+            <div key={chip.label} className={className}>
+              {body}
+            </div>
+          )
+        })}
       </div>
 
       {data.system_health ? (

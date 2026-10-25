@@ -2,12 +2,13 @@ import type {
   CustomerPayment,
   CustomerPaymentSettings,
   OwnerPayment,
+  OwnerPaymentAccount,
   OwnerPaymentListData,
   OwnerPaymentSettings,
   PaymentMethod,
   PaymentRevenueSummary,
 } from '../types/api'
-import { apiGet, apiPatch, apiPost } from './api'
+import { apiGet, apiGetBlob, apiPatch, apiPost, apiPostForm } from './api'
 
 export type OwnerPaymentListFilters = {
   q?: string
@@ -36,12 +37,47 @@ export function startCustomerCardPayment(id: number) {
   return apiPost<CustomerPayment>(`/api/customer/payments/${id}/card`)
 }
 
-/** Customer-declared InstaPay / bank transfer details, pending owner verification. */
+/** Customer-declared InstaPay / bank transfer details plus a required receipt image. */
 export function submitCustomerManualTransfer(
   id: number,
-  payload: { reference_number: string; payer_name?: string; notes?: string },
+  payload: { reference_number: string; payer_name?: string; notes?: string; payment_account_id?: number; proof: File },
 ) {
-  return apiPost<CustomerPayment>(`/api/customer/payments/${id}/manual-transfer`, payload)
+  const body = new FormData()
+  body.append('reference_number', payload.reference_number)
+  if (payload.payer_name) body.append('payer_name', payload.payer_name)
+  if (payload.notes) body.append('notes', payload.notes)
+  if (payload.payment_account_id) body.append('payment_account_id', String(payload.payment_account_id))
+  body.append('proof', payload.proof)
+
+  return apiPostForm<CustomerPayment>(`/api/customer/payments/${id}/manual-transfer`, body)
+}
+
+export function getCustomerPaymentProof(id: number) {
+  return apiGetBlob(`/api/customer/payments/${id}/proof`)
+}
+
+export function getOwnerPaymentProof(id: number) {
+  return apiGetBlob(`/api/admin/payments/${id}/proof`)
+}
+
+export function getOwnerPaymentAccounts() {
+  return apiGet<OwnerPaymentAccount[]>('/api/admin/payment-accounts')
+}
+
+export function createOwnerPaymentAccount(payload: Partial<OwnerPaymentAccount> & { method: string; account_holder_name: string; instructions: string }) {
+  return apiPost<OwnerPaymentAccount>('/api/admin/payment-accounts', payload)
+}
+
+export function updateOwnerPaymentAccount(id: number, payload: Partial<OwnerPaymentAccount>) {
+  return apiPatch<OwnerPaymentAccount>(`/api/admin/payment-accounts/${id}`, payload)
+}
+
+export function makeOwnerPaymentAccountDefault(id: number) {
+  return apiPost<OwnerPaymentAccount>(`/api/admin/payment-accounts/${id}/default`)
+}
+
+export function archiveOwnerPaymentAccount(id: number) {
+  return apiPost<OwnerPaymentAccount>(`/api/admin/payment-accounts/${id}/archive`)
 }
 
 export function getOwnerPayments(filters: OwnerPaymentListFilters = {}) {

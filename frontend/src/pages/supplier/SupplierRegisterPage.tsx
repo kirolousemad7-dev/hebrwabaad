@@ -1,7 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../../components/brand/BrandLogo'
-import { ContinueWithGoogleButton } from '../../components/auth/ContinueWithGoogleButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
 import { useAuth } from '../../context/AuthContext'
 import { persistSession } from '../../services/auth'
@@ -13,8 +12,6 @@ export function SupplierRegisterPage() {
   const { refreshUser } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [passwordless, setPasswordless] = useState(false)
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setLoading(true)
@@ -33,19 +30,15 @@ export function SupplierRegisterPage() {
         category: String(form.get('category') || '') || undefined,
         short_description: String(form.get('short_description') || ''),
         services: servicesRaw ? servicesRaw.split(',').map((s) => s.trim()).filter(Boolean) : [],
-        passwordless,
-        password: passwordless ? undefined : String(form.get('password') || ''),
-        password_confirmation: passwordless ? undefined : String(form.get('password_confirmation') || ''),
+        password: String(form.get('password') || ''),
+        password_confirmation: String(form.get('password_confirmation') || ''),
       })
       if (response.data.token) {
         persistSession({ user: response.data.user, token: response.data.token })
         await refreshUser()
         navigate('/verify-email', { replace: true })
       } else {
-        navigate(`/login/code?email=${encodeURIComponent(String(form.get('email') || ''))}`, {
-          replace: true,
-          state: { registered: true },
-        })
+        setError('تعذر إكمال التسجيل. أدخل كلمة المرور ثم أعد المحاولة.')
       }
     } catch (caught) {
       setError(describeApiError(caught, 'تعذر تسجيل المورد.'))
@@ -71,21 +64,9 @@ export function SupplierRegisterPage() {
         <input name="category" placeholder="التصنيف" className="rounded-lg border px-3 py-2 text-sm" />
         <input name="services" placeholder="الخدمات (مفصولة بفاصلة)" className="rounded-lg border px-3 py-2 text-sm" />
         <textarea required name="short_description" placeholder="وصف قصير *" className="min-h-24 rounded-lg border px-3 py-2 text-sm" />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={passwordless} onChange={(e) => setPasswordless(e.target.checked)} />
-          تسجيل بدون كلمة مرور (دخول لاحق برمز لمرة واحدة)
-        </label>
-        {!passwordless ? (
-          <>
-            <input required name="password" type="password" placeholder="كلمة المرور *" className="rounded-lg border px-3 py-2 text-sm" />
-            <input required name="password_confirmation" type="password" placeholder="تأكيد كلمة المرور *" className="rounded-lg border px-3 py-2 text-sm" />
-          </>
-        ) : null}
+        <input required name="password" type="password" minLength={8} placeholder="كلمة المرور *" className="rounded-lg border px-3 py-2 text-sm" />
+        <input required name="password_confirmation" type="password" minLength={8} placeholder="تأكيد كلمة المرور *" className="rounded-lg border px-3 py-2 text-sm" />
         <button type="submit" disabled={loading} className="min-h-11 rounded-xl bg-slate-900 text-sm text-white disabled:opacity-60">إرسال الطلب</button>
-        <div className="relative py-1 text-center text-xs text-slate-400">
-          <span className="bg-white px-2">أو</span>
-        </div>
-        <ContinueWithGoogleButton intent="supplier" next="/supplier" />
         <p className="text-center text-sm">لديك حساب؟ <Link className="underline" to="/supplier/login">تسجيل دخول المورد</Link></p>
       </form>
     </section>

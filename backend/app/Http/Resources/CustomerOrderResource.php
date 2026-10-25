@@ -92,6 +92,10 @@ class CustomerOrderResource extends JsonResource
                 'name' => $this->accountManager->name,
             ]),
             'payable' => app(PaymentService::class)->payablePayload($this->resource),
+            'shipment' => $this->whenLoaded(
+                'otoShipment',
+                fn () => $this->otoShipment?->customerPayload(),
+            ),
             'latest_payment' => $this->whenLoaded(
                 'latestPayment',
                 fn () => $this->latestPayment === null

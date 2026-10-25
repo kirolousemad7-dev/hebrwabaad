@@ -53,6 +53,7 @@ import { OwnerHomePage } from '../pages/owner/OwnerHomePage'
 import { OwnerNotificationsPage } from '../pages/owner/OwnerNotificationsPage'
 import { OwnerOrderDetailPage } from '../pages/owner/OwnerOrderDetailPage'
 import { OwnerOrdersPage } from '../pages/owner/OwnerOrdersPage'
+import { OwnerShippingPage } from '../pages/owner/OwnerShippingPage'
 import { OwnerPaymentDetailPage } from '../pages/owner/OwnerPaymentDetailPage'
 import { OwnerPaymentsPage } from '../pages/owner/OwnerPaymentsPage'
 import { OwnerPaymentSettingsPage } from '../pages/owner/OwnerPaymentSettingsPage'
@@ -149,7 +150,6 @@ import { SupplierProfilePage } from '../pages/supplier/SupplierProfilePage'
 import { SupplierRegisterPage } from '../pages/supplier/SupplierRegisterPage'
 import { SupplierSettingsPage } from '../pages/supplier/SupplierSettingsPage'
 import { SupplierSourcingPage } from '../pages/supplier/SupplierSourcingPage'
-import { LoginCodePage } from '../pages/verification/LoginCodePage'
 import { VerifyEmailPage } from '../pages/verification/VerifyEmailPage'
 import { VerifyPhonePage } from '../pages/verification/VerifyPhonePage'
 import { CrmDashboardPage } from '../pages/crm/CrmDashboardPage'
@@ -249,7 +249,6 @@ export function AppRoutes() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/supplier/login" element={<SupplierLoginPage />} />
           <Route path="/supplier/register" element={<SupplierRegisterPage />} />
-          <Route path="/login/code" element={<LoginCodePage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -349,6 +348,7 @@ export function AppRoutes() {
           <Route path="/owner/employees" element={<OwnerEmployeesPage />} />
           <Route path="/owner/role-dashboard-access" element={<OwnerRoleDashboardAccessPage />} />
           <Route path="/owner/orders" element={<OwnerOrdersPage />} />
+          <Route path="/owner/shipping" element={<OwnerShippingPage />} />
           <Route path="/owner/orders/:orderId" element={<OwnerOrderDetailPage />} />
           <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
           <Route path="/owner/payments/reconciliation" element={<OwnerPaymentsReconciliationPage />} />

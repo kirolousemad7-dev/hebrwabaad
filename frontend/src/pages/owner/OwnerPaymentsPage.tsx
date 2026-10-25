@@ -10,12 +10,12 @@ import { formatPaymentAmount, ownerPaymentPath, PAYMENT_COPY } from '../../utils
 
 const STATUS_FILTERS = [
   { value: '', label: 'كل الحالات' },
-  { value: 'PAID', label: 'مدفوع' },
-  { value: 'PENDING_VERIFICATION', label: 'بانتظار التحقق' },
+  { value: 'PAID', label: 'تم تأكيد الدفع' },
+  { value: 'PENDING_VERIFICATION', label: 'في انتظار مراجعة التحويل' },
   { value: 'PROCESSING', label: 'قيد المعالجة' },
   { value: 'FAILED', label: 'فشل' },
-  { value: 'REJECTED', label: 'مرفوض' },
-  { value: 'PENDING', label: 'بانتظار الدفع' },
+  { value: 'REJECTED', label: 'تم رفض إثبات الدفع' },
+  { value: 'PENDING', label: 'في انتظار الدفع' },
   { value: 'CANCELLED', label: 'ملغى' },
 ]
 
@@ -80,7 +80,7 @@ export function OwnerPaymentsPage() {
 
       {list && list.summary.pending_verification_count > 0 ? (
         <FeedbackBanner kind="warning">
-          {list.summary.pending_verification_count.toLocaleString('ar-SA')} تحويل بانتظار التحقق.
+          {list.summary.pending_verification_count.toLocaleString('ar-SA')} مدفوعات بانتظار التأكيد.
         </FeedbackBanner>
       ) : null}
 

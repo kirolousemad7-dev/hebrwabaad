@@ -79,6 +79,7 @@ export const OWNER_NAV_SECTIONS: DashboardNavSection[] = [
       { to: '/owner/printing-quotations', label: 'عروض الطباعة', icon: 'printing', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/printing-requests', label: 'طلبات الطباعة', icon: 'printing', roles: ['OWNER', 'ADMIN_MANAGER'] },
       { to: '/owner/orders', label: 'الطلبات', icon: 'orders', roles: ['OWNER'] },
+      { to: '/owner/shipping', label: 'الشحن', icon: 'orders', roles: ['OWNER'] },
       { to: '/owner/support', label: 'الدعم', icon: 'messages', roles: ['OWNER'] },
     ],
   },

@@ -66,6 +66,10 @@ class OrderResource extends JsonResource
                 'name' => $this->package->name,
             ]),
             'timeline' => app(OrderService::class)->timeline($this->resource),
+            'shipment' => $this->whenLoaded(
+                'otoShipment',
+                fn () => $this->otoShipment?->ownerPayload(),
+            ),
             'history' => $this->whenLoaded('statusHistory', function () {
                 return $this->statusHistory->map(function ($item) {
                     $to = $item->to_status instanceof OrderStatus

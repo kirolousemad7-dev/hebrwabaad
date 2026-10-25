@@ -10,6 +10,7 @@ use App\Models\PaymentSetting;
 use App\Models\User;
 use App\Services\Payments\CardPaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\Support\FakeCardPaymentGateway;
 use Tests\TestCase;
 
@@ -201,10 +202,11 @@ class ManualPaymentSettingsTest extends TestCase
             ->json('data');
 
         $this->asUser($customer)
-            ->postJson('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
+            ->post('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
                 'reference_number' => 'BANK-REF-9001',
                 'payer_name' => 'عميل تجريبي',
-            ])
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertOk()
             ->assertJsonPath('data.status', PaymentStatus::PendingVerification->value)
             ->assertJsonPath('data.reference_number', 'BANK-REF-9001');
@@ -250,9 +252,10 @@ class ManualPaymentSettingsTest extends TestCase
             ->json('data');
 
         $this->asUser($customer)
-            ->postJson('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
+            ->post('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
                 'reference_number' => 'BANK-REF-BAD',
-            ])
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertOk();
 
         $this->asUser($owner)

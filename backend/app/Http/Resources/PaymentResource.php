@@ -45,6 +45,34 @@ class PaymentResource extends JsonResource
             'payer_name' => $this->payer_name,
             'notes' => $this->when($this->forOwner, $this->notes),
             'failure_reason' => $this->failure_reason,
+            'has_proof' => filled($this->proof_path),
+            'receiving_account' => $this->whenLoaded('paymentAccount', function () {
+                if ($this->paymentAccount === null) {
+                    return null;
+                }
+
+                return [
+                    'id' => $this->paymentAccount->id,
+                    'method' => $this->paymentAccount->method instanceof \App\Enums\PaymentMethod
+                        ? $this->paymentAccount->method->value
+                        : (string) $this->paymentAccount->method,
+                    'account_holder_name' => $this->paymentAccount->account_holder_name,
+                    'instapay_address' => $this->paymentAccount->instapay_address,
+                    'bank_name' => $this->paymentAccount->bank_name,
+                    'account_number' => $this->paymentAccount->account_number,
+                    'iban' => $this->paymentAccount->iban,
+                ];
+            }),
+            'verification_events' => $this->when(
+                $this->forOwner && $this->relationLoaded('verificationEvents'),
+                fn () => $this->verificationEvents->map(fn ($event) => [
+                    'id' => $event->id,
+                    'action' => $event->action,
+                    'reason' => $event->reason,
+                    'actor' => $event->relationLoaded('actor') && $event->actor ? $event->actor->name : null,
+                    'created_at' => $event->created_at?->toIso8601String(),
+                ])->values()->all(),
+            ),
             'paid_at' => $this->paid_at?->toIso8601String(),
             'verified_at' => $this->verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),

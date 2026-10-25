@@ -11,6 +11,7 @@ use App\Models\PaymentSetting;
 use App\Models\User;
 use App\Services\Payments\CardPaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\FakeCardPaymentGateway;
 use Tests\Support\SignsPayTabsCallbacks;
@@ -236,9 +237,10 @@ class CustomerPackageOrderTest extends TestCase
             ->json('data');
 
         $this->asUser($customer)
-            ->postJson('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
+            ->post('/api/customer/payments/'.$payment['id'].'/manual-transfer', [
                 'reference_number' => 'IP-PACKAGE-001',
-            ])
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertOk()
             ->assertJsonPath('data.status', PaymentStatus::PendingVerification->value);
     }

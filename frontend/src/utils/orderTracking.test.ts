@@ -56,6 +56,8 @@ describe('order tracking', () => {
 
   it('keeps owner order management on a live route and hides it from catalog managers', () => {
     expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/orders')).toBe(true)
+    expect(ownerNavForRole('OWNER').some((item) => item.to === '/owner/shipping')).toBe(true)
     expect(ownerNavForRole('ADMIN_MANAGER').some((item) => item.to === '/owner/orders')).toBe(false)
+    expect(ownerNavForRole('ADMIN_MANAGER').some((item) => item.to === '/owner/shipping')).toBe(false)
   })
 })

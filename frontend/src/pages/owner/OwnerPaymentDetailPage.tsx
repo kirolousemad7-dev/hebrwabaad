@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   getOwnerPayment,
+  getOwnerPaymentProof,
   getOwnerPaymentRefunds,
   rejectOwnerPayment,
   requestOwnerPaymentRefund,
@@ -18,6 +19,40 @@ import { describeApiError } from '../../utils/errors'
 import { formatDashboardDateTime } from '../../utils/ownerDashboard'
 import { formatPaymentAmount } from '../../utils/payments'
 import { isOwner } from '../../utils/roles'
+
+function PaymentProofImage({ paymentId }: { paymentId: number }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    let objectUrl = ''
+    void getOwnerPaymentProof(paymentId)
+      .then((blob) => {
+        if (!active) return
+        objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+      })
+      .catch(() => {
+        if (active) setFailed(true)
+      })
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [paymentId])
+
+  if (failed) return <p className="text-sm text-red-700">تعذر عرض إثبات الدفع.</p>
+  if (!url) return <p className="text-sm text-slate-500">جاري تحميل الإثبات...</p>
+  return <img src={url} alt="إثبات الدفع" className="max-h-80 w-full rounded-lg border border-slate-200 object-contain" />
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  submitted: 'تم إرسال الإثبات',
+  resubmitted: 'تمت إعادة الإرسال',
+  approved: 'تم تأكيد الدفع',
+  rejected: 'تم رفض إثبات الدفع',
+}
 
 export function OwnerPaymentDetailPage() {
   const { paymentId } = useParams()
@@ -232,7 +267,40 @@ export function OwnerPaymentDetailPage() {
           <dt className="text-xs text-slate-500">سبب الرفض / الفشل</dt>
           <dd>{payment.failure_reason ?? '—'}</dd>
         </div>
+        {payment.receiving_account ? (
+          <div className="sm:col-span-2">
+            <dt className="text-xs text-slate-500">حساب الاستلام</dt>
+            <dd>
+              {payment.receiving_account.account_holder_name}
+              {' · '}
+              <span dir="ltr">{payment.receiving_account.instapay_address || payment.receiving_account.iban || payment.receiving_account.account_number || payment.receiving_account.bank_name}</span>
+            </dd>
+          </div>
+        ) : null}
       </dl>
+
+      {payment.has_proof ? (
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="font-semibold">إثبات الدفع</h2>
+          <PaymentProofImage paymentId={payment.id} />
+        </div>
+      ) : null}
+
+      {payment.verification_events && payment.verification_events.length > 0 ? (
+        <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="font-semibold">سجل المراجعة</h2>
+          <ul className="space-y-2 text-sm">
+            {payment.verification_events.map((event) => (
+              <li key={event.id} className="rounded-lg border border-slate-100 px-3 py-2">
+                {EVENT_LABELS[event.action] ?? event.action}
+                {event.actor ? ` · ${event.actor}` : ''}
+                {event.reason ? ` · ${event.reason}` : ''}
+                {event.created_at ? <span className="block text-xs text-slate-500">{formatDashboardDateTime(event.created_at)}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {canRefund ? (
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">

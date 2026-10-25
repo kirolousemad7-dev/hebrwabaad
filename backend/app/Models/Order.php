@@ -153,6 +153,14 @@ class Order extends Model
         return $this->hasOne(Payment::class)->latestOfMany();
     }
 
+    /**
+     * @return HasOne<OtoShipment, $this>
+     */
+    public function otoShipment(): HasOne
+    {
+        return $this->hasOne(OtoShipment::class);
+    }
+
     public function progressPercent(): int
     {
         $status = $this->status instanceof OrderStatus

@@ -94,6 +94,22 @@ export async function apiGet<T>(path: string): Promise<ApiSuccess<T>> {
   return parseResponse<T>(response)
 }
 
+/** Authorized binary download. Private receipts are never served from a public URL. */
+export async function apiGetBlob(path: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: headers(),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearStoredToken()
+    }
+    throw new ApiRequestError('Request failed.', response.status, null)
+  }
+
+  return response.blob()
+}
+
 async function apiSend<T>(
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,

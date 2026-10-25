@@ -175,11 +175,17 @@ class OperationalAttentionService
                 ->get();
 
             foreach ($pendingPayments as $payment) {
+                $status = $payment->status instanceof PaymentStatus
+                    ? $payment->status
+                    : PaymentStatus::from((string) $payment->status);
+                $awaitingConfirmation = $status === PaymentStatus::PendingVerification;
                 $items[] = $this->withKey([
                     'type' => 'payment_attention',
                     'severity' => 'high',
-                    'title' => 'دفعة #'.$payment->id,
-                    'description' => 'دفعة تحتاج مراجعة',
+                    'title' => $awaitingConfirmation ? 'مدفوعات بانتظار التأكيد' : 'دفعة #'.$payment->id,
+                    'description' => $awaitingConfirmation
+                        ? 'تحويل يدوي #'.$payment->id.' بانتظار مراجعة الإثبات'
+                        : 'دفعة تحتاج مراجعة',
                     'source' => 'payment',
                     'related_type' => 'payment',
                     'related_id' => $payment->id,
